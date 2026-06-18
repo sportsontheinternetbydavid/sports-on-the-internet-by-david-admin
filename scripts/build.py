@@ -52,6 +52,16 @@ def derive_elos(data):
     return data["games"]
 
 
+def replace_block(html, name, content):
+    """Replace the content between // BEGIN:name and // END:name sentinels."""
+    pattern = rf'// BEGIN:{re.escape(name)}\n.*?// END:{re.escape(name)}'
+    replacement = f'// BEGIN:{name}\n{content}\n// END:{name}'
+    result, n = re.subn(pattern, replacement, html, flags=re.DOTALL)
+    if n == 0:
+        raise ValueError(f"Sentinel '// BEGIN:{name}' not found in {html[:40]!r}...")
+    return result
+
+
 def main():
     if len(sys.argv) == 2 and sys.argv[1] in ("-h", "--help"):
         print(__doc__)
@@ -78,26 +88,11 @@ def main():
 
         path = ROOT / f"{year}.html"
         html = path.read_text()
-        html = re.sub(
-            r"const games%d = \[.*?\];" % year,
-            games_js,
-            html,
-            flags=re.DOTALL,
-        )
-        html = re.sub(
-            r"const teams = \[.*?\];",
-            teams_js,
-            html,
-            flags=re.DOTALL,
-        )
+        html = replace_block(html, f"games{year}", games_js)
+        html = replace_block(html, "teams", teams_js)
         if isinstance(data, dict) and "teamElos" in data:
             team_elos_js = f"const teamElos{year} = " + json.dumps(data["teamElos"], separators=(',', ':')) + ";"
-            html = re.sub(
-                r"const teamElos%d = \{.*?\};" % year,
-                team_elos_js,
-                html,
-                flags=re.DOTALL,
-            )
+            html = replace_block(html, f"teamElos{year}", team_elos_js)
         path.write_text(html)
         print(f"Updated {year}.html")
 
