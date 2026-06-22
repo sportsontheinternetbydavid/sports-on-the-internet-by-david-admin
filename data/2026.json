@@ -515,11 +515,11 @@
     {
       "gameNumber": 43,
       "homeTeam": "Argentina",
-      "homeScore": null,
+      "homeScore": 2,
       "awayTeam": "Austria",
-      "awayScore": null,
+      "awayScore": 0,
       "date": "2026-06-22",
-      "eloChange": null,
+      "eloChange": 16,
       "homeEloPre": 2128,
       "awayEloPre": 1857
     },
@@ -785,7 +785,7 @@
       "date": "2026-06-27",
       "eloChange": null,
       "homeEloPre": null,
-      "awayEloPre": null
+      "awayEloPre": 1841
     },
     {
       "gameNumber": 68,
@@ -796,7 +796,7 @@
       "date": "2026-06-27",
       "eloChange": null,
       "homeEloPre": null,
-      "awayEloPre": null
+      "awayEloPre": 2144
     },
     {
       "gameNumber": 69,

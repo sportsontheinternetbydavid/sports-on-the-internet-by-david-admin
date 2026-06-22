@@ -9,6 +9,10 @@
 //   tbody          — document.getElementById('games')
 //   thead          — document.querySelector('#matches-view thead')
 
+// Data-entry panel is only available in admin mode (?admin in the URL).
+const IS_ADMIN = location.search.includes('admin');
+if (IS_ADMIN) document.title = '[ADMIN] ' + document.title;
+
 // Early guards — must run before confByTeam/flagByTeam are built from these globals.
 // Full structural validation (GAMESETS ordering, team-name coverage, etc.) runs at the
 // bottom of this file once all functions are defined.
@@ -193,7 +197,7 @@ function renderElo(games, ordered, rowTotals) {
           ? `<td class="num conf" style="background-color:${eloColor(rowTotals[i][c])}">${rowTotals[i][c]}</td>`
           : `<td class="num conf"></td>`
       ).join('');
-    tr.addEventListener('click', () => toggleExpand(game, tr));
+    if (IS_ADMIN) tr.addEventListener('click', () => toggleExpand(game, tr));
     tbody.appendChild(tr);
   });
 }
@@ -216,7 +220,7 @@ function renderWld(games, ordered) {
         const { w, l, d } = rowTotals[i][c];
         return `<td class="num conf">${w}-${d}-${l}</td>`;
       }).join('');
-    tr.addEventListener('click', () => toggleExpand(game, tr));
+    if (IS_ADMIN) tr.addEventListener('click', () => toggleExpand(game, tr));
     tbody.appendChild(tr);
   });
 }
@@ -258,7 +262,7 @@ function renderStats(games, ordered) {
     } else {
       tr.innerHTML = gameRowCells(game) + emptyTd;
     }
-    tr.addEventListener('click', () => toggleExpand(game, tr));
+    if (IS_ADMIN) tr.addEventListener('click', () => toggleExpand(game, tr));
     tbody.appendChild(tr);
   });
 }
@@ -908,23 +912,28 @@ function validateContract() {
     if (!teamNames.has(g.homeTeam)) console.warn(`shared.js: game #${g.gameNumber} homeTeam "${g.homeTeam}" not found in teams — flag and confederation will be missing`);
     if (!teamNames.has(g.awayTeam)) console.warn(`shared.js: game #${g.gameNumber} awayTeam "${g.awayTeam}" not found in teams — flag and confederation will be missing`);
   }
-  // Spot-check ELO chain sync: each team's first game pre-ELO must equal TEAM_ELOS,
-  // since build.py seeds the chain from there. Catches hand-edits to teamElos that
-  // weren't followed by a build.py run, and the most common class of chain bugs.
+  // Full ELO chain sync check: walk every game in order, tracking each team's
+  // running ELO from TEAM_ELOS through completed results (mirrors derive_elos in
+  // build.py). Once a team hits a null eloChange its chain is broken and we stop
+  // checking it — subsequent homeEloPre/awayEloPre values will be null by design.
   if (Object.keys(TEAM_ELOS).length > 0) {
-    const firstGameSeen = new Set();
+    const current = { ...TEAM_ELOS };
+    const broken = new Set();
     for (const g of GAMES) {
-      if (!firstGameSeen.has(g.homeTeam) && g.homeTeam in TEAM_ELOS) {
-        if (g.homeEloPre !== null && g.homeEloPre !== TEAM_ELOS[g.homeTeam]) {
-          throw new Error(`shared.js: homeEloPre mismatch for "${g.homeTeam}" in game #${g.gameNumber}: embedded ${g.homeEloPre} ≠ TEAM_ELOS ${TEAM_ELOS[g.homeTeam]} — run scripts/build.py to resync`);
-        }
-        firstGameSeen.add(g.homeTeam);
+      const home = g.homeTeam;
+      const away = g.awayTeam;
+      if (home in TEAM_ELOS && !broken.has(home) && g.homeEloPre !== current[home]) {
+        throw new Error(`shared.js: homeEloPre mismatch for "${home}" in game #${g.gameNumber}: embedded ${g.homeEloPre} ≠ expected ${current[home]} — run scripts/build.py to resync`);
       }
-      if (!firstGameSeen.has(g.awayTeam) && g.awayTeam in TEAM_ELOS) {
-        if (g.awayEloPre !== null && g.awayEloPre !== TEAM_ELOS[g.awayTeam]) {
-          throw new Error(`shared.js: awayEloPre mismatch for "${g.awayTeam}" in game #${g.gameNumber}: embedded ${g.awayEloPre} ≠ TEAM_ELOS ${TEAM_ELOS[g.awayTeam]} — run scripts/build.py to resync`);
-        }
-        firstGameSeen.add(g.awayTeam);
+      if (away in TEAM_ELOS && !broken.has(away) && g.awayEloPre !== current[away]) {
+        throw new Error(`shared.js: awayEloPre mismatch for "${away}" in game #${g.gameNumber}: embedded ${g.awayEloPre} ≠ expected ${current[away]} — run scripts/build.py to resync`);
+      }
+      if (typeof g.eloChange === 'number') {
+        if (home in TEAM_ELOS && !broken.has(home)) current[home] += g.eloChange;
+        if (away in TEAM_ELOS && !broken.has(away)) current[away] -= g.eloChange;
+      } else {
+        broken.add(home);
+        broken.add(away);
       }
     }
   }

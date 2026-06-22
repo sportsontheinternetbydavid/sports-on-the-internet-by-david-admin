@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>World Cup ELO - 2022</title>
 <link rel="stylesheet" href="shared.css">
 </head>
@@ -825,14 +826,14 @@ const TEAM_ELOS = teamElos2022;
 const CONFEDERATIONS = ["Europe", "Asia", "Africa", "South America", "North America", "Oceania"];
 // Gameset boundaries: [label, lastGameNumber]. 32-team format: 3 group-stage matchdays + knockout.
 const GAMESETS = [
-  ['Initial',  0],
-  ['MD1',     16],
-  ['MD2',     32],
-  ['MD3',     48],
-  ['16',      56],
-  ['8',       60],
-  ['4',       62],
-  ['Final',   64],
+  ['Initial',   0],
+  ['MD1',      16],
+  ['MD2',      32],
+  ['MD3',      48],
+  ['16',       56],
+  ['8',        60],
+  ['4',        62],
+  ['Final',    64]
 ];
 const tbody = document.getElementById('games');
 const thead = document.querySelector('#matches-view thead');

@@ -1,19 +1,71 @@
 #!/usr/bin/env python3
-"""Regenerate the embedded data blocks in 2018.html / 2022.html / 2026.html
-from data/*.json. Run this after editing any data/*.json file by hand,
-or use scripts/set_result.py for a one-line score update.
+"""Regenerate 2018.html / 2022.html / 2026.html from data/*.json and the
+page template defined in this file.
+
+Run this after editing any data/*.json file by hand, or use
+scripts/set_result.py for a one-line score update.
 
 For tournament files that include a top-level "teamElos" key, homeEloPre and
 awayEloPre are derived automatically and written back to the JSON before the
 HTML is regenerated.
+
+The three HTML files are pure build artifacts — edit the template here, not
+the HTML files directly.
 """
 import json
-import re
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 YEARS = [2018, 2022, 2026]
+
+# Per-year static configuration: gameset boundaries and the comment that
+# describes the tournament format. These are the only parts of the page that
+# differ by year beyond the data blocks.
+PER_YEAR_CONFIG = {
+    2018: {
+        'gamesets_comment': '// Gameset boundaries: [label, lastGameNumber]. 32-team format: 3 group-stage matchdays + knockout.',
+        'gamesets': [
+            ('Initial',  0),
+            ('MD1',     16),
+            ('MD2',     32),
+            ('MD3',     48),
+            ('16',      56),
+            ('8',       60),
+            ('4',       62),
+            ('Final',   64),
+        ],
+    },
+    2022: {
+        'gamesets_comment': '// Gameset boundaries: [label, lastGameNumber]. 32-team format: 3 group-stage matchdays + knockout.',
+        'gamesets': [
+            ('Initial',  0),
+            ('MD1',     16),
+            ('MD2',     32),
+            ('MD3',     48),
+            ('16',      56),
+            ('8',       60),
+            ('4',       62),
+            ('Final',   64),
+        ],
+    },
+    2026: {
+        'gamesets_comment': '// Gameset boundaries: [label, lastGameNumber]. lastGameNumber=0 means pre-tournament.',
+        'gamesets': [
+            ('Initial',  0),
+            ('Game 1',  24),
+            ('Game 2',  48),
+            ('Game 3',  72),
+            ('32',      88),
+            ('16',      96),
+            ('8',      100),
+            ('4',      102),
+            ('Final',  104),
+        ],
+    },
+}
+
+CONFEDERATIONS = ["Europe", "Asia", "Africa", "South America", "North America", "Oceania"]
 
 
 def load(name):
@@ -51,16 +103,6 @@ def derive_elos(data):
             broken.add(away)
 
     return data["games"]
-
-
-def replace_block(html, name, content):
-    """Replace the content between // BEGIN:name and // END:name sentinels."""
-    pattern = rf'// BEGIN:{re.escape(name)}\n.*?// END:{re.escape(name)}'
-    replacement = f'// BEGIN:{name}\n{content}\n// END:{name}'
-    result, n = re.subn(pattern, replacement, html, flags=re.DOTALL)
-    if n == 0:
-        raise ValueError(f"Sentinel '// BEGIN:{name}' not found in {html[:40]!r}...")
-    return result
 
 
 def validate(data, year, team_names):
@@ -132,6 +174,126 @@ def validate(data, year, team_names):
             raise ValueError(f"{year}.json: game numbers are not contiguous from 1; missing: {missing}")
 
 
+def build_nav(current_year):
+    parts = []
+    for y in YEARS:
+        parts.append(f'<strong>{y}</strong>' if y == current_year else f'<a href="{y}.html">{y}</a>')
+    parts.append('<a href="index.html">Home</a>')
+    return '<nav>' + ' | '.join(parts) + '</nav>'
+
+
+def format_gamesets_js(gamesets):
+    """Format a list of (label, lastGameNumber) pairs as a JS array literal."""
+    max_label_len = max(len(label) for label, _ in gamesets)
+    lines = ['[']
+    for label, last_gn in gamesets:
+        padding = ' ' * (max_label_len - len(label))
+        lines.append(f"  ['{label}',{padding} {last_gn:3d}],")
+    lines[-1] = lines[-1].rstrip(',')  # no trailing comma on last entry
+    lines.append(']')
+    return '\n'.join(lines)
+
+
+def build_script_block(year, games_js, teams_js, team_elos_js, config):
+    conf_js = json.dumps(CONFEDERATIONS)
+    gamesets_comment = config['gamesets_comment']
+    gamesets_js = format_gamesets_js(config['gamesets'])
+
+    parts = [
+        f'// BEGIN:games{year}',
+        games_js,
+        f'// END:games{year}',
+        '',
+        '// BEGIN:teams',
+        teams_js,
+        '// END:teams',
+    ]
+
+    if team_elos_js:
+        parts += [
+            '',
+            f'// BEGIN:teamElos{year}',
+            team_elos_js,
+            f'// END:teamElos{year}',
+            '',
+        ]
+    else:
+        parts.append('')
+
+    parts += [
+        f'const GAMES = games{year};',
+        f'const YEAR = {year};',
+        f'const TEAM_ELOS = teamElos{year};' if team_elos_js else 'const TEAM_ELOS = {};',
+        f'const CONFEDERATIONS = {conf_js};',
+        gamesets_comment,
+        f'const GAMESETS = {gamesets_js};',
+        "const tbody = document.getElementById('games');",
+        "const thead = document.querySelector('#matches-view thead');",
+    ]
+
+    return '\n'.join(parts)
+
+
+def page_html(year, script_block):
+    nav = build_nav(year)
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>World Cup ELO - {year}</title>
+<link rel="stylesheet" href="shared.css">
+</head>
+<body>
+{nav}
+<h1>World Cup ELO - {year}</h1>
+
+<div class="page-toggle view-toggle">
+  <button id="tab-matches" class="active" onclick="setPageView('matches')">Match List</button>
+  <button id="tab-rankings" onclick="setPageView('rankings')">Rankings</button>
+</div>
+
+<div id="matches-view">
+  <table>
+    <thead></thead>
+    <tbody id="games"></tbody>
+  </table>
+</div>
+
+<div id="rankings-view">
+  <div class="rankings-toggle view-toggle">
+    <button id="tab-rank" class="active" onclick="setRankView('rank')">Rank</button>
+    <button id="tab-scale" onclick="setRankView('scale')">Scale</button>
+  </div>
+  <div class="rankings-filter-controls">
+    <label><input type="checkbox" id="chk-show-elim" onchange="toggleShowEliminated()"> Show eliminated</label>
+    <label id="true-rank-label" style="opacity:1"><input type="checkbox" id="chk-true-rank" onchange="toggleTrueRank()"> True rank</label>
+  </div>
+  <label style="font-size:0.75rem;color:#c00;margin-left:1rem;user-select:none">
+    <input type="checkbox" id="debug-clusters" onchange="renderRankings()"> debug: show binding clusters
+  </label>
+  <div id="rankings-outer">
+    <div id="rank-info"></div>
+    <div class="rankings-cols" id="rankings-cols">
+      <div class="rankings-header" id="rankings-header"></div>
+      <div class="rankings-body" id="rankings-body"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+{script_block}
+</script>
+<script src="shared.js"></script>
+<script>
+// (init handled by shared.js)
+</script>
+
+</body>
+</html>
+"""
+
+
 def main():
     if len(sys.argv) == 2 and sys.argv[1] in ("-h", "--help"):
         print(__doc__)
@@ -162,13 +324,15 @@ def main():
 
         games_js = f"const games{year} = " + json.dumps(games, indent=2) + ";"
 
-        path = ROOT / f"{year}.html"
-        html = path.read_text()
-        html = replace_block(html, f"games{year}", games_js)
-        html = replace_block(html, "teams", teams_js)
+        team_elos_js = None
         if isinstance(data, dict) and "teamElos" in data:
             team_elos_js = f"const teamElos{year} = " + json.dumps(data["teamElos"], separators=(',', ':')) + ";"
-            html = replace_block(html, f"teamElos{year}", team_elos_js)
+
+        config = PER_YEAR_CONFIG[year]
+        script_block = build_script_block(year, games_js, teams_js, team_elos_js, config)
+        html = page_html(year, script_block)
+
+        path = ROOT / f"{year}.html"
         path.write_text(html)
         print(f"Updated {year}.html")
 

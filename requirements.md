@@ -42,7 +42,9 @@ The table has two groups of columns: **Game columns** and **Confederation column
 
 #### Row click — data entry panel
 
-Each game row in the match list is clickable. Clicking a row expands an inline panel directly below that row (spanning the full table width). The panel has four lines:
+The data entry panel is only available in **admin mode**, activated by adding `?admin` to the URL (e.g. `2026.html?admin`). In normal (public) mode, rows are not clickable and the panel is not shown. The page title gains an `[ADMIN]` prefix when admin mode is active, making it easy to confirm which mode you're in.
+
+In admin mode, clicking a game row expands an inline panel directly below that row (spanning the full table width). The panel has four lines:
 
 1. The game label (e.g. "#7: Haiti vs Scotland").
 2. Home score, away score, ELO magnitude (optional), and — only when both scores are filled in and equal (a draw) — a "Who gains ELO?" selector showing the two team names.
