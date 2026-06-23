@@ -2,14 +2,14 @@
 
 ## The Concept
 
-SportsOnTheInternet is a sports data and visualization site that looks and feels like it was built in 1997 by someone who just discovered the web — but clearly wasn't. The aesthetic is sincere 90s web energy: primary colors, chunky UI, childlike enthusiasm, "coming soon" pages. The content underneath is modern, data-rich, and genuinely interesting.
+SportsOnTheInternet looks and feels like a kid made it in an art room — construction paper, markers, scissors, and glue sticks. The aesthetic is sincere arts-and-crafts energy: hand-lettered headlines, layered paper sections, imperfect edges. The content underneath is modern, data-rich, and genuinely interesting.
 
 The tension between the shell and the substance is the point. A 9-year-old would think the site looks cool. A sports analyst would find something worth reading.
 
 ## Voice & Tone
 
 - Enthusiastic, unsophisticated surface — like a kid explaining something they're obsessed with
-- No irony, no winking. The site doesn't know it's retro.
+- No irony, no winking. The site doesn't know it's crafted.
 - "Coming soon" sections are not embarrassing — they're exciting announcements
 - No author voice. The site speaks for itself.
 
@@ -24,34 +24,37 @@ Unique data visualizations and novel methods for exploring sports information. N
 ## Visual Identity
 
 ### Feeling
-Aimed at a 9-year-old. Primary colors. Bold. A little loud. Childishly enthusiastic about sports being on the internet.
+A kid's art room. Construction paper layered on construction paper. Marker-written labels. Hand-cut edges. Slightly imperfect. Enthusiastic. Every section looks like it was made with physical materials and stuck to a posterboard.
 
 ### Colors
-Primary palette — clean, saturated, no pastels, no gradients:
-- **Blue** — `#0000CC` (classic hyperlink blue)
-- **Red** — `#CC0000`
-- **Yellow** — `#FFCC00`
-- **Green** — `#009900`
-- **White** — `#FFFFFF` (dominant background)
-- **Black** — `#111111` (text)
+Construction paper palette — the colors of actual construction paper, not web-safe primaries. Rich but not garish. Slightly warm:
+- **Red** — `#C0392B` (red construction paper)
+- **Blue** — `#1A5276` (dark blue construction paper)
+- **Yellow** — `#F4D03F` (yellow construction paper)
+- **Green** — `#1E8449` (green construction paper)
+- **Orange** — `#E67E22` (orange construction paper)
+- **Background** — `#F5F0E8` (cream — like the posterboard everything is stuck to)
+- **Text** — `#1a1a1a` (marker black)
 
-Accent use: one bright color per section/feature. Not all at once.
+Accent use: one construction paper color per section. Not all at once. Colors should feel like you picked a sheet from the stack.
 
 ### Typography
-Modern fonts that *feel* 90s without being literally Comic Sans. Targets:
-- **Headlines**: chunky, bold, slightly rounded — something with Impact energy but readable
-- **Body**: clean, slightly wide — readable at small sizes
-- No serif. No elegance. Friendly and direct.
-
-### Logo / Mascot
-Childish icon or mascot — sporty, simple, slightly absurd. Direction TBD. Should feel like clip art that somehow works.
+Fonts that look hand-made — like someone wrote the labels with a thick marker or cut letters out.
+- **Headlines / section labels**: Permanent Marker (Google Fonts) — looks like thick marker writing
+- **Body / links**: Fredoka One or Patrick Hand — rounded, friendly, legible
+- No formal serifs. No corporate sans. Everything should feel hand-done.
 
 ### Layout Principles
-- Visible borders and boxes — things are contained, chunky, defined
-- Bright section headers
-- Tables are fine and good, actually
-- "Under construction" / "Coming soon" sections are first-class UI — styled consistently, not hidden
-- No minimalism. Whitespace is earned, not assumed.
+- Everything on the page looks like it was carefully stuck to a wall or posterboard by a kid — sections, flags, labels, badges.
+- The kid is deliberate and takes care. Not sloppy. But a kid can't perfectly align everything, so every element has a very slight, unique tilt. The imperfection is subtle — a degree or two at most — not chaotic.
+- Sections have slightly imperfect edges — `border-radius` variations to feel hand-cut, not machine-perfect.
+- Section cards have a soft drop shadow suggesting physical paper lifted off a surface. Flags do not — a shadow on something that small reads as hovering, not pinned.
+- Flags are treated like small photographs or stickers stuck flat onto the page — each with its own tiny unique rotation, consistent across the page. They are slightly desaturated (matte, not glossy) to feel like a printed sticker rather than a crisp digital image.
+- "Coming soon" badges look like a sticky note stuck on with tape — already slightly rotated.
+- No clean minimalism. Whitespace is a craft table, not a gallery wall.
+
+### Logo / Mascot
+Direction TBD. Should feel hand-drawn — like a kid's doodle of a sports mascot, not a polished logo.
 
 ## Name
 

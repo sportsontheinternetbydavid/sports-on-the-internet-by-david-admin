@@ -24,6 +24,14 @@ for (const t of teams) confByTeam[t.name] = t.confederation;
 const flagByTeam = {};
 for (const t of teams) flagByTeam[t.name] = t.flag;
 
+// Returns a deterministic slight rotation (±1deg) for a team's flag,
+// derived from the team name so each team is consistent across all appearances.
+function flagRotation(teamName) {
+  let h = 0;
+  for (let i = 0; i < teamName.length; i++) h = (h * 31 + teamName.charCodeAt(i)) & 0xffff;
+  return ((h % 21) - 10) * 0.1; // -1.0 to +1.0 degrees
+}
+
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 function esc(s) {
@@ -88,11 +96,11 @@ function gameRowCells(game) {
     `<td class="narrow">#${game.gameNumber}</td>` +
     `<td class="spacer"></td>` +
     `<td class="elo">${eloCell(game.homeEloPre, homeEloDelta)}</td>` +
-    `<td class="flag"><span class="icon" style="background-image:url('flags/${flagByTeam[game.homeTeam]}.svg')" title="${esc(game.homeTeam)}"></span></td>` +
+    `<td class="flag"><span class="icon" style="background-image:url('flags/${flagByTeam[game.homeTeam]}.svg');transform:rotate(${flagRotation(game.homeTeam)}deg)" title="${esc(game.homeTeam)}"></span></td>` +
     `<td class="narrow">${homeScore}</td>` +
     `<td class="score-sep">-</td>` +
     `<td class="narrow">${awayScore}</td>` +
-    `<td class="flag"><span class="icon" style="background-image:url('flags/${flagByTeam[game.awayTeam]}.svg')" title="${esc(game.awayTeam)}"></span></td>` +
+    `<td class="flag"><span class="icon" style="background-image:url('flags/${flagByTeam[game.awayTeam]}.svg');transform:rotate(${flagRotation(game.awayTeam)}deg)" title="${esc(game.awayTeam)}"></span></td>` +
     `<td class="elo">${eloCell(game.awayEloPre, awayEloDelta)}</td>`
   );
 }
@@ -724,9 +732,10 @@ function renderRankings() {
         pin.style.top = topPx + 'px';
         pin.style.zIndex = zIndex;
 
-        const iconStyle = `background-image:url('flags/${flag}.svg')` +
+        const iconStyle = `background-image:url('flags/${flag}.svg');transform:rotate(${flagRotation(team)}deg)` +
           (elim ? ';filter:grayscale(100%);opacity:0.4'
-                : pending ? ';filter:grayscale(80%);opacity:0.35' : '');
+                : pending ? ';filter:grayscale(80%);opacity:0.35'
+                : ';filter:saturate(0.8)');
         const icon = document.createElement('span');
         icon.className = 'icon';
         icon.style.cssText = iconStyle;

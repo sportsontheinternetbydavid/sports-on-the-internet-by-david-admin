@@ -1,23 +1,25 @@
 /* Shared styles for all World Cup pages */
 
-body { font-family: sans-serif; max-width: 1100px; margin: 2rem auto; overflow-x: auto; }
+body { font-family: 'Fredoka One', cursive; font-size: 1rem; line-height: 1.5; background: #F5F0E8; color: #1a1a1a; max-width: 1100px; margin: 0 auto; padding: 0 1.5rem 4rem; overflow-x: auto; }
+h1 { font-family: 'Permanent Marker', cursive; font-size: 2.2rem; margin: 0.5rem 0 1rem; }
+a { color: #1A5276; }
 table { border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem; white-space: nowrap; }
 .table-wrap { overflow-x: auto; }
 th, td { padding: 0.4rem 0.6rem; text-align: left; border-bottom: 1px solid #ddd; }
-th { background: #f0f0f0; position: sticky; top: 0; }
+th { font-family: 'Permanent Marker', cursive; background: #C0392B; color: #FFFFFF; position: sticky; top: 0; }
 .num { text-align: right; }
 .narrow { text-align: center; }
 .spacer { padding: 0 0.3rem; }
 .score-sep { text-align: center; padding: 0 0.2rem; }
 .elo { text-align: left; }
 .flag { text-align: center; }
-.flag .icon { display: inline-block; width: 2.2em; height: 1.5em; background-size: cover; background-position: center; background-repeat: no-repeat; vertical-align: middle; border: 1px solid #ccc; }
+.flag .icon { display: inline-block; width: 2.2em; height: 1.5em; background-size: cover; background-position: center; background-repeat: no-repeat; vertical-align: middle; border: 1px solid #ccc; filter: saturate(0.8); }
 .conf { text-align: center; min-width: 5em; }
-nav { margin-bottom: 1rem; }
-nav a { margin-right: 1rem; }
+nav { margin: 1.5rem 0 0.5rem; }
+nav a { margin-right: 1rem; color: #1A5276; }
 
 tbody tr { cursor: pointer; }
-tbody tr:hover { background: #f9f9f9; }
+tbody tr:hover { background: #EDE8DC; }
 .expand-row td { background: #f4f8ff; border-top: none; cursor: default; padding: 0.5rem 0.8rem; }
 .expand-row .ur-line { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin: 0.3rem 0; }
 .expand-row label { display: flex; align-items: center; gap: 0.3rem; white-space: nowrap; }

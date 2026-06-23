@@ -1,5 +1,79 @@
 # Requirements
 
+## Homepage (`index.html`)
+
+The homepage is the SportsOnTheInternet landing page. It reflects the brand: kids art room, construction paper and markers, handmade and enthusiastic.
+
+### Layout
+- Full-width page with a centered content column (max ~800px).
+- Background is cream `#F5F0E8` — like posterboard that everything is stuck to.
+- A site header at the top containing the site name and tagline.
+- Feature sections below — one per sport category.
+
+### Header
+- Site name "SportsOnTheInternet" as an `<h1>` in Permanent Marker font — looks like it was written with a thick marker.
+- Tagline: "Sports data and visualizations. On the internet." in body font below.
+- No top border. The marker-style headline is the visual anchor.
+
+### Feature sections
+- Each sport category is a card that looks like a piece of construction paper stuck to the background — slight drop shadow, slightly imperfect border-radius.
+- Each card has a section header strip in a construction paper color (one color per section), with the label written in Permanent Marker font.
+- Within a sport section, features are grouped by competition type (e.g. "World Cup" under Football). The competition group label uses Permanent Marker font at a smaller size.
+- Individual editions (e.g. 2026, 2022, 2018) are listed as links beneath the group label.
+- Sport sections with no live features show a "COMING SOON" label styled like a sticky note or cut-paper badge — yellow construction paper color, slight rotation.
+- There is no Basketball section.
+
+### Typography
+- Headlines and labels: Permanent Marker (Google Fonts) — marker-written feel.
+- Body / links: Fredoka One (Google Fonts) — rounded, friendly, legible.
+- Links use a construction paper color (dark blue `#1A5276`), bold.
+
+### Colors
+- Page background: cream `#F5F0E8`.
+- Text: near-black `#1a1a1a`.
+- Section header strips: one construction paper color each — Football uses red `#C0392B`, More Sports uses green `#1E8449`.
+- "Coming Soon" badge: yellow `#F4D03F`, slight rotation, marker font.
+- No clean web-safe primaries. Colors come from the construction paper palette in `brand.md`.
+
+### Handmade feel
+- Cards use `border-radius` with slightly varied values (not perfectly round) to feel hand-cut.
+- Cards have a soft drop shadow suggesting physical paper.
+- Each section card has a very slight, fixed, unique rotation (±0.5deg or less) — like it was placed carefully but not perfectly.
+- No hard pixel-perfect lines. The aesthetic is slightly imperfect, like something stuck to a bulletin board.
+
+---
+
+## World Cup pages (`2018.html`, `2022.html`, `2026.html`)
+
+Styling is defined in `shared.css` and inlined at build time. All three pages share the same visual treatment.
+
+### Typography
+- Body font: Fredoka One (Google Fonts), loaded via `<link>` in the page `<head>`.
+- Page `<h1>` uses Permanent Marker font — marker-written headline.
+- Links use dark blue `#1A5276`.
+
+### Page background and header
+- Page background: cream `#F5F0E8`.
+- No top border. The Permanent Marker `<h1>` is the visual anchor.
+
+### Navigation
+- The `<nav>` sits above the `<h1>` and links between the three World Cup year pages and back to the homepage.
+- Nav links use dark blue `#1A5276`. The current page's year is shown as plain bold text.
+
+### Table
+- Page background `#F5F0E8` carries through — tables sit on the cream background.
+- Table header row styled like a strip of colored construction paper: red `#C0392B` background, white text, Permanent Marker font.
+- Row hover: a warm tint `#EDE8DC`.
+- All other table layout and column behavior is unchanged.
+
+### Flags
+- Each flag icon is treated like a small photograph or sticker stuck flat onto the page.
+- Each flag has a very slight, unique, deterministic rotation — derived from the team name so it's consistent across every appearance of that team. Rotation range: approximately ±1 degree.
+- No drop shadow on flags — on something that small, a shadow reads as hovering, not pinned. The tilt alone conveys placement.
+- Flags are slightly desaturated (`saturate(0.8)`) to feel like a printed sticker, not a crisp digital image.
+
+---
+
 ## Overview
 
 A tool for soccer fans to follow and compare how different continental confederations perform across FIFA World Cups — who's gaining rating ground, who's losing it, and how each tournament's results play out game by game. It does this by tracking ELO rating transfers between confederations as matches are played, across the 2018, 2022, and 2026 World Cups.

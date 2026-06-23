@@ -4,7 +4,7 @@
     {
       "name": "2026",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8765"],
+      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "site"],
       "port": 8765
     }
   ]

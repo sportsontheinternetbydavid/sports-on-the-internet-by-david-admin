@@ -4,27 +4,32 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>World Cup ELO - 2022</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Fredoka+One&display=swap" rel="stylesheet">
 <style>
 /* Shared styles for all World Cup pages */
 
-body { font-family: sans-serif; max-width: 1100px; margin: 2rem auto; overflow-x: auto; }
+body { font-family: 'Fredoka One', cursive; font-size: 1rem; line-height: 1.5; background: #F5F0E8; color: #1a1a1a; max-width: 1100px; margin: 0 auto; padding: 0 1.5rem 4rem; overflow-x: auto; }
+h1 { font-family: 'Permanent Marker', cursive; font-size: 2.2rem; margin: 0.5rem 0 1rem; }
+a { color: #1A5276; }
 table { border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem; white-space: nowrap; }
 .table-wrap { overflow-x: auto; }
 th, td { padding: 0.4rem 0.6rem; text-align: left; border-bottom: 1px solid #ddd; }
-th { background: #f0f0f0; position: sticky; top: 0; }
+th { font-family: 'Permanent Marker', cursive; background: #C0392B; color: #FFFFFF; position: sticky; top: 0; }
 .num { text-align: right; }
 .narrow { text-align: center; }
 .spacer { padding: 0 0.3rem; }
 .score-sep { text-align: center; padding: 0 0.2rem; }
 .elo { text-align: left; }
 .flag { text-align: center; }
-.flag .icon { display: inline-block; width: 2.2em; height: 1.5em; background-size: cover; background-position: center; background-repeat: no-repeat; vertical-align: middle; border: 1px solid #ccc; }
+.flag .icon { display: inline-block; width: 2.2em; height: 1.5em; background-size: cover; background-position: center; background-repeat: no-repeat; vertical-align: middle; border: 1px solid #ccc; filter: saturate(0.8); }
 .conf { text-align: center; min-width: 5em; }
-nav { margin-bottom: 1rem; }
-nav a { margin-right: 1rem; }
+nav { margin: 1.5rem 0 0.5rem; }
+nav a { margin-right: 1rem; color: #1A5276; }
 
 tbody tr { cursor: pointer; }
-tbody tr:hover { background: #f9f9f9; }
+tbody tr:hover { background: #EDE8DC; }
 .expand-row td { background: #f4f8ff; border-top: none; cursor: default; padding: 0.5rem 0.8rem; }
 .expand-row .ur-line { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin: 0.3rem 0; }
 .expand-row label { display: flex; align-items: center; gap: 0.3rem; white-space: nowrap; }
@@ -979,6 +984,14 @@ for (const t of teams) confByTeam[t.name] = t.confederation;
 const flagByTeam = {};
 for (const t of teams) flagByTeam[t.name] = t.flag;
 
+// Returns a deterministic slight rotation (±1deg) for a team's flag,
+// derived from the team name so each team is consistent across all appearances.
+function flagRotation(teamName) {
+  let h = 0;
+  for (let i = 0; i < teamName.length; i++) h = (h * 31 + teamName.charCodeAt(i)) & 0xffff;
+  return ((h % 21) - 10) * 0.1; // -1.0 to +1.0 degrees
+}
+
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 function esc(s) {
@@ -1043,11 +1056,11 @@ function gameRowCells(game) {
     `<td class="narrow">#${game.gameNumber}</td>` +
     `<td class="spacer"></td>` +
     `<td class="elo">${eloCell(game.homeEloPre, homeEloDelta)}</td>` +
-    `<td class="flag"><span class="icon" style="background-image:url('flags/${flagByTeam[game.homeTeam]}.svg')" title="${esc(game.homeTeam)}"></span></td>` +
+    `<td class="flag"><span class="icon" style="background-image:url('flags/${flagByTeam[game.homeTeam]}.svg');transform:rotate(${flagRotation(game.homeTeam)}deg)" title="${esc(game.homeTeam)}"></span></td>` +
     `<td class="narrow">${homeScore}</td>` +
     `<td class="score-sep">-</td>` +
     `<td class="narrow">${awayScore}</td>` +
-    `<td class="flag"><span class="icon" style="background-image:url('flags/${flagByTeam[game.awayTeam]}.svg')" title="${esc(game.awayTeam)}"></span></td>` +
+    `<td class="flag"><span class="icon" style="background-image:url('flags/${flagByTeam[game.awayTeam]}.svg');transform:rotate(${flagRotation(game.awayTeam)}deg)" title="${esc(game.awayTeam)}"></span></td>` +
     `<td class="elo">${eloCell(game.awayEloPre, awayEloDelta)}</td>`
   );
 }
@@ -1679,9 +1692,10 @@ function renderRankings() {
         pin.style.top = topPx + 'px';
         pin.style.zIndex = zIndex;
 
-        const iconStyle = `background-image:url('flags/${flag}.svg')` +
+        const iconStyle = `background-image:url('flags/${flag}.svg');transform:rotate(${flagRotation(team)}deg)` +
           (elim ? ';filter:grayscale(100%);opacity:0.4'
-                : pending ? ';filter:grayscale(80%);opacity:0.35' : '');
+                : pending ? ';filter:grayscale(80%);opacity:0.35'
+                : ';filter:saturate(0.8)');
         const icon = document.createElement('span');
         icon.className = 'icon';
         icon.style.cssText = iconStyle;
