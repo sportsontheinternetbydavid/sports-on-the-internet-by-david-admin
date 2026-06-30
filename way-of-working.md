@@ -20,6 +20,25 @@ A tiny project: a requirements doc + an implementation. Keep it that way.
 - Commit before running `scripts/set_result.py` or editing data files by hand. `build.py` writes directly to the HTML pages; a clean working tree is your only rollback if something goes wrong.
 - Normal commit rhythm: one commit per session, or one per result batch if entering several games at once.
 
+## Two-repo structure
+
+This project uses two GitHub repos under the `sportsontheworldwideweb` account:
+
+| Repo | Visibility | Purpose |
+|------|------------|---------|
+| `sportsontheworldwidewebadmin` | Private | Everything — source data, scripts, docs, shared.js/css, build tooling. This is where all work happens. |
+| `sportsontheworldwideweb.github.io` | Public | Only the built `site/` output. What the world sees. No source files, no scripts, no docs. |
+
+**What goes in the public repo:** the contents of `site/` only — HTML pages, flags, nothing else. Think of it as the website, not the project.
+
+**What stays private:** `data/`, `scripts/`, `shared.js`, `shared.css`, `requirements.md`, `way-of-working.md`, all docs. Anything that isn't a finished published page.
+
+**Deploying:** run `scripts/deploy.py` to push the current `site/` contents to the public repo. Do this after a build when you're happy with the result. No automatic triggers — deploy is a deliberate manual step.
+
+**Remotes in the private repo:**
+- `origin` → `sportsontheworldwidewebadmin` (private, push here normally)
+- `public` → `sportsontheworldwideweb.github.io` (public, push via deploy script only)
+
 ## Where CSS and JS changes go
 
 The rendering logic is split across three layers:
