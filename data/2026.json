@@ -944,11 +944,11 @@
     {
       "gameNumber": 82,
       "homeTeam": "Belgium",
-      "homeScore": 0,
+      "homeScore": 3,
       "awayTeam": "Senegal",
       "awayScore": 2,
       "date": "2026-07-01",
-      "eloChange": -50,
+      "eloChange": 26,
       "homeEloPre": 1884,
       "awayEloPre": 1842
     },
