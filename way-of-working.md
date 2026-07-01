@@ -33,7 +33,7 @@ This project uses two GitHub repos under the `sportsontheworldwideweb` account:
 
 **What stays private:** `data/`, `scripts/`, `shared.js`, `shared.css`, `requirements.md`, `way-of-working.md`, all docs. Anything that isn't a finished published page.
 
-**Deploying:** run `scripts/deploy.py` to push the current `site/` contents to the public repo. Do this after a build when you're happy with the result. No automatic triggers — deploy is a deliberate manual step.
+**Deploying:** run `scripts/deploy.py` to push the current `site/` contents to the public repo. Do this after a build when you're happy with the result. The one automatic trigger is `scripts/update_day.py`, which commits/pushes to the admin repo and deploys to the public repo by default after updating scores (pass `--no-push` to opt out and update local files only).
 
 **Remotes in the private repo:**
 - `origin` → `sportsontheworldwidewebadmin` (private, push here normally)

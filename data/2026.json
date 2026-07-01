@@ -922,11 +922,11 @@
     {
       "gameNumber": 80,
       "homeTeam": "England",
-      "homeScore": null,
+      "homeScore": 2,
       "awayTeam": "DR Congo",
-      "awayScore": null,
+      "awayScore": 1,
       "date": "2026-07-01",
-      "eloChange": null,
+      "eloChange": 8,
       "homeEloPre": 2038,
       "awayEloPre": 1712
     },

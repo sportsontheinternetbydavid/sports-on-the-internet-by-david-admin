@@ -12,6 +12,11 @@ Games are matched in chronological order (by gameNumber) for that date.
 You must supply one score per game on that day, or fewer to partially update
 (the first N games in order will be updated).
 
+After updating the data and rebuilding the HTML, the script commits and
+pushes the changes to the private admin repo (`origin`), then deploys the
+rebuilt site/ to the public GitHub Pages repo (equivalent to running
+scripts/deploy.py). Pass --no-push to skip both and only update local files.
+
 Examples:
   # Update yesterday's 6 games:
   python scripts/update_day.py 2-1 0-0 1-3 2-0 1-0 3-2
@@ -22,10 +27,14 @@ Examples:
   # Update a specific date:
   python scripts/update_day.py --date 2026-06-24 3-0 1-1 2-0 4-1 0-2 1-0
 
+  # Update without touching git (local files only):
+  python scripts/update_day.py --no-push 2-1 0-0
+
 ELO changes are not set by this script — use set_result.py afterwards if needed.
 """
 import argparse
 import json
+import subprocess
 import sys
 from datetime import date, timedelta
 from pathlib import Path
@@ -59,10 +68,33 @@ def parse_score(s):
         sys.exit(f"Invalid score '{s}' — scores must be integers")
 
 
+def push_to_github(target_date, scores):
+    message = f"Data: {YEAR} results — {target_date}"
+
+    print("\nCommitting and pushing to admin repo...")
+    subprocess.run(["git", "-C", str(ROOT), "add", "data", "site"], check=True)
+    status = subprocess.run(
+        ["git", "-C", str(ROOT), "status", "--porcelain", "--", "data", "site"],
+        capture_output=True, text=True, check=True,
+    )
+    if not status.stdout.strip():
+        print("Nothing to commit — admin repo already up to date.")
+    else:
+        subprocess.run(["git", "-C", str(ROOT), "commit", "-m", message], check=True)
+        subprocess.run(["git", "-C", str(ROOT), "push", "origin"], check=True)
+
+    print("\nDeploying to public site...")
+    subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "deploy.py"), "-m", message],
+        check=True,
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--date", default=None, help="Date to update (YYYY-MM-DD). Defaults to yesterday.")
     parser.add_argument("--list", action="store_true", help="List games for the date without updating.")
+    parser.add_argument("--no-push", action="store_true", help="Update local files only — skip the admin-repo commit/push and public deploy.")
     parser.add_argument("scores", nargs="*", help="Scores in HOME-AWAY format, one per game in order.")
     args = parser.parse_args()
 
@@ -107,7 +139,12 @@ def main():
 
     print(f"\nUpdated {len(scores)} game(s) in {path.name}. Rebuilding HTML...")
     build.main()
-    print("Done.")
+
+    if args.no_push:
+        print("Done (--no-push: skipped commit/push/deploy).")
+    else:
+        push_to_github(target_date, scores)
+        print("Done.")
 
 
 if __name__ == "__main__":
