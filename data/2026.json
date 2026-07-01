@@ -889,11 +889,11 @@
     {
       "gameNumber": 77,
       "homeTeam": "France",
-      "homeScore": null,
+      "homeScore": 3,
       "awayTeam": "Sweden",
-      "awayScore": null,
+      "awayScore": 0,
       "date": "2026-06-30",
-      "eloChange": null,
+      "eloChange": 11,
       "homeEloPre": 2123,
       "awayEloPre": 1742
     },
@@ -911,11 +911,11 @@
     {
       "gameNumber": 79,
       "homeTeam": "Mexico",
-      "homeScore": null,
+      "homeScore": 2,
       "awayTeam": "Ecuador",
-      "awayScore": null,
+      "awayScore": 0,
       "date": "2026-06-30",
-      "eloChange": null,
+      "eloChange": 31,
       "homeEloPre": 1912,
       "awayEloPre": 1902
     },
