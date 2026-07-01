@@ -19,6 +19,11 @@ Sets the game's homeScore/awayScore (and eloChange if provided) in
 data/YEAR.json, then runs build.py to derive homeEloPre/awayEloPre for
 all games and regenerate the embedded data in all three *.html pages.
 
+After rebuilding, the script commits and pushes the change to the private
+admin repo (`origin`), then deploys the rebuilt site/ to the public GitHub
+Pages repo (equivalent to running scripts/deploy.py). Pass --no-push to
+skip both and only update local files.
+
 --list-teams prints the index of every team's shorthand, full name, and
 confederation, from data/teams.json.
 """
@@ -28,6 +33,7 @@ import sys
 from pathlib import Path
 
 import build
+import gitops
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -59,6 +65,7 @@ def main():
     parser.add_argument("away_score", type=int)
     parser.add_argument("elo_change", type=int, nargs="?", default=None)
     parser.add_argument("--gains", choices=["home", "away"], default=None)
+    parser.add_argument("--no-push", action="store_true", help="Update local files only — skip the admin-repo commit/push and public deploy.")
     args = parser.parse_args()
 
     if (args.elo_change is not None) != (args.gains is not None):
@@ -91,6 +98,13 @@ def main():
           + (f", eloChange={game['eloChange']}" if args.elo_change is not None else ""))
 
     build.main()
+
+    if args.no_push:
+        print("Done (--no-push: skipped commit/push/deploy).")
+    else:
+        message = f"Data: {args.year} #{args.game_number} {game['homeTeam']} {args.home_score}-{args.away_score} {game['awayTeam']}"
+        gitops.push_to_github(message)
+        print("Done.")
 
 
 if __name__ == "__main__":

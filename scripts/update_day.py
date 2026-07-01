@@ -34,12 +34,12 @@ ELO changes are not set by this script — use set_result.py afterwards if neede
 """
 import argparse
 import json
-import subprocess
 import sys
 from datetime import date, timedelta
 from pathlib import Path
 
 import build
+import gitops
 
 ROOT = Path(__file__).resolve().parent.parent
 YEAR = 2026  # active tournament year
@@ -66,28 +66,6 @@ def parse_score(s):
         return int(parts[0]), int(parts[1])
     except ValueError:
         sys.exit(f"Invalid score '{s}' — scores must be integers")
-
-
-def push_to_github(target_date, scores):
-    message = f"Data: {YEAR} results — {target_date}"
-
-    print("\nCommitting and pushing to admin repo...")
-    subprocess.run(["git", "-C", str(ROOT), "add", "data", "site"], check=True)
-    status = subprocess.run(
-        ["git", "-C", str(ROOT), "status", "--porcelain", "--", "data", "site"],
-        capture_output=True, text=True, check=True,
-    )
-    if not status.stdout.strip():
-        print("Nothing to commit — admin repo already up to date.")
-    else:
-        subprocess.run(["git", "-C", str(ROOT), "commit", "-m", message], check=True)
-        subprocess.run(["git", "-C", str(ROOT), "push", "origin"], check=True)
-
-    print("\nDeploying to public site...")
-    subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "deploy.py"), "-m", message],
-        check=True,
-    )
 
 
 def main():
@@ -143,7 +121,7 @@ def main():
     if args.no_push:
         print("Done (--no-push: skipped commit/push/deploy).")
     else:
-        push_to_github(target_date, scores)
+        gitops.push_to_github(f"Data: {YEAR} results — {target_date}")
         print("Done.")
 
 
