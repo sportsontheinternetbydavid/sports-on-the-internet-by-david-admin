@@ -966,11 +966,11 @@
     {
       "gameNumber": 84,
       "homeTeam": "Spain",
-      "homeScore": null,
+      "homeScore": 3,
       "awayTeam": "Austria",
-      "awayScore": null,
+      "awayScore": 0,
       "date": "2026-07-02",
-      "eloChange": null,
+      "eloChange": 15,
       "homeEloPre": 2144,
       "awayEloPre": 1836
     },
