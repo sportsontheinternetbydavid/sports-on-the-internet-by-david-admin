@@ -132,6 +132,36 @@ PER_YEAR_CONFIG = {
 
 CONFEDERATIONS = ["Europe", "Asia", "Africa", "South America", "North America", "Oceania"]
 
+# Favicon: distinguishes local-vs-live at a glance across many open browser
+# tabs. This site has no admin mode, so there's exactly one signal — ring
+# style: dashed = local dev server, solid = live/published. Fill is always
+# cream+blue, the same colors used everywhere else on this site.
+# window.__setFavicon() runs once at load, deriving isLocal from location.hostname.
+FAVICON_SCRIPT = """<script>
+(function() {
+  function faviconHref(isLocal) {
+    var dash = isLocal ? ' stroke-dasharray="3 2.5"' : '';
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
+      + '<circle cx="16" cy="16" r="14" fill="#F5F0E8" stroke="#1A5276" stroke-width="2.5"' + dash + '/>'
+      + '<path d="M16,10 L21.7,14.2 L19.5,20.9 L12.5,20.9 L10.3,14.2 Z" fill="#1A5276"/>'
+      + '</svg>';
+    return 'data:image/svg+xml,' + encodeURIComponent(svg);
+  }
+  window.__setFavicon = function() {
+    var isLocal = ['localhost', '127.0.0.1', ''].indexOf(location.hostname) !== -1;
+    var link = document.querySelector('link[rel="icon"]');
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+    link.type = 'image/svg+xml';
+    link.href = faviconHref(isLocal);
+  };
+  window.__setFavicon();
+})();
+</script>"""
+
 
 def load(name):
     return json.load(open(ROOT / "data" / name))
@@ -240,12 +270,19 @@ def validate(data, year, team_names):
 
 
 def build_nav(current_year):
+    """Utility bar: year switcher + History on the left, Home on the right.
+    Deliberately understated — this is meta navigation between pages, not
+    the primary content tabs on the page."""
     parts = []
     for y in YEARS:
         parts.append(f'<strong>{y}</strong>' if y == current_year else f'<a href="{y}.html">{y}</a>')
-    parts.append('<a href="history.html">History</a>' if current_year != 'history' else '<strong>History</strong>')
-    parts.append('<a href="../../index.html">Home</a>')
-    return '<nav>' + ' | '.join(parts) + '</nav>'
+    parts.append('<strong>History</strong>' if current_year == 'history' else '<a href="history.html">History</a>')
+    year_links = ' | '.join(parts)
+
+    actions = '<a href="../../index.html">Home</a>'
+
+    return (f'<nav class="utility-bar"><span class="year-links">{year_links}</span>'
+            f'<span class="utility-actions">{actions}</span></nav>')
 
 
 def flag_rotation(team_name):
@@ -404,6 +441,7 @@ def build_history_page(shared_css):
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Fredoka+One&display=swap" rel="stylesheet">
+{FAVICON_SCRIPT}
 <style>
 {shared_css}
 .year-cell {{
@@ -600,6 +638,7 @@ def page_html(year, script_block, shared_css, shared_js):
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Fredoka+One&display=swap" rel="stylesheet">
+{FAVICON_SCRIPT}
 <style>
 {shared_css}
 </style>
@@ -608,12 +647,11 @@ def page_html(year, script_block, shared_css, shared_js):
 {nav}
 <h1>World Cup ELO - {year}</h1>
 
-<div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
-  <div class="page-toggle view-toggle">
-    <button id="tab-matches" class="active" onclick="setPageView('matches')">Match List</button>
-    <button id="tab-rankings" onclick="setPageView('rankings')">Rankings</button>
-  </div>
-  <button id="btn-data-entry" onclick="toggleDataEntry()" style="font-family:'Permanent Marker',cursive; font-size:0.75rem; background:transparent; border:1px dashed #aaa; border-radius:4px; padding:0.2rem 0.7rem; cursor:pointer; color:#888;">Data Entry</button>
+<div class="page-toggle primary-tabs view-toggle">
+  <button id="tab-matches" class="active" onclick="setPageView('matches')">Match List</button>
+  <button id="tab-groups" onclick="setPageView('groups')">Groups</button>
+  <button id="tab-knockout" onclick="setPageView('knockout')">Knockout</button>
+  <button id="tab-rankings" onclick="setPageView('rankings')">Rankings</button>
 </div>
 
 <div id="matches-view">
@@ -624,24 +662,34 @@ def page_html(year, script_block, shared_css, shared_js):
 </div>
 
 <div id="rankings-view">
-  <div class="rankings-toggle view-toggle">
-    <button id="tab-rank" class="active" onclick="setRankView('rank')">Rank</button>
-    <button id="tab-scale" onclick="setRankView('scale')">Scale</button>
-  </div>
-  <div class="rankings-filter-controls">
-    <label><input type="checkbox" id="chk-show-elim" onchange="toggleShowEliminated()"> Show eliminated</label>
-    <label id="true-rank-label" style="opacity:1"><input type="checkbox" id="chk-true-rank" onchange="toggleTrueRank()"> True rank</label>
-  </div>
-  <label style="font-size:0.75rem;color:#c00;margin-left:1rem;user-select:none">
-    <input type="checkbox" id="debug-clusters" onchange="renderRankings()"> debug: show binding clusters
-  </label>
-  <div id="rankings-outer">
-    <div id="rank-info"></div>
-    <div class="rankings-cols" id="rankings-cols">
-      <div class="rankings-header" id="rankings-header"></div>
-      <div class="rankings-body" id="rankings-body"></div>
+  <div class="rankings-panel">
+    <div class="rankings-controls">
+      <label><input type="checkbox" id="chk-show-elim" onchange="toggleShowEliminated()"> Show eliminated</label>
+      <label id="true-rank-label" style="opacity:1"><input type="checkbox" id="chk-true-rank" onchange="toggleTrueRank()"> True rank</label>
+      <label style="color:#c00;">
+        <input type="checkbox" id="debug-clusters" onchange="renderRankings()"> debug: show binding clusters
+      </label>
+      <div class="rankings-toggle sub-toggle">
+        <button id="tab-rank" class="active" onclick="setRankView('rank')">Rank</button>
+        <button id="tab-scale" onclick="setRankView('scale')">Scale</button>
+      </div>
+    </div>
+    <div id="rankings-outer">
+      <div id="rank-info"></div>
+      <div class="rankings-cols" id="rankings-cols">
+        <div class="rankings-header" id="rankings-header"></div>
+        <div class="rankings-body" id="rankings-body"></div>
+      </div>
     </div>
   </div>
+</div>
+
+<div id="groups-view">
+  <p style="opacity:0.6; font-style:italic;">Group Stage view — coming soon.</p>
+</div>
+
+<div id="knockout-view">
+  <p style="opacity:0.6; font-style:italic;">Knockout Bracket view — coming soon.</p>
 </div>
 
 <script>

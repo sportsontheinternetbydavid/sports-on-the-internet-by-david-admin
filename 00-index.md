@@ -8,7 +8,8 @@ This project has the following documents, each with one job. Don't blur these re
 |---|-----|----------------|
 | 1 | [00-index.md](00-index.md) | This file. Map of the project — what each doc does and where things live. |
 | 2 | [way-of-working.md](way-of-working.md) | How we (human + AI) operate this project. Workflow, process, brand, visual direction. |
-| 3 | [requirements.md](requirements.md) | What the World Cup ELO feature should be/do. Source of truth for desired behavior. |
+| 3a | [requirements-public.md](requirements-public.md) | What the public World Cup ELO site should be/do. Source of truth for desired behavior on the site anyone can visit — no admin/data-entry content. |
+| 3b | [requirements-admin.md](requirements-admin.md) | What the (separate, not-yet-built) admin site should be/do. Source of truth for the internal data-entry tool. Not a mirror of the public site — see the doc for why. |
 | 4 | [brand.md](brand.md) | SportsOnTheInternet brand: concept, audience, voice, visual direction. |
 | 5 | [scale-algorithm.md](scale-algorithm.md) | Deep-dive on the Scale view layout algorithm. Update when scale rendering logic changes. |
 | 6 | [scripts/build.py](scripts/build.py) | Regenerates HTML pages in site/ from data/*.json and shared.js/shared.css. |
@@ -31,6 +32,8 @@ Everything under `site/` is what goes online. The static host points at this fol
 | [site/football/worldcup/flags/](site/football/worldcup/flags/) | Flag SVGs served alongside the World Cup pages. |
 | [shared.js](shared.js) | Shared JS source — inlined into World Cup pages at build time. |
 | [shared.css](shared.css) | Shared CSS source — inlined into World Cup pages at build time. |
+
+The admin site described in `requirements-admin.md` has no output folder yet — it hasn't been built. When it is, its output goes in `admin/` (a new top-level folder, sibling to `site/`) — never under `site/`, since `site/` is what gets deployed to the public repo (see `way-of-working.md` → *Two-repo structure*) and the admin site must never end up there.
 
 ## Adding a new feature
 

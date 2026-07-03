@@ -9,26 +9,6 @@
 //   tbody          — document.getElementById('games')
 //   thead          — document.querySelector('#matches-view thead')
 
-// Data-entry panel is only available in admin mode (?admin in the URL) or via the toggle button.
-let IS_ADMIN = location.search.includes('admin');
-if (IS_ADMIN) document.title = '[ADMIN] ' + document.title;
-
-function toggleDataEntry() {
-  IS_ADMIN = !IS_ADMIN;
-  const btn = document.getElementById('btn-data-entry');
-  if (IS_ADMIN) {
-    btn.style.color = '#C0392B';
-    btn.style.borderColor = '#C0392B';
-    btn.style.fontWeight = 'bold';
-  } else {
-    btn.style.color = '#888';
-    btn.style.borderColor = '#aaa';
-    btn.style.fontWeight = '';
-    if (matchState.expandRow) { matchState.expandRow.remove(); matchState.expandRow = null; }
-  }
-  render();
-}
-
 // Early guards — must run before confByTeam/flagByTeam are built from these globals.
 // Full structural validation (GAMESETS ordering, team-name coverage, etc.) runs at the
 // bottom of this file once all functions are defined.
@@ -91,7 +71,7 @@ function eloColor(value) {
 
 // Date, #, spacer, homeElo, homeFlag, homeScore, sep, awayScore, awayFlag, awayElo
 const GAME_COL_COUNT = 10;
-const matchState = { view: 'elo', colCount: GAME_COL_COUNT, expandRow: null, gameRow: null };
+const matchState = { view: 'elo', colCount: GAME_COL_COUNT };
 
 function gameColsHeader() {
   return (
@@ -202,8 +182,6 @@ function render() {
   const confederations = CONFEDERATIONS.filter(c => participating.has(c));
 
   tbody.innerHTML = '';
-  matchState.expandRow = null;
-  matchState.gameRow = null;
 
   if (games.length === 0) {
     thead.innerHTML = `<tr><th>No games</th></tr><tr></tr>`;
@@ -241,7 +219,6 @@ function renderElo(games, ordered, rowTotals) {
           ? `<td class="num conf" style="background-color:${eloColor(rowTotals[i][c])}">${rowTotals[i][c]}</td>`
           : `<td class="num conf"></td>`
       ).join('');
-    if (IS_ADMIN) tr.addEventListener('click', () => toggleExpand(game, tr));
     tbody.appendChild(tr);
   });
 }
@@ -274,7 +251,6 @@ function renderWld(games, ordered, eloRowTotals) {
         };
         return `<td class="num conf" style="${bg}">${hi(w,'w')}-${hi(d,'d')}-${hi(l,'l')}</td>`;
       }).join('');
-    if (IS_ADMIN) tr.addEventListener('click', () => toggleExpand(game, tr));
     tbody.appendChild(tr);
   });
 }
@@ -316,81 +292,8 @@ function renderStats(games, ordered, _eloRowTotals) {
     } else {
       tr.innerHTML = gameRowCells(game) + emptyTd;
     }
-    if (IS_ADMIN) tr.addEventListener('click', () => toggleExpand(game, tr));
     tbody.appendChild(tr);
   });
-}
-
-function toggleExpand(game, tr) {
-  const colCount = matchState.colCount;
-  if (matchState.expandRow) {
-    matchState.expandRow.remove();
-    matchState.expandRow = null;
-    if (matchState.gameRow === tr) { matchState.gameRow = null; return; }
-  }
-  matchState.gameRow = tr;
-  const expandTr = document.createElement('tr');
-  expandTr.className = 'expand-row';
-  const td = document.createElement('td');
-  td.colSpan = colCount;
-
-  const hsVal = game.homeScore != null ? game.homeScore : '';
-  const asVal = game.awayScore != null ? game.awayScore : '';
-  const eloVal = game.eloChange != null ? Math.abs(game.eloChange) : '';
-  const gainsVal = game.eloChange != null ? (game.eloChange >= 0 ? 'home' : 'away') : '';
-  const isDraw = hsVal !== '' && asVal !== '' && hsVal === asVal;
-
-  td.innerHTML = `
-    <div class="ur-line"><strong>#${game.gameNumber}: ${esc(game.homeTeam)} vs ${esc(game.awayTeam)}</strong></div>
-    <div class="ur-line">
-      <label>Home score: <input class="ur-hs" type="number" min="0" value="${hsVal}"></label>
-      <label>Away score: <input class="ur-as" type="number" min="0" value="${asVal}"></label>
-      <label>ELO magnitude (opt): <input class="ur-elo" type="number" min="0" value="${eloVal}"></label>
-      <label class="ur-gains-wrap" style="display:${isDraw ? 'flex' : 'none'}">Who gains ELO:
-        <select class="ur-gains">
-          <option value="" ${gainsVal === '' ? 'selected' : ''}>—</option>
-          <option value="home" ${gainsVal === 'home' ? 'selected' : ''}>${esc(game.homeTeam)}</option>
-          <option value="away" ${gainsVal === 'away' ? 'selected' : ''}>${esc(game.awayTeam)}</option>
-        </select>
-      </label>
-    </div>
-    <div class="ur-line">
-      <button class="ur-gen">Generate command</button>
-      <input class="ur-cmd" type="text" readonly placeholder="command will appear here">
-      <button class="ur-copy">Copy</button>
-    </div>`;
-
-  td.addEventListener('click', e => e.stopPropagation());
-
-  function updateGainsVisibility() {
-    const hs = td.querySelector('.ur-hs').value;
-    const as_ = td.querySelector('.ur-as').value;
-    const draw = hs !== '' && as_ !== '' && hs === as_;
-    td.querySelector('.ur-gains-wrap').style.display = draw ? 'flex' : 'none';
-  }
-  td.querySelector('.ur-hs').addEventListener('input', updateGainsVisibility);
-  td.querySelector('.ur-as').addEventListener('input', updateGainsVisibility);
-
-  td.querySelector('.ur-gen').addEventListener('click', () => {
-    const hs = td.querySelector('.ur-hs').value;
-    const as_ = td.querySelector('.ur-as').value;
-    const elo = td.querySelector('.ur-elo').value;
-    const gains = td.querySelector('.ur-gains').value;
-    const draw = hs !== '' && as_ !== '' && hs === as_;
-    let cmd = `python3 scripts/set_result.py ${YEAR} ${game.gameNumber} ${hs} ${as_}`;
-    if (elo !== '') cmd += ` ${elo} --gains ${draw ? (gains || '???') : (Number(hs) > Number(as_) ? 'home' : 'away')}`;
-    td.querySelector('.ur-cmd').value = cmd;
-  });
-
-  td.querySelector('.ur-copy').addEventListener('click', () => {
-    const cmdInput = td.querySelector('.ur-cmd');
-    cmdInput.select();
-    navigator.clipboard.writeText(cmdInput.value);
-  });
-
-  expandTr.appendChild(td);
-  tr.after(expandTr);
-  matchState.expandRow = expandTr;
 }
 
 // ── Rankings view ──────────────────────────────────────────────────────────
@@ -927,18 +830,19 @@ function initRankingsHover() {
   container.addEventListener('mouseleave', scheduleReset);
 }
 
-// ── Page view (Match List ↔ Rankings) ────────────────────────────────────
+// ── Page view (Match List / Rankings / Groups / Knockout) ────────────────
 
+const PAGE_VIEWS = ['matches', 'rankings', 'groups', 'knockout'];
 let currentPageView = null;
 
 function setPageView(view) {
-  if (view !== 'matches' && view !== 'rankings') view = 'matches';
+  if (!PAGE_VIEWS.includes(view)) view = 'matches';
   if (view === currentPageView) return;
   currentPageView = view;
-  document.getElementById('matches-view').style.display = view === 'matches' ? 'block' : 'none';
-  document.getElementById('rankings-view').style.display = view === 'rankings' ? 'block' : 'none';
-  document.getElementById('tab-matches').classList.toggle('active', view === 'matches');
-  document.getElementById('tab-rankings').classList.toggle('active', view === 'rankings');
+  for (const v of PAGE_VIEWS) {
+    document.getElementById(v + '-view').style.display = v === view ? 'block' : 'none';
+    document.getElementById('tab-' + v).classList.toggle('active', v === view);
+  }
   if (view === 'matches') render();
   if (view === 'rankings') renderRankings();
   if (location.hash.slice(1) !== view) history.replaceState(null, '', '#' + view);
