@@ -18,6 +18,7 @@ There are two requirements docs, for two separate sites — see `00-index.md` fo
 - Each requirements doc describes *what its site* should do/look like, including scope/structure — that's defined there, not here.
 - Each requirements doc is the source of truth for its own site. If the implementation and a requirements doc ever disagree, that's a bug — fix one to match the other.
 - Keep the implementation as simple as the requirements docs allow — no npm, no bundler, no framework. `worldcup/scripts/build.py` is the one build step; it regenerates embedded data in the HTML pages and is the intentional exception to this rule.
+- Never remove working functionality just because a requirements doc says it belongs somewhere else, unless the replacement already exists and works, or the human has explicitly confirmed the interim gap is fine. Rewriting a requirements doc to describe a future split (e.g. "this belongs on a separate admin site now") is not authorization to delete the current implementation before that split is actually built.
 
 ## Scripts
 

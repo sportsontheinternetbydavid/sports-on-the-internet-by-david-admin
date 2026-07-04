@@ -2,6 +2,8 @@
 
 This project has the following documents, each with one job. Don't blur these responsibilities.
 
+[CLAUDE.md](CLAUDE.md), at the repo root, is the entry point an AI session loads automatically — it points here. Not listed in the table below since it's not part of the doc map itself, just the door into it.
+
 ## Project docs (not deployed)
 
 Docs that apply to the whole site (not any one feature) live at the root:
