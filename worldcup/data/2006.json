@@ -571,7 +571,8 @@
       "date": "2006-06-24",
       "eloChange": 19,
       "homeEloPre": 1980,
-      "awayEloPre": 1840
+      "awayEloPre": 1840,
+      "round": 0
     },
     {
       "gameNumber": 50,
@@ -582,7 +583,8 @@
       "date": "2006-06-24",
       "eloChange": 24,
       "homeEloPre": 1946,
-      "awayEloPre": 1873
+      "awayEloPre": 1873,
+      "round": 0
     },
     {
       "gameNumber": 51,
@@ -593,7 +595,8 @@
       "date": "2006-06-25",
       "eloChange": 14,
       "homeEloPre": 1984,
-      "awayEloPre": 1782
+      "awayEloPre": 1782,
+      "round": 0
     },
     {
       "gameNumber": 52,
@@ -604,7 +607,8 @@
       "date": "2006-06-25",
       "eloChange": 34,
       "homeEloPre": 1973,
-      "awayEloPre": 2016
+      "awayEloPre": 2016,
+      "round": 0
     },
     {
       "gameNumber": 53,
@@ -615,7 +619,8 @@
       "date": "2006-06-26",
       "eloChange": 17,
       "homeEloPre": 1984,
-      "awayEloPre": 1820
+      "awayEloPre": 1820,
+      "round": 0
     },
     {
       "gameNumber": 54,
@@ -626,7 +631,8 @@
       "date": "2006-06-26",
       "eloChange": -5,
       "homeEloPre": 1863,
-      "awayEloPre": 1809
+      "awayEloPre": 1809,
+      "round": 0
     },
     {
       "gameNumber": 55,
@@ -637,7 +643,8 @@
       "date": "2006-06-27",
       "eloChange": 12,
       "homeEloPre": 2085,
-      "awayEloPre": 1726
+      "awayEloPre": 1726,
+      "round": 0
     },
     {
       "gameNumber": 56,
@@ -648,7 +655,8 @@
       "date": "2006-06-27",
       "eloChange": 53,
       "homeEloPre": 1946,
-      "awayEloPre": 2011
+      "awayEloPre": 2011,
+      "round": 0
     },
     {
       "gameNumber": 57,
@@ -659,7 +667,8 @@
       "date": "2006-06-30",
       "eloChange": -6,
       "homeEloPre": 1970,
-      "awayEloPre": 1999
+      "awayEloPre": 1999,
+      "round": 1
     },
     {
       "gameNumber": 58,
@@ -670,7 +679,8 @@
       "date": "2006-06-30",
       "eloChange": 27,
       "homeEloPre": 2001,
-      "awayEloPre": 1814
+      "awayEloPre": 1814,
+      "round": 1
     },
     {
       "gameNumber": 59,
@@ -681,7 +691,8 @@
       "date": "2006-07-01",
       "eloChange": 1,
       "homeEloPre": 1998,
-      "awayEloPre": 2007
+      "awayEloPre": 2007,
+      "round": 1
     },
     {
       "gameNumber": 60,
@@ -692,7 +703,8 @@
       "date": "2006-07-01",
       "eloChange": 38,
       "homeEloPre": 1999,
-      "awayEloPre": 2097
+      "awayEloPre": 2097,
+      "round": 1
     },
     {
       "gameNumber": 61,
@@ -703,7 +715,8 @@
       "date": "2006-07-04",
       "eloChange": -50,
       "homeEloPre": 1964,
-      "awayEloPre": 2028
+      "awayEloPre": 2028,
+      "round": 2
     },
     {
       "gameNumber": 62,
@@ -714,7 +727,8 @@
       "date": "2006-07-05",
       "eloChange": 27,
       "homeEloPre": 2037,
-      "awayEloPre": 2006
+      "awayEloPre": 2006,
+      "round": 2
     },
     {
       "gameNumber": 63,
@@ -725,7 +739,8 @@
       "date": "2006-07-08",
       "eloChange": 40,
       "homeEloPre": 1914,
-      "awayEloPre": 1979
+      "awayEloPre": 1979,
+      "round": 3
     },
     {
       "gameNumber": 64,
@@ -736,7 +751,9 @@
       "date": "2006-07-09",
       "eloChange": 1,
       "homeEloPre": 2064,
-      "awayEloPre": 2078
+      "awayEloPre": 2078,
+      "round": 3
     }
-  ]
+  ],
+  "knockoutSize": 16
 }
