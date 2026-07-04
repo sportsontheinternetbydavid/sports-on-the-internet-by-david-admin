@@ -46,7 +46,7 @@ Every script lives in `worldcup/scripts/`, is plain Python 3 with no dependencie
 
 | Script | Purpose |
 |--------|---------|
-| `gitops.py` | Shared commit/push/deploy helper: commits `data/` + `site/` to the private repo, then calls `deploy.py`. |
+| `gitops.py` | Shared commit/push/deploy helper: commits `data/`, `site/`, and `admin/` to the private repo, then calls `deploy.py`. |
 | `deploy.py` | Pushes the current `site/` contents to the public GitHub Pages repo. |
 
 ## Git
