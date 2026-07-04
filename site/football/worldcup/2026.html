@@ -94,7 +94,7 @@ tbody tr:hover { background: #EDE8DC; }
    the page, and align-items:stretch makes every level exactly that width.
    Only one Level 3 variant is shown at a time — setPageView() hides the
    rest. margin-bottom:0 — Level 4 (each view's own table/grid header, see
-   requirements-public.md) fuses flush underneath with no gap; views without
+   requirements/public.md) fuses flush underneath with no gap; views without
    a fusable Level 4 (Knockout) add their own top margin back instead (see
    #knockout-view). */
 .page-nav { display: flex; flex-direction: column; align-items: stretch; width: 100%; margin-bottom: 0; }
@@ -137,7 +137,7 @@ tbody tr:hover { background: #EDE8DC; }
    against Level 3 above with no gap, same as Match List's table. */
 .rankings-panel { border: 1px solid rgba(0,0,0,0.08); border-radius: 0 0 6px 6px; background: rgba(255,255,255,0.35); padding: 0 0.8rem 0.3rem; }
 .rankings-cols { font-size: 0.85rem; white-space: nowrap; }
-/* This view's Level 4 (see requirements-public.md → Navigation) — red/white
+/* This view's Level 4 (see requirements/public.md → Navigation) — red/white
    like every other Level 4. The negative left/right margin cancels
    .rankings-panel's padding so this bleeds all the way to the panel's
    edges, aligning with Levels 1-3 above instead of sitting inset. */
@@ -271,7 +271,7 @@ tbody tr:hover { background: #EDE8DC; }
 .bracket-round-toggle.view-toggle button:not(.active):hover { background: rgba(255,255,255,0.45); }
 .bracket { display: flex; align-items: stretch; gap: 2.5rem; overflow-x: auto; padding: 0.5rem 0 1.5rem; }
 .bracket-round { display: flex; flex-direction: column; min-width: 190px; }
-/* This round's Level 4 (see requirements-public.md → Navigation) — a small
+/* This round's Level 4 (see requirements/public.md → Navigation) — a small
    red bar with white text, matching every other view's Level 4 coloring,
    rather than plain red text on the page background. */
 .bracket-round-label { font-family: 'Permanent Marker', cursive; font-size: 0.9rem; background: #C0392B; color: #fff; text-align: center; padding: 0.3rem 0.5rem; border-radius: 4px; margin-bottom: 0.6rem; }
@@ -1345,11 +1345,11 @@ const games2026 = [
   {
     "gameNumber": 89,
     "homeTeam": "Paraguay",
-    "homeScore": null,
+    "homeScore": 0,
     "awayTeam": "France",
-    "awayScore": null,
+    "awayScore": 1,
     "date": "2026-07-04",
-    "eloChange": null,
+    "eloChange": -9,
     "round": 1,
     "homeFrom": null,
     "awayFrom": null,
