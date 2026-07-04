@@ -13,7 +13,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # repo root — site/ lives here, not under worldcup/
 SITE = PROJECT_ROOT / "site"
-PUBLIC_REMOTE = "https://github.com/sportsontheworldwideweb/sportsontheworldwideweb.github.io.git"
+PUBLIC_REMOTE = "https://github.com/sportsontheinternetbydavid/sports-on-the-internet-by-david.git"
 
 
 def run(cmd, **kwargs):
@@ -73,7 +73,7 @@ def main():
         run(["git", "-C", str(tmp), "commit", "-m", args.message])
         print("Pushing to public repo...")
         run(["git", "-C", str(tmp), "push"])
-        print("Done. Site is live at https://sportsontheworldwideweb.github.io/")
+        print("Done. Site is live at https://sports-on-the-internet-by-david.com/")
 
 
 if __name__ == "__main__":
