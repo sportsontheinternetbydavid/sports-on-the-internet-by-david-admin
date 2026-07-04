@@ -10,26 +10,29 @@ Docs that apply to the whole site (not any one feature) live at the root:
 |---|-----|----------------|
 | 1 | [00-index.md](00-index.md) | This file. Map of the project — what each doc does and where things live. |
 | 2 | [way-of-working.md](way-of-working.md) | How we (human + AI) operate this project. Workflow, process, brand, visual direction. |
-| 3 | [brand.md](brand.md) | SportsOnTheInternet brand: concept, audience, voice, visual direction. |
+| 3 | [brand.md](brand.md) | "Sports! On the Internet. By David" brand: concept, audience, voice, visual direction. |
 | 4 | [open-questions.md](open-questions.md) | Unresolved project-level questions (naming, hosting, etc.) that don't block work but shouldn't be forgotten. |
+| 5 | [operations.md](operations.md) | Account inventory, domain/DNS, and hosting/deployment facts. Not a build doc — reference only. |
+
+Multi-session milestones (a rebrand, an infra migration) are tracked as a checklist in `workbench/<milestone-name>.md` — see `way-of-working.md` → *Milestones*. The folder is empty between milestones, so it has no permanent entry here.
 
 Everything specific to a single feature lives in its own top-level folder, named after the feature. World Cup ELO is the first (and so far only) feature:
 
 | # | Doc | Responsibility |
 |---|-----|----------------|
-| 5a | [worldcup/requirements-public.md](worldcup/requirements-public.md) | What the public World Cup ELO site should be/do. Source of truth for desired behavior on the site anyone can visit — no admin/data-entry content. |
-| 5b | [worldcup/requirements-admin.md](worldcup/requirements-admin.md) | What the admin site should be/do. Source of truth for the internal data-entry tool. Not a mirror of the public site — see the doc for why. |
-| 6 | [worldcup/scale-algorithm.md](worldcup/scale-algorithm.md) | Deep-dive on the Scale view layout algorithm. Update when scale rendering logic changes. |
-| 7 | [worldcup/scripts/build.py](worldcup/scripts/build.py) | Regenerates the public HTML pages in site/ from worldcup/data/*.json and worldcup/shared.js/shared.css. Also calls build_admin.py, so one run keeps both sites in sync. |
-| 8 | [worldcup/scripts/build_admin.py](worldcup/scripts/build_admin.py) | Regenerates the admin site's per-year pages in admin/. Same embed-at-build-time pattern as build.py — no server, no runtime fetch. |
-| 9 | [worldcup/scripts/set_result.py](worldcup/scripts/set_result.py) | Enters a game result and calls build.py. The normal data-entry path. |
-| 10 | [worldcup/scripts/set_team_elo.py](worldcup/scripts/set_team_elo.py) | Sets a team's initial ELO and calls build.py. |
-| 11 | [worldcup/scripts/knockout.py](worldcup/scripts/knockout.py) | Shared knockout-bracket round-shape logic (no CLI) — used by build.py and the two scripts below. |
-| 12 | [worldcup/scripts/set_knockout_size.py](worldcup/scripts/set_knockout_size.py) | One-time per-tournament setup: sets the bracket size and scaffolds its games. |
-| 13 | [worldcup/scripts/set_bracket_game.py](worldcup/scripts/set_bracket_game.py) | Sets a knockout game's date and/or participants (team or feed reference) and calls build.py. |
-| 14 | [worldcup/data/](worldcup/data/) | Source data: one JSON file per World Cup (1998, 2002, 2006, 2010, 2014, 2018, 2022, 2026) plus teams.json. Not deployed directly. |
-| 15 | [worldcup/shared.js](worldcup/shared.js) | Shared JS source — inlined into World Cup pages at build time. |
-| 16 | [worldcup/shared.css](worldcup/shared.css) | Shared CSS source — inlined into World Cup pages at build time. |
+| 6a | [worldcup/requirements-public.md](worldcup/requirements-public.md) | What the public World Cup ELO site should be/do. Source of truth for desired behavior on the site anyone can visit — no admin/data-entry content. |
+| 6b | [worldcup/requirements-admin.md](worldcup/requirements-admin.md) | What the admin site should be/do. Source of truth for the internal data-entry tool. Not a mirror of the public site — see the doc for why. |
+| 7 | [worldcup/scale-algorithm.md](worldcup/scale-algorithm.md) | Deep-dive on the Scale view layout algorithm. Update when scale rendering logic changes. |
+| 8 | [worldcup/scripts/build.py](worldcup/scripts/build.py) | Regenerates the public HTML pages in site/ from worldcup/data/*.json and worldcup/shared.js/shared.css. Also calls build_admin.py, so one run keeps both sites in sync. |
+| 9 | [worldcup/scripts/build_admin.py](worldcup/scripts/build_admin.py) | Regenerates the admin site's per-year pages in admin/. Same embed-at-build-time pattern as build.py — no server, no runtime fetch. |
+| 10 | [worldcup/scripts/set_result.py](worldcup/scripts/set_result.py) | Enters a game result and calls build.py. The normal data-entry path. |
+| 11 | [worldcup/scripts/set_team_elo.py](worldcup/scripts/set_team_elo.py) | Sets a team's initial ELO and calls build.py. |
+| 12 | [worldcup/scripts/knockout.py](worldcup/scripts/knockout.py) | Shared knockout-bracket round-shape logic (no CLI) — used by build.py and the two scripts below. |
+| 13 | [worldcup/scripts/set_knockout_size.py](worldcup/scripts/set_knockout_size.py) | One-time per-tournament setup: sets the bracket size and scaffolds its games. |
+| 14 | [worldcup/scripts/set_bracket_game.py](worldcup/scripts/set_bracket_game.py) | Sets a knockout game's date and/or participants (team or feed reference) and calls build.py. |
+| 15 | [worldcup/data/](worldcup/data/) | Source data: one JSON file per World Cup (1998, 2002, 2006, 2010, 2014, 2018, 2022, 2026) plus teams.json. Not deployed directly. |
+| 16 | [worldcup/shared.js](worldcup/shared.js) | Shared JS source — inlined into World Cup pages at build time. |
+| 17 | [worldcup/shared.css](worldcup/shared.css) | Shared CSS source — inlined into World Cup pages at build time. |
 
 ## Site (deployed)
 
@@ -37,7 +40,8 @@ Everything under `site/` is what goes online. The static host points at this fol
 
 | Path | Responsibility |
 |------|----------------|
-| [site/index.html](site/index.html) | SportsOnTheInternet homepage. |
+| [site/index.html](site/index.html) | "Sports! On the Internet. By David" homepage. |
+| [site/CNAME](site/CNAME) | GitHub Pages custom-domain file (`sports-on-the-internet-by-david.com`). Committed as-is; `deploy.py` wipes and replaces the public repo's contents on every deploy, so this must exist in `site/` or the live domain breaks. |
 | [site/football/worldcup/history.html](site/football/worldcup/history.html) | Year-over-year knockout comparison (F4/F8/F16). Build artifact — do not edit directly. |
 | [site/football/worldcup/1998.html](site/football/worldcup/1998.html) | World Cup 1998 page (and one per other year: 2002, 2006, 2010, 2014, 2018, 2022, 2026). Build artifact — do not edit directly. |
 | [site/football/worldcup/flags/](site/football/worldcup/flags/) | Flag SVGs served alongside the World Cup pages. |

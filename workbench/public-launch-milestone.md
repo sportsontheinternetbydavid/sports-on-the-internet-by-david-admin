@@ -8,32 +8,32 @@ Decisions locked:
 - No legacy ties outside this repo to unwind (no other domains/DNS/services).
 
 ## Phase 1 — Repo & infra migration
-- [ ] Add `site/CNAME` (`sports-on-the-internet-by-david.com`)
-- [ ] Repoint `origin` remote → `sportsontheinternetbydavid/sports-on-the-internet-by-david-admin`
-- [ ] Update `deploy.py`'s `PUBLIC_REMOTE` and printed URL → new public repo/domain
-- [ ] Push full history to new admin repo
+- [x] Add `site/CNAME` (`sports-on-the-internet-by-david.com`)
+- [x] Repoint `origin`/`public` remotes → new org/repos
+- [x] Update `deploy.py`'s `PUBLIC_REMOTE` and printed URL → new public repo/domain
+- [ ] Push full history to new admin repo — **blocked**: local git credentials are for the old account (`sportsontheworldwideweb`), which has no access to the new repos. Needs `gh auth login` (or one manual push) as `sportsontheinternetbydavid`.
 - [ ] Run `deploy.py` against new public repo; confirm CNAME survives
 - [ ] Verify GitHub Pages settings (custom domain + HTTPS) on new public repo
 - [ ] Verify live domain end-to-end in a browser
 
 ## Phase 2 — Remove "World Wide Web" branding
-- [ ] `way-of-working.md` — two-repo structure table + remotes
-- [ ] `open-questions.md` — resolve/remove naming question
-- [ ] `worldcup/requirements-admin.md` — old repo name reference
-- [ ] `brand.md` — name, domain, email
-- [ ] Final grep pass for zero remaining hits
+- [x] `way-of-working.md` — two-repo structure table + remotes
+- [x] `open-questions.md` — resolve/remove naming question
+- [x] `worldcup/requirements-admin.md` — old repo name reference
+- [x] `brand.md` — name, domain, email
+- [x] Final grep pass for zero remaining hits (outside intentional legacy references in `operations.md`/here)
 
 ## Phase 3 — Site branding polish
-- [ ] `site/index.html` + public pages: `<title>`/headers match finalized name
-- [ ] Favicon/meta tags match
-- [ ] Spot-check `brand.md` voice/visual vs. built site
+- [x] `site/index.html`: `<title>`/`<h1>` match finalized name (verified in preview — wraps cleanly at both desktop and mobile widths)
+- [x] Favicon: no text/brand name baked in, unaffected
+- [x] Spot-checked `brand.md` voice/visual vs. built site — no drift
 
 ## Phase 4 — Codebase & doc simplification
-- [ ] `00-index.md` matches actual files
-- [ ] Confirm every script in `worldcup/scripts/` is used
-- [ ] `.gitignore` covers what it should
-- [ ] Trim stale entries in `.claude/settings.local.json`
-- [ ] Add `operations.md` (accounts, domain/DNS, hosting)
+- [x] `00-index.md` matches actual files (added `operations.md`, `site/CNAME`, `workbench/` note; renumbered feature docs)
+- [x] Confirmed every script in `worldcup/scripts/` is used and documented in `way-of-working.md`
+- [x] `.gitignore` sufficient — no untracked junk found beyond `.DS_Store`
+- [x] `.claude/settings.local.json` reviewed — globally gitignored, machine-local only, not part of the shared repo; left as-is
+- [x] Added `operations.md` (accounts, domain/DNS, hosting)
 
 ## Phase 5 — Retire legacy repos/account
 - [ ] Confirm new site fully replaces old one in actual use

@@ -1,8 +1,8 @@
-# Brand: SportsOnTheInternet
+# Brand: Sports! On the Internet. By David
 
 ## The Concept
 
-SportsOnTheInternet looks and feels like a kid made it in an art room — construction paper, markers, scissors, and glue sticks. The aesthetic is sincere arts-and-crafts energy: hand-lettered headlines, layered paper sections, imperfect edges. The content underneath is modern, data-rich, and genuinely interesting.
+"Sports! On the Internet. By David" looks and feels like a kid made it in an art room — construction paper, markers, scissors, and glue sticks. The aesthetic is sincere arts-and-crafts energy: hand-lettered headlines, layered paper sections, imperfect edges. The content underneath is modern, data-rich, and genuinely interesting.
 
 The tension between the shell and the substance is the point. A 9-year-old would think the site looks cool. A sports analyst would find something worth reading.
 
@@ -58,11 +58,11 @@ Direction TBD. Should feel hand-drawn — like a kid's doodle of a sports mascot
 
 ## Name
 
-**SportsOnTheInternet**
+**Sports! On the Internet. By David**
 
 - Full name used in the header/logo
-- Domain: `sportsontheinternet.com` (TBC — not yet registered)
-- Email: TBD
+- Domain: `sports-on-the-internet-by-david.com`
+- Email: `sports.on.the.internet.by.david@gmail.com`
 - Socials: TBD
 
 ## Features (current and planned)

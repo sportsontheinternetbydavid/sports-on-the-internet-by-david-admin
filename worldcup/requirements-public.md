@@ -1,6 +1,6 @@
 # Requirements — Public Site
 
-What the public-facing SportsOnTheInternet site should do/look like — the read-only site anyone can visit. This is a strict subset of what the project used to be: it has **no admin mode, no data-entry UI, no `?admin` param, no mode toggle of any kind**. All of that now lives in a completely separate site, documented in `requirements-admin.md`. The two are not mirrors of each other — the admin site is a purpose-built internal tool, not "this site plus a toggle."
+What the public-facing "Sports! On the Internet. By David" site should do/look like — the read-only site anyone can visit. This is a strict subset of what the project used to be: it has **no admin mode, no data-entry UI, no `?admin` param, no mode toggle of any kind**. All of that now lives in a completely separate site, documented in `requirements-admin.md`. The two are not mirrors of each other — the admin site is a purpose-built internal tool, not "this site plus a toggle."
 
 See `../00-index.md` for how this doc relates to `requirements-admin.md` and the rest of the project's docs.
 
@@ -14,7 +14,7 @@ Where the underlying ELO/match data comes from, how it's stored, and how it gets
 
 ## Homepage (`index.html`)
 
-The homepage is the SportsOnTheInternet landing page. It reflects the brand: kids art room, construction paper and markers, handmade and enthusiastic.
+The homepage is the "Sports! On the Internet. By David" landing page. It reflects the brand: kids art room, construction paper and markers, handmade and enthusiastic.
 
 ### Layout
 - Full-width page with a centered content column (max ~800px).
@@ -23,7 +23,7 @@ The homepage is the SportsOnTheInternet landing page. It reflects the brand: kid
 - Feature sections below — one per sport category.
 
 ### Header
-- Site name "SportsOnTheInternet" as an `<h1>` in Permanent Marker font — looks like it was written with a thick marker.
+- Site name "Sports! On the Internet. By David" as an `<h1>` in Permanent Marker font — looks like it was written with a thick marker.
 - Tagline: "Sports data and visualizations. On the internet." in body font below.
 - No top border. The marker-style headline is the visual anchor.
 

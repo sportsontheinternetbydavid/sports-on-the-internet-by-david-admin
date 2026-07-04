@@ -56,12 +56,12 @@ Every script lives in `worldcup/scripts/`, is plain Python 3 with no dependencie
 
 ## Two-repo structure
 
-This project uses two GitHub repos under the `sportsontheworldwideweb` account:
+This project uses two GitHub repos under the `sportsontheinternetbydavid` account:
 
 | Repo | Visibility | Purpose |
 |------|------------|---------|
-| `sportsontheworldwidewebadmin` | Private | Everything — source data, scripts, docs, worldcup/shared.js/css, build tooling. This is where all work happens. |
-| `sportsontheworldwideweb.github.io` | Public | Only the built `site/` output. What the world sees. No source files, no scripts, no docs. |
+| `sports-on-the-internet-by-david-admin` | Private | Everything — source data, scripts, docs, worldcup/shared.js/css, build tooling. This is where all work happens. |
+| `sports-on-the-internet-by-david` | Public | Only the built `site/` output. What the world sees. No source files, no scripts, no docs. |
 
 **What goes in the public repo:** the contents of `site/` only — HTML pages, flags, nothing else. Think of it as the website, not the project.
 
@@ -70,8 +70,8 @@ This project uses two GitHub repos under the `sportsontheworldwideweb` account:
 **Deploying:** run `worldcup/scripts/deploy.py` to push the current `site/` contents to the public repo. Do this after a build when you're happy with the result. `set_result.py`, `update_day.py`, `set_knockout_size.py`, and `set_bracket_game.py` are the automatic triggers — each commits/pushes to the admin repo and deploys to the public repo by default after updating data, via the shared `worldcup/scripts/gitops.py` helper (pass `--no-push` to opt out and update local files only). `set_team_elo.py` and `fetch_results.py` do not push — they only update local files and rebuild.
 
 **Remotes in the private repo:**
-- `origin` → `sportsontheworldwidewebadmin` (private, push here normally)
-- `public` → `sportsontheworldwideweb.github.io` (public, push via deploy script only)
+- `origin` → `sports-on-the-internet-by-david-admin` (private, push here normally)
+- `public` → `sports-on-the-internet-by-david` (public, push via deploy script only)
 
 **Admin site (future):** per `worldcup/requirements-admin.md`, the admin site is local-only for now and has no deployment target. When it gets one, it should follow the same pattern as above — its own repo, pushed via its own deploy step, never mixed into either repo above. It must never end up in the public repo.
 
@@ -84,3 +84,7 @@ The rendering logic is split across three layers:
 - **Inline `<script>` in the page** — page-specific setup only: the embedded data constants (`games`, `teams`, `teamElos`), and the page configuration constants (`GAMES`, `YEAR`, `TEAM_ELOS`, `GAMESETS`, `CONFEDERATIONS`, `KNOCKOUT_SIZE`, DOM refs). Nothing else belongs here.
 
 When in doubt: if the change would need to be made in more than one HTML file, it belongs in `worldcup/shared.css` or `worldcup/shared.js`.
+
+## Milestones
+
+Work that spans multiple sessions (a rebrand, an infra migration, anything bigger than one loop of *The loop* above) is tracked as a checklist in `workbench/<milestone-name>.md`. Check items off as they land. When the milestone is done, delete the file — git history keeps the record, and the outcome belongs in the commit message, not a changelog doc.

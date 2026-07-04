@@ -3,7 +3,7 @@
 What the admin site should do/look like. This is a **completely separate site** from the public one (see `requirements-public.md`) — not a mirror of it, not the public site with a toggle flipped. It exists for exactly one job: entering/correcting tournament data — match results and knockout-bracket structure. Nothing here is meant for a visitor to ever see.
 
 **Terminology note**, because "admin" gets used two different ways in this project and they must not be conflated:
-- The **private admin repo** (`sportsontheworldwidewebadmin`) is where all source code lives — scripts, data, docs, `shared.js`/`shared.css`, and the templates for *both* sites. This already exists and is unchanged by this doc; see `../way-of-working.md`.
+- The **private admin repo** (`sports-on-the-internet-by-david-admin`) is where all source code lives — scripts, data, docs, `shared.js`/`shared.css`, and the templates for *both* sites. This already exists and is unchanged by this doc; see `../way-of-working.md`.
 - The **admin site** is a second, separate deployable website described by this doc — a small internal tool for data entry. It is new; see *Status* below for what's built.
 
 ## Status
