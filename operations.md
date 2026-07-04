@@ -41,4 +41,4 @@ Pushing to either repo (directly, or via `worldcup/scripts/deploy.py`) requires 
 - **GitHub account**: `sportsontheworldwideweb`, backed by Google account `sportsontheworldwideweb@gmail.com`.
 - **GitHub repo**: `sportsontheworldwideweb/sportsontheworldwideweb.github.io` — the only repo that ever existed under this account (no custom domain; served from the default `sportsontheworldwideweb.github.io` hostname). A previously assumed private admin repo (`sportsontheworldwidewebadmin`) was never actually created on GitHub, despite being referenced as existing in older project docs — confirmed via a direct API check.
 
-Retirement status tracked in `workbench/public-launch-milestone.md`.
+Retirement status tracked in `workbench/old-account-deletion.md`.
