@@ -2,7 +2,7 @@
 """Fetch yesterday's World Cup results from eloratings.net and update 2026.json.
 
 Usage:
-  scripts/fetch_results.py [--dry-run] [--all]
+  worldcup/scripts/fetch_results.py [--dry-run] [--all]
 
 Fetches https://www.eloratings.net/latest.tsv, finds any WC games that are
 in 2026.json with null scores but now have results, sets homeScore/awayScore

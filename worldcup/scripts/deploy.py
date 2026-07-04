@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Push the built site/ folder to the public GitHub Pages repo.
 
-Usage: python scripts/deploy.py [-m "commit message"]
+Usage: python worldcup/scripts/deploy.py [-m "commit message"]
 """
 
 import argparse
@@ -11,8 +11,8 @@ import tempfile
 import shutil
 from pathlib import Path
 
-ROOT = Path(__file__).parent.parent
-SITE = ROOT / "site"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # repo root — site/ lives here, not under worldcup/
+SITE = PROJECT_ROOT / "site"
 PUBLIC_REMOTE = "https://github.com/sportsontheworldwideweb/sportsontheworldwideweb.github.io.git"
 
 
@@ -28,7 +28,7 @@ def main():
     args = parser.parse_args()
 
     if not SITE.exists():
-        print("ERROR: site/ folder not found. Run scripts/build.py first.")
+        print("ERROR: site/ folder not found. Run worldcup/scripts/build.py first.")
         sys.exit(1)
 
     with tempfile.TemporaryDirectory() as tmpdir:

@@ -8,21 +8,22 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent  # worldcup/
+PROJECT_ROOT = ROOT.parent  # repo root — site/ lives here, not under worldcup/
 
 
 def push_to_github(message):
     print("\nCommitting and pushing to admin repo...")
-    subprocess.run(["git", "-C", str(ROOT), "add", "data", "site"], check=True)
+    subprocess.run(["git", "-C", str(PROJECT_ROOT), "add", "worldcup/data", "site"], check=True)
     status = subprocess.run(
-        ["git", "-C", str(ROOT), "status", "--porcelain", "--", "data", "site"],
+        ["git", "-C", str(PROJECT_ROOT), "status", "--porcelain", "--", "worldcup/data", "site"],
         capture_output=True, text=True, check=True,
     )
     if not status.stdout.strip():
         print("Nothing to commit — admin repo already up to date.")
     else:
-        subprocess.run(["git", "-C", str(ROOT), "commit", "-m", message], check=True)
-        subprocess.run(["git", "-C", str(ROOT), "push", "origin"], check=True)
+        subprocess.run(["git", "-C", str(PROJECT_ROOT), "commit", "-m", message], check=True)
+        subprocess.run(["git", "-C", str(PROJECT_ROOT), "push", "origin"], check=True)
 
     print("\nDeploying to public site...")
     subprocess.run(

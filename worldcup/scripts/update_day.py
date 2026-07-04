@@ -2,9 +2,9 @@
 """Update all results for a given day (default: yesterday) in one command.
 
 Usage:
-  scripts/update_day.py SCORE [SCORE ...]
-  scripts/update_day.py --date YYYY-MM-DD SCORE [SCORE ...]
-  scripts/update_day.py --list [--date YYYY-MM-DD]
+  worldcup/scripts/update_day.py SCORE [SCORE ...]
+  worldcup/scripts/update_day.py --date YYYY-MM-DD SCORE [SCORE ...]
+  worldcup/scripts/update_day.py --list [--date YYYY-MM-DD]
 
 SCORE format: HOME-AWAY  (e.g. 2-1, 0-0, 1-3)
 
@@ -15,20 +15,20 @@ You must supply one score per game on that day, or fewer to partially update
 After updating the data and rebuilding the HTML, the script commits and
 pushes the changes to the private admin repo (`origin`), then deploys the
 rebuilt site/ to the public GitHub Pages repo (equivalent to running
-scripts/deploy.py). Pass --no-push to skip both and only update local files.
+worldcup/scripts/deploy.py). Pass --no-push to skip both and only update local files.
 
 Examples:
   # Update yesterday's 6 games:
-  python scripts/update_day.py 2-1 0-0 1-3 2-0 1-0 3-2
+  python worldcup/scripts/update_day.py 2-1 0-0 1-3 2-0 1-0 3-2
 
   # List today's games without updating:
-  python scripts/update_day.py --list
+  python worldcup/scripts/update_day.py --list
 
   # Update a specific date:
-  python scripts/update_day.py --date 2026-06-24 3-0 1-1 2-0 4-1 0-2 1-0
+  python worldcup/scripts/update_day.py --date 2026-06-24 3-0 1-1 2-0 4-1 0-2 1-0
 
   # Update without touching git (local files only):
-  python scripts/update_day.py --no-push 2-1 0-0
+  python worldcup/scripts/update_day.py --no-push 2-1 0-0
 
 ELO changes are not set by this script — use set_result.py afterwards if needed.
 """
@@ -93,7 +93,7 @@ def main():
         if not args.scores:
             print("\nPass scores as arguments to update, e.g.:")
             example = " ".join("X-X" for _ in day_games)
-            print(f"  python scripts/update_day.py {example}")
+            print(f"  python worldcup/scripts/update_day.py {example}")
         return
 
     if len(args.scores) > len(day_games):

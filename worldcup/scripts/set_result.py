@@ -2,11 +2,11 @@
 """Set the result of a game and regenerate the HTML pages.
 
 Usage:
-  scripts/set_result.py YEAR GAME_NUMBER HOME_SCORE AWAY_SCORE [ELO_CHANGE --gains {home|away}]
-  scripts/set_result.py --list-teams
+  worldcup/scripts/set_result.py YEAR GAME_NUMBER HOME_SCORE AWAY_SCORE [ELO_CHANGE --gains {home|away}]
+  worldcup/scripts/set_result.py --list-teams
 
 Example:
-  scripts/set_result.py 2026 13 1 1 15 --gains away
+  worldcup/scripts/set_result.py 2026 13 1 1 15 --gains away
 
 GAME_NUMBER is the game's 1-based position in chronological order within
 that World Cup (shown as the "#" column on the page).
@@ -21,7 +21,7 @@ all games and regenerate the embedded data in all three *.html pages.
 
 After rebuilding, the script commits and pushes the change to the private
 admin repo (`origin`), then deploys the rebuilt site/ to the public GitHub
-Pages repo (equivalent to running scripts/deploy.py). Pass --no-push to
+Pages repo (equivalent to running worldcup/scripts/deploy.py). Pass --no-push to
 skip both and only update local files.
 
 --list-teams prints the index of every team's shorthand, full name, and

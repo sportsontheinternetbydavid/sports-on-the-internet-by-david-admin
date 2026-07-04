@@ -3,7 +3,7 @@
 What the admin site should do/look like. This is a **completely separate site** from the public one (see `requirements-public.md`) — not a mirror of it, not the public site with a toggle flipped. It exists for exactly one job: entering/correcting match results. Nothing here is meant for a visitor to ever see.
 
 **Terminology note**, because "admin" gets used two different ways in this project and they must not be conflated:
-- The **private admin repo** (`sportsontheworldwidewebadmin`) is where all source code lives — scripts, data, docs, `shared.js`/`shared.css`, and the templates for *both* sites. This already exists and is unchanged by this doc; see `way-of-working.md`.
+- The **private admin repo** (`sportsontheworldwidewebadmin`) is where all source code lives — scripts, data, docs, `shared.js`/`shared.css`, and the templates for *both* sites. This already exists and is unchanged by this doc; see `../way-of-working.md`.
 - The **admin site** is a second, separate deployable website described by this doc — a small internal tool for data entry. It is new. It does not exist yet as a build target.
 
 ## Status
@@ -12,7 +12,7 @@ Not yet implemented. This doc describes the target; `scripts/build.py` does not 
 
 ## Hosting
 
-Local-only for now — served the same way the public site is previewed today, via a local HTTP server (e.g. `python3 -m http.server`), never deployed anywhere reachable from outside your machine. Later, this can get its own repo and its own deployment (mirroring the existing public two-repo split described in `way-of-working.md`), gated by a login. Nothing in this doc should assume a particular future hosting/auth mechanism — the site's behavior shouldn't need to change when that gets added.
+Local-only for now — served the same way the public site is previewed today, via a local HTTP server (e.g. `python3 -m http.server`), never deployed anywhere reachable from outside your machine. Later, this can get its own repo and its own deployment (mirroring the existing public two-repo split described in `../way-of-working.md`), gated by a login. Nothing in this doc should assume a particular future hosting/auth mechanism — the site's behavior shouldn't need to change when that gets added.
 
 Because it is only ever served over HTTP (never opened via `file://`, unlike the public pages), the admin site is **not** bound by the public site's "must embed data as JS constants" constraint (see `requirements-public.md` → this doc's own *Data* section below). It may fetch `data/<year>.json` directly at runtime. This is a meaningful simplification and the intended default, but open to revision.
 
@@ -25,7 +25,7 @@ A minimal internal tool, used by one person (you), for entering and correcting W
 - One page per World Cup year (1998–2026), same year set as the public site.
 - A simple year switcher at the top to jump between years — no `History`, no `Home`, no link back to the public site. This tool has one purpose; there's nothing else to navigate to.
 - No Match List / Rankings / Groups / Knockout tab strip — there is only ever the match list, since that's the only view this site has.
-- No brand styling requirement. Legible and fast beats polished — flags are shown plainly for identification, not as the public site's tilted/desaturated "stickers." Construction-paper aesthetic (`brand.md`) does not apply here.
+- No brand styling requirement. Legible and fast beats polished — flags are shown plainly for identification, not as the public site's tilted/desaturated "stickers." Construction-paper aesthetic (`../brand.md`) does not apply here.
 
 ## Match list
 
@@ -174,7 +174,7 @@ Fix: when a MD2 game appears before the final MD1 game in the TSV, swap their po
 4. Map TSV team codes to `teams.json` names (see code map above)
 5. Build the `games` array in TSV order, applying any MD boundary swaps
 6. Check `data/teams.json` for any teams not yet present; add them with confederation and flag-icons code
-7. Download missing flag SVGs from `https://github.com/lipis/flag-icons/tree/main/flags/4x3` into **both** `data/flags/` and `site/football/worldcup/flags/` — the HTML pages load flags from the latter; `data/flags/` is the source copy kept in sync
+7. Download missing flag SVGs from `https://github.com/lipis/flag-icons/tree/main/flags/4x3` into **both** `data/flags/` and `../site/football/worldcup/flags/` — the HTML pages load flags from the latter; `data/flags/` is the source copy kept in sync
 8. Add the year to `YEARS` and a matching entry to `PER_YEAR_CONFIG` in `scripts/build.py` (32-team format uses the same gameset structure as 2018/2022)
 9. Run `scripts/build.py`
 
@@ -183,7 +183,7 @@ Fix: when a MD2 game appears before the final MD1 game in the TSV, swap their po
 ### Storage & delivery
 
 - Match data is stored in separate data files (one per World Cup, e.g. `data/2018.json`), plus `data/teams.json`. These files are the source of truth.
-- The public site's pages open directly via `file://` with no server (per `way-of-working.md`), so they cannot `fetch` the data files at runtime — each World Cup page embeds the contents of its corresponding data file plus `data/teams.json` as JS constants. The embedded constants must be kept in sync with the data files and are clearly marked (e.g. a comment noting the source file) so it's obvious they are a copy, not hand-edited separately.
+- The public site's pages open directly via `file://` with no server (per `../way-of-working.md`), so they cannot `fetch` the data files at runtime — each World Cup page embeds the contents of its corresponding data file plus `data/teams.json` as JS constants. The embedded constants must be kept in sync with the data files and are clearly marked (e.g. a comment noting the source file) so it's obvious they are a copy, not hand-edited separately.
 - The admin site is always served over HTTP (see *Hosting* above), so it is not bound by this constraint and may fetch `data/<year>.json` directly instead of requiring embedded constants.
 
 ### Scripts
@@ -237,6 +237,6 @@ A single shared file `data/teams.json`, used across all World Cups.
 | name | string | Must match team names used in game records |
 | shorthand | string | FIFA 3-letter code, e.g. `BEL`. Used as a shorthand identifier in `scripts/set_result.py` |
 | confederation | string | One of: Europe, Asia, Africa, South America, North America, Oceania |
-| flag | string | [flag-icons](https://github.com/lipis/flag-icons) code for the team's flag (e.g. `be`), used to look up the SVG at `site/football/worldcup/flags/<flag>.svg` (also kept in `data/flags/`) |
+| flag | string | [flag-icons](https://github.com/lipis/flag-icons) code for the team's flag (e.g. `be`), used to look up the SVG at `../site/football/worldcup/flags/<flag>.svg` (also kept in `data/flags/`) |
 
-To add a new team: add its row to `data/teams.json` with the appropriate flag-icons code, download the corresponding SVG from the [flag-icons 4x3 flags folder](https://github.com/lipis/flag-icons/tree/main/flags/4x3) into **both** `data/flags/<flag>.svg` and `site/football/worldcup/flags/<flag>.svg` (the HTML loads flags from the latter; `data/flags/` is kept in sync as the source copy), then run `scripts/build.py`.
+To add a new team: add its row to `data/teams.json` with the appropriate flag-icons code, download the corresponding SVG from the [flag-icons 4x3 flags folder](https://github.com/lipis/flag-icons/tree/main/flags/4x3) into **both** `data/flags/<flag>.svg` and `../site/football/worldcup/flags/<flag>.svg` (the HTML loads flags from the latter; `data/flags/` is kept in sync as the source copy), then run `scripts/build.py`.

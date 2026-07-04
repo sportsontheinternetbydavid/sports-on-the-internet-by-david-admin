@@ -2,11 +2,11 @@
 """Set a team's initial ELO for a tournament and regenerate the HTML pages.
 
 Usage:
-  scripts/set_team_elo.py YEAR TEAM_SHORTHAND ELO
-  scripts/set_team_elo.py --list-teams
+  worldcup/scripts/set_team_elo.py YEAR TEAM_SHORTHAND ELO
+  worldcup/scripts/set_team_elo.py --list-teams
 
 Example:
-  scripts/set_team_elo.py 2018 FRA 1998
+  worldcup/scripts/set_team_elo.py 2018 FRA 1998
 
 TEAM_SHORTHAND is the FIFA 3-letter code (use --list-teams to see all).
 ELO is a positive integer — the team's rating at the start of the tournament.

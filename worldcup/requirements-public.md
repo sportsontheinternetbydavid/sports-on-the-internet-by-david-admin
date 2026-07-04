@@ -2,7 +2,7 @@
 
 What the public-facing SportsOnTheInternet site should do/look like — the read-only site anyone can visit. This is a strict subset of what the project used to be: it has **no admin mode, no data-entry UI, no `?admin` param, no mode toggle of any kind**. All of that now lives in a completely separate site, documented in `requirements-admin.md`. The two are not mirrors of each other — the admin site is a purpose-built internal tool, not "this site plus a toggle."
 
-See `00-index.md` for how this doc relates to `requirements-admin.md` and the rest of the project's docs.
+See `../00-index.md` for how this doc relates to `requirements-admin.md` and the rest of the project's docs.
 
 ## Homepage (`index.html`)
 
@@ -37,7 +37,7 @@ The homepage is the SportsOnTheInternet landing page. It reflects the brand: kid
 - Text: near-black `#1a1a1a`.
 - Section header strips: one construction paper color each — Football uses red `#C0392B`, More Sports uses green `#1E8449`.
 - "Coming Soon" badge: yellow `#F4D03F`, slight rotation, marker font.
-- No clean web-safe primaries. Colors come from the construction paper palette in `brand.md`.
+- No clean web-safe primaries. Colors come from the construction paper palette in `../brand.md`.
 
 ### Handmade feel
 - Cards use `border-radius` with slightly varied values (not perfectly round) to feel hand-cut.
@@ -143,7 +143,7 @@ Since this site has no admin mode at all, there is exactly one signal: **local v
 | Local | cream | dashed |
 | Live | cream | solid |
 
-**Implementation:** the icon is not a static image file. It's a small inline SVG (a circle + a pentagon, evoking a soccer ball) built as a data URI at load time by `window.__setFavicon()`, deriving `isLocal` once from `location.hostname`. The function is duplicated in two places rather than shared, because it must run before any page-specific data exists: `scripts/build.py`'s `FAVICON_SCRIPT` constant (reused for `history.html` and every year page) and a hand-copied version in `site/index.html`, since the homepage is hand-authored and not a build artifact.
+**Implementation:** the icon is not a static image file. It's a small inline SVG (a circle + a pentagon, evoking a soccer ball) built as a data URI at load time by `window.__setFavicon()`, deriving `isLocal` once from `location.hostname`. The function is duplicated in two places rather than shared, because it must run before any page-specific data exists: `scripts/build.py`'s `FAVICON_SCRIPT` constant (reused for `history.html` and every year page) and a hand-copied version in `../site/index.html`, since the homepage is hand-authored and not a build artifact.
 
 ---
 

@@ -3,7 +3,7 @@
 page template defined in this file.
 
 Run this after editing any data/*.json file by hand, or use
-scripts/set_result.py for a one-line score update.
+worldcup/scripts/set_result.py for a one-line score update.
 
 For tournament files that include a top-level "teamElos" key, homeEloPre and
 awayEloPre are derived automatically and written back to the JSON before the
@@ -16,7 +16,8 @@ import json
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent  # worldcup/ — data/, shared.css, shared.js live here
+PROJECT_ROOT = ROOT.parent  # repo root — site/ (deployed output) lives here, not under worldcup/
 YEARS = [1998, 2002, 2006, 2010, 2014, 2018, 2022, 2026]
 
 # Per-year static configuration: gameset boundaries and the comment that
@@ -745,13 +746,13 @@ def main():
         script_block = build_script_block(year, games_js, teams_js, team_elos_js, config)
         html = page_html(year, script_block, shared_css, shared_js)
 
-        path = ROOT / "site" / "football" / "worldcup" / f"{year}.html"
+        path = PROJECT_ROOT / "site" / "football" / "worldcup" / f"{year}.html"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(html)
         print(f"Updated site/football/worldcup/{year}.html")
 
     history_html = build_history_page(shared_css)
-    history_path = ROOT / "site" / "football" / "worldcup" / "history.html"
+    history_path = PROJECT_ROOT / "site" / "football" / "worldcup" / "history.html"
     history_path.write_text(history_html)
     print("Updated site/football/worldcup/history.html")
 
