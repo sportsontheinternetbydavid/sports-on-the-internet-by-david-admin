@@ -5,11 +5,13 @@ Goal: get the project into a state comfortable to share with friends — new inf
 New infra, branding, and doc cleanup are done. What's left is retiring the legacy account/repos and a final close-out.
 
 ## Retire legacy repos/account
-- [x] Old public repo (`sportsontheworldwideweb/sportsontheworldwideweb.github.io`) reduced to a single "moved" page linking to the new domain — kept in place rather than deleted
-- [ ] Decide whether/when to delete the old public repo outright, now that it's just a redirect notice
-- [ ] Archive (then delete) the old admin repo under `sportsontheworldwideweb`
-- [ ] Decide the fate of the old GitHub account and its email
+
+Old public repo (`sportsontheworldwideweb/sportsontheworldwideweb.github.io`) is already reduced to a single "moved" page linking to the new domain, kept in place for now rather than deleted. No old admin repo exists to retire — `sportsontheworldwidewebadmin` was referenced in old docs but never actually created on GitHub (confirmed via API: 404). Three things left, not doing yet, logged for later:
+
+- [ ] Delete GitHub repository: `sportsontheworldwideweb/sportsontheworldwideweb.github.io`
+- [ ] Delete GitHub user: `sportsontheworldwideweb`
+- [ ] Delete Google account: `sportsontheworldwideweb@gmail.com`
 
 ## Close-out
-- [ ] Old repos handled per above, old account retired (or knowingly kept dormant)
+- [ ] All three deletions above done (or knowingly deferred)
 - [ ] User confirms comfortable sharing the live URL — milestone done, delete this file

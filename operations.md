@@ -36,6 +36,9 @@ Pushing to either repo (directly, or via `worldcup/scripts/deploy.py`) requires 
 - Switch/add account: `gh auth login`
 - Git on macOS typically caches HTTPS credentials via the `osxkeychain` credential helper (`git config credential.helper`), keyed by host (`github.com`) — not by account. Authenticating as a different GitHub account on the same machine replaces the cached credential for anyone using that helper.
 
-## Legacy (retired)
+## Legacy (to retire)
 
-The project previously ran under the `sportsontheworldwideweb` GitHub account and its two repos, with no custom domain (served from `sportsontheworldwideweb.github.io`). Those assets are being retired — see `workbench/public-launch-milestone.md` for status.
+- **GitHub account**: `sportsontheworldwideweb`, backed by Google account `sportsontheworldwideweb@gmail.com`.
+- **GitHub repo**: `sportsontheworldwideweb/sportsontheworldwideweb.github.io` — the only repo that ever existed under this account (no custom domain; served from the default `sportsontheworldwideweb.github.io` hostname). A previously assumed private admin repo (`sportsontheworldwidewebadmin`) was never actually created on GitHub, despite being referenced as existing in older project docs — confirmed via a direct API check.
+
+Retirement status tracked in `workbench/public-launch-milestone.md`.
