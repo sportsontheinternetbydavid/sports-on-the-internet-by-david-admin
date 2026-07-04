@@ -18,14 +18,15 @@ Everything specific to a single feature lives in its own top-level folder, named
 | # | Doc | Responsibility |
 |---|-----|----------------|
 | 5a | [worldcup/requirements-public.md](worldcup/requirements-public.md) | What the public World Cup ELO site should be/do. Source of truth for desired behavior on the site anyone can visit — no admin/data-entry content. |
-| 5b | [worldcup/requirements-admin.md](worldcup/requirements-admin.md) | What the (separate, not-yet-built) admin site should be/do. Source of truth for the internal data-entry tool. Not a mirror of the public site — see the doc for why. |
+| 5b | [worldcup/requirements-admin.md](worldcup/requirements-admin.md) | What the admin site should be/do. Source of truth for the internal data-entry tool. Not a mirror of the public site — see the doc for why. |
 | 6 | [worldcup/scale-algorithm.md](worldcup/scale-algorithm.md) | Deep-dive on the Scale view layout algorithm. Update when scale rendering logic changes. |
-| 7 | [worldcup/scripts/build.py](worldcup/scripts/build.py) | Regenerates HTML pages in site/ from worldcup/data/*.json and worldcup/shared.js/shared.css. |
-| 8 | [worldcup/scripts/set_result.py](worldcup/scripts/set_result.py) | Enters a game result and calls build.py. The normal data-entry path. |
-| 9 | [worldcup/scripts/set_team_elo.py](worldcup/scripts/set_team_elo.py) | Sets a team's initial ELO and calls build.py. |
-| 10 | [worldcup/data/](worldcup/data/) | Source data: 2014.json, 2018.json, 2022.json, 2026.json, teams.json. Not deployed directly. |
-| 11 | [worldcup/shared.js](worldcup/shared.js) | Shared JS source — inlined into World Cup pages at build time. |
-| 12 | [worldcup/shared.css](worldcup/shared.css) | Shared CSS source — inlined into World Cup pages at build time. |
+| 7 | [worldcup/scripts/build.py](worldcup/scripts/build.py) | Regenerates the public HTML pages in site/ from worldcup/data/*.json and worldcup/shared.js/shared.css. |
+| 8 | [worldcup/scripts/build_admin.py](worldcup/scripts/build_admin.py) | Regenerates the admin site's per-year pages in admin/. Data is fetched at runtime, not embedded. |
+| 9 | [worldcup/scripts/set_result.py](worldcup/scripts/set_result.py) | Enters a game result and calls build.py. The normal data-entry path. |
+| 10 | [worldcup/scripts/set_team_elo.py](worldcup/scripts/set_team_elo.py) | Sets a team's initial ELO and calls build.py. |
+| 11 | [worldcup/data/](worldcup/data/) | Source data: 2014.json, 2018.json, 2022.json, 2026.json, teams.json. Not deployed directly. |
+| 12 | [worldcup/shared.js](worldcup/shared.js) | Shared JS source — inlined into World Cup pages at build time. |
+| 13 | [worldcup/shared.css](worldcup/shared.css) | Shared CSS source — inlined into World Cup pages at build time. |
 
 ## Site (deployed)
 
@@ -41,7 +42,13 @@ Everything under `site/` is what goes online. The static host points at this fol
 | [site/football/worldcup/2026.html](site/football/worldcup/2026.html) | World Cup 2026 page. Build artifact — do not edit directly. |
 | [site/football/worldcup/flags/](site/football/worldcup/flags/) | Flag SVGs served alongside the World Cup pages. |
 
-The admin site described in `worldcup/requirements-admin.md` has no output folder yet — it hasn't been built. When it is, its output goes in `admin/` (a new top-level folder, sibling to `site/`) — never under `site/`, since `site/` is what gets deployed to the public repo (see `way-of-working.md` → *Two-repo structure*) and the admin site must never end up there.
+## Admin (local-only, not deployed)
+
+The admin site described in `worldcup/requirements-admin.md` lives in `admin/` — a top-level folder, sibling to `site/`, never nested under it. Unlike `site/`, this is never deployed anywhere: no static host points at it, and it must never be pushed to the public repo (see `way-of-working.md` → *Two-repo structure*). It's served locally only, e.g. `python3 -m http.server --directory .` from the repo root, so its pages can fetch `worldcup/data/*.json` at runtime.
+
+| Path | Responsibility |
+|------|----------------|
+| [admin/2026.html](admin/2026.html) | World Cup 2026 admin page (and one per other year). Build artifact — do not edit directly. |
 
 ## Adding a new feature
 

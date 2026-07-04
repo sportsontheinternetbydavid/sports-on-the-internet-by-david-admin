@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin — World Cup 2022</title>
+<script>
+(function() {
+  function faviconHref(isLocal) {
+    var dash = isLocal ? ' stroke-dasharray="3 2.5"' : '';
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
+      + '<circle cx="16" cy="16" r="14" fill="#C0392B" stroke="#FFFFFF" stroke-width="2.5"' + dash + '/>'
+      + '<path d="M16,10 L21.7,14.2 L19.5,20.9 L12.5,20.9 L10.3,14.2 Z" fill="#FFFFFF"/>'
+      + '</svg>';
+    return 'data:image/svg+xml,' + encodeURIComponent(svg);
+  }
+  window.__setFavicon = function() {
+    var isLocal = ['localhost', '127.0.0.1', ''].indexOf(location.hostname) !== -1;
+    var link = document.createElement('link');
+    link.rel = 'icon';
+    link.type = 'image/svg+xml';
+    link.href = faviconHref(isLocal);
+    document.head.appendChild(link);
+  };
+  window.__setFavicon();
+})();
+</script>
+<style>
+* { box-sizing: border-box; }
+html { color-scheme: light; }
+body { font-family: system-ui, sans-serif; font-size: 0.95rem; margin: 0 auto; max-width: 900px; padding: 1.5rem 1.5rem 4rem; color: #1a1a1a; background: #fff; }
+h1 { font-size: 1.3rem; margin: 0.5rem 0 1rem; }
+nav { margin-bottom: 1rem; font-size: 0.85rem; }
+nav a { margin-right: 0.6rem; color: #1A5276; }
+nav strong { margin-right: 0.6rem; }
+table { border-collapse: collapse; width: 100%; }
+th, td { padding: 0.4rem 0.6rem; text-align: left; border-bottom: 1px solid #ddd; }
+th { background: #eee; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: #f5f5f5; }
+.flag-cell { display: flex; align-items: center; gap: 0.4rem; }
+.flag-cell .icon { display: inline-block; width: 1.6em; height: 1.1em; background-size: cover; background-position: center; background-repeat: no-repeat; border: 1px solid #ccc; }
+.score { width: 2.5em; text-align: center; }
+.expand-row td { background: #f4f8ff; cursor: default; padding: 0.6rem 0.8rem; }
+.ur-line { display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; margin: 0.35rem 0; }
+.ur-line label { display: flex; align-items: center; gap: 0.3rem; white-space: nowrap; }
+.ur-line input[type=number] { width: 4.5rem; padding: 0.2rem; }
+.ur-cmd { font-family: monospace; flex: 1; min-width: 16rem; padding: 0.3rem; }
+.loading { color: #888; font-style: italic; }
+</style>
+</head>
+<body>
+<nav><a href="1998.html">1998</a><a href="2002.html">2002</a><a href="2006.html">2006</a><a href="2010.html">2010</a><a href="2014.html">2014</a><a href="2018.html">2018</a><strong>2022</strong><a href="2026.html">2026</a></nav>
+<h1>World Cup 2022 — Admin</h1>
+<table>
+  <thead><tr><th>Date</th><th>#</th><th>Home</th><th>Away</th></tr></thead>
+  <tbody id="games"><tr><td colspan="4" class="loading">Loading…</td></tr></tbody>
+</table>
+
+<script>
+const YEAR = 2022;
+
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function flagIcon(flag, name) {
+  return flag
+    ? `<span class="icon" style="background-image:url('../site/football/worldcup/flags/${flag}.svg')" title="${esc(name)}"></span>`
+    : '';
+}
+
+let expandRow = null;
+let expandGameNumber = null;
+
+function toggleExpand(game, tr, flagByTeam) {
+  if (expandRow) {
+    expandRow.remove();
+    expandRow = null;
+    if (expandGameNumber === game.gameNumber) { expandGameNumber = null; return; }
+  }
+  expandGameNumber = game.gameNumber;
+
+  const hsVal = game.homeScore != null ? game.homeScore : '';
+  const asVal = game.awayScore != null ? game.awayScore : '';
+  const eloVal = game.eloChange != null ? Math.abs(game.eloChange) : '';
+  const gainsVal = game.eloChange != null ? (game.eloChange >= 0 ? 'home' : 'away') : '';
+  const isDraw = hsVal !== '' && asVal !== '' && hsVal === asVal;
+
+  const expandTr = document.createElement('tr');
+  expandTr.className = 'expand-row';
+  const td = document.createElement('td');
+  td.colSpan = 4;
+  td.innerHTML = `
+    <div class="ur-line"><strong>#${game.gameNumber}: ${esc(game.homeTeam)} vs ${esc(game.awayTeam)}</strong></div>
+    <div class="ur-line">
+      <label>Home score: <input class="ur-hs score" type="number" min="0" value="${hsVal}"></label>
+      <label>Away score: <input class="ur-as score" type="number" min="0" value="${asVal}"></label>
+      <label>ELO magnitude (opt): <input class="ur-elo" type="number" min="0" value="${eloVal}"></label>
+      <label class="ur-gains-wrap" style="display:${isDraw ? 'flex' : 'none'}">Who gains ELO:
+        <select class="ur-gains">
+          <option value="" ${gainsVal === '' ? 'selected' : ''}>—</option>
+          <option value="home" ${gainsVal === 'home' ? 'selected' : ''}>${esc(game.homeTeam)}</option>
+          <option value="away" ${gainsVal === 'away' ? 'selected' : ''}>${esc(game.awayTeam)}</option>
+        </select>
+      </label>
+    </div>
+    <div class="ur-line">
+      <button class="ur-gen">Generate command</button>
+      <input class="ur-cmd" type="text" readonly placeholder="command will appear here">
+      <button class="ur-copy">Copy</button>
+    </div>`;
+
+  td.addEventListener('click', e => e.stopPropagation());
+
+  function updateGainsVisibility() {
+    const hs = td.querySelector('.ur-hs').value;
+    const as_ = td.querySelector('.ur-as').value;
+    const draw = hs !== '' && as_ !== '' && hs === as_;
+    td.querySelector('.ur-gains-wrap').style.display = draw ? 'flex' : 'none';
+  }
+  td.querySelector('.ur-hs').addEventListener('input', updateGainsVisibility);
+  td.querySelector('.ur-as').addEventListener('input', updateGainsVisibility);
+
+  td.querySelector('.ur-gen').addEventListener('click', () => {
+    const hs = td.querySelector('.ur-hs').value;
+    const as_ = td.querySelector('.ur-as').value;
+    const elo = td.querySelector('.ur-elo').value;
+    const gains = td.querySelector('.ur-gains').value;
+    const draw = hs !== '' && as_ !== '' && hs === as_;
+    let cmd = `python3 worldcup/scripts/set_result.py ${YEAR} ${game.gameNumber} ${hs} ${as_}`;
+    if (elo !== '') cmd += ` ${elo} --gains ${draw ? (gains || '???') : (Number(hs) > Number(as_) ? 'home' : 'away')}`;
+    td.querySelector('.ur-cmd').value = cmd;
+  });
+
+  td.querySelector('.ur-copy').addEventListener('click', () => {
+    const cmdInput = td.querySelector('.ur-cmd');
+    cmdInput.select();
+    navigator.clipboard.writeText(cmdInput.value);
+  });
+
+  expandTr.appendChild(td);
+  tr.after(expandTr);
+  expandRow = expandTr;
+}
+
+async function main() {
+  const [data, teams] = await Promise.all([
+    fetch(`../worldcup/data/${YEAR}.json`).then(r => r.json()),
+    fetch('../worldcup/data/teams.json').then(r => r.json()),
+  ]);
+  const games = data.games;
+  const flagByTeam = {};
+  for (const t of teams) flagByTeam[t.name] = t.flag;
+
+  const tbody = document.getElementById('games');
+  tbody.innerHTML = '';
+  if (games.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4">No games</td></tr>';
+    return;
+  }
+
+  for (const game of games) {
+    const tr = document.createElement('tr');
+    const hs = game.homeScore != null ? game.homeScore : '';
+    const as_ = game.awayScore != null ? game.awayScore : '';
+    tr.innerHTML = `
+      <td>${game.date || ''}</td>
+      <td>#${game.gameNumber}</td>
+      <td><div class="flag-cell">${flagIcon(flagByTeam[game.homeTeam], game.homeTeam)}${esc(game.homeTeam)} <strong>${hs}</strong></div></td>
+      <td><div class="flag-cell"><strong>${as_}</strong> ${flagIcon(flagByTeam[game.awayTeam], game.awayTeam)}${esc(game.awayTeam)}</div></td>
+    `;
+    tr.addEventListener('click', () => toggleExpand(game, tr, flagByTeam));
+    tbody.appendChild(tr);
+  }
+}
+
+main();
+</script>
+</body>
+</html>

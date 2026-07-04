@@ -8,7 +8,7 @@ What the admin site should do/look like. This is a **completely separate site** 
 
 ## Status
 
-Not yet implemented. This doc describes the target; `scripts/build.py` does not yet produce this site, and there is no admin-site output folder yet. The old single-site behavior (a `?admin` URL param / Data Entry toggle bolted onto the public pages) is being retired — see `requirements-public.md`, which now describes the public site with all of that removed.
+Implemented. `scripts/build_admin.py` generates one page per year into `../admin/` (e.g. `../admin/2026.html`). The old single-site behavior (a `?admin` URL param / Data Entry toggle bolted onto the public pages) has been retired — see `requirements-public.md`, which describes the public site with all of that removed.
 
 ## Hosting
 

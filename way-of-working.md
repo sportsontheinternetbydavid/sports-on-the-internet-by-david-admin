@@ -35,7 +35,7 @@ This project uses two GitHub repos under the `sportsontheworldwideweb` account:
 
 **What goes in the public repo:** the contents of `site/` only — HTML pages, flags, nothing else. Think of it as the website, not the project.
 
-**What stays private:** `worldcup/data/`, `worldcup/scripts/`, `worldcup/shared.js`, `worldcup/shared.css`, `worldcup/requirements-public.md`, `worldcup/requirements-admin.md`, `way-of-working.md`, all docs. Anything that isn't a finished published page.
+**What stays private:** `worldcup/data/`, `worldcup/scripts/`, `worldcup/shared.js`, `worldcup/shared.css`, `worldcup/requirements-public.md`, `worldcup/requirements-admin.md`, `way-of-working.md`, `admin/`, all docs. Anything that isn't a finished published page.
 
 **Deploying:** run `worldcup/scripts/deploy.py` to push the current `site/` contents to the public repo. Do this after a build when you're happy with the result. `worldcup/scripts/update_day.py` and `worldcup/scripts/set_result.py` are the automatic triggers — both commit/push to the admin repo and deploy to the public repo by default after updating scores, via the shared `worldcup/scripts/gitops.py` helper (pass `--no-push` to opt out and update local files only).
 
