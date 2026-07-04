@@ -54,6 +54,13 @@ Every script lives in `worldcup/scripts/`, is plain Python 3 with no dependencie
 - Commit before running `worldcup/scripts/set_result.py` or editing data files by hand. `build.py` writes directly to the HTML pages; a clean working tree is your only rollback if something goes wrong.
 - Normal commit rhythm: one commit per session, or one per result batch if entering several games at once.
 
+## Local machine dependencies
+
+Nothing in this workflow should silently depend on undocumented state on whichever machine is running it. If a step needs specific local setup to work, that dependency — and how to check/fix it — must be named here, not just assumed or discovered by hitting an error.
+
+**Known dependencies:**
+- **Git authentication for `github.com`** — required for any `git push` (either remote) and for `worldcup/scripts/deploy.py`, which pushes on your behalf. Must be authenticated as the `sportsontheinternetbydavid` account (see `operations.md`), not any other account that happens to be cached. Check with `gh auth status`; switch with `gh auth login`. This project's push credential caching mechanism (e.g. the macOS Keychain `osxkeychain` git credential helper) is machine-specific and not tracked by this repo — a fresh machine, or one previously used for another GitHub account, needs this checked before pushing.
+
 ## Two-repo structure
 
 This project uses two GitHub repos under the `sportsontheinternetbydavid` account:
