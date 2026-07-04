@@ -54,12 +54,16 @@ Every script lives in `worldcup/scripts/`, is plain Python 3 with no dependencie
 - Commit before running `worldcup/scripts/set_result.py` or editing data files by hand. `build.py` writes directly to the HTML pages; a clean working tree is your only rollback if something goes wrong.
 - Normal commit rhythm: one commit per session, or one per result batch if entering several games at once.
 
-## Local machine dependencies
+## Local & session state
 
-Nothing in this workflow should silently depend on undocumented state on whichever machine is running it. If a step needs specific local setup to work, that dependency — and how to check/fix it — must be named here, not just assumed or discovered by hitting an error.
+Nothing this project needs should live *only* outside version control. Three specific cases:
 
-**Known dependencies:**
+**Setup dependencies** — if a workflow step needs specific local machine setup to work, that dependency must be named here, not just assumed or discovered by hitting an error.
 - **Git authentication for `github.com`** — required for any `git push` (either remote) and for `worldcup/scripts/deploy.py`, which pushes on your behalf. Must be authenticated as the `sportsontheinternetbydavid` account (see `operations.md`), not any other account that happens to be cached. Check with `gh auth status`; switch with `gh auth login`. This project's push credential caching mechanism (e.g. the macOS Keychain `osxkeychain` git credential helper) is machine-specific and not tracked by this repo — a fresh machine, or one previously used for another GitHub account, needs this checked before pushing.
+
+**Ephemeral working artifacts** — AI tooling creates files outside this repo while working (plan-mode plan files, scratch/temp directories used to clone or inspect something, etc.). These are disposable by design: fine to use mid-session, expected to be discardable by the end of it. Anything that needs to survive past the session — a decision, a checklist, a doc update — must be written into this repo (typically `workbench/<milestone-name>.md` for in-flight plans, or the relevant root doc for a settled decision) before the session ends. Never leave a durable outcome resting only in a tool-managed file the project doesn't own.
+
+**Boundary with other local projects** — this repo does not depend on other projects or systems on the machine (other codebases, the user's personal planning/documentation system, global tool config) to be built, deployed, or understood — everything needed is in this repo. If that ever stops being true (a script starts reading from outside the repo, a doc's meaning depends on external context), that dependency must be called out explicitly wherever it's introduced — in the relevant doc, not left implicit.
 
 ## Two-repo structure
 
