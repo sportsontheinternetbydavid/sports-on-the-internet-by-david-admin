@@ -8,7 +8,6 @@ New infra, branding, and doc cleanup are done. What's left is retiring the legac
 - [ ] Confirm the new site fully replaces the old one in actual use
 - [ ] Archive (then delete) the old repos under `sportsontheworldwideweb`
 - [ ] Decide the fate of the old GitHub account and its email
-- [ ] Flag any external bookmarks/links still pointing at the old URL, for manual cleanup
 
 ## Close-out
 - [ ] Old repos archived/deleted, old account retired (or knowingly kept dormant)
