@@ -24,7 +24,7 @@ Everything specific to a single feature lives in its own top-level folder, named
 | 8 | [worldcup/scripts/build_admin.py](worldcup/scripts/build_admin.py) | Regenerates the admin site's per-year pages in admin/. Data is fetched at runtime, not embedded. |
 | 9 | [worldcup/scripts/set_result.py](worldcup/scripts/set_result.py) | Enters a game result and calls build.py. The normal data-entry path. |
 | 10 | [worldcup/scripts/set_team_elo.py](worldcup/scripts/set_team_elo.py) | Sets a team's initial ELO and calls build.py. |
-| 11 | [worldcup/data/](worldcup/data/) | Source data: 2014.json, 2018.json, 2022.json, 2026.json, teams.json. Not deployed directly. |
+| 11 | [worldcup/data/](worldcup/data/) | Source data: one JSON file per World Cup (1998, 2002, 2006, 2010, 2014, 2018, 2022, 2026) plus teams.json. Not deployed directly. |
 | 12 | [worldcup/shared.js](worldcup/shared.js) | Shared JS source — inlined into World Cup pages at build time. |
 | 13 | [worldcup/shared.css](worldcup/shared.css) | Shared CSS source — inlined into World Cup pages at build time. |
 
@@ -36,10 +36,7 @@ Everything under `site/` is what goes online. The static host points at this fol
 |------|----------------|
 | [site/index.html](site/index.html) | SportsOnTheInternet homepage. |
 | [site/football/worldcup/history.html](site/football/worldcup/history.html) | Year-over-year knockout comparison (F4/F8/F16). Build artifact — do not edit directly. |
-| [site/football/worldcup/2014.html](site/football/worldcup/2014.html) | World Cup 2014 page. Build artifact — do not edit directly. |
-| [site/football/worldcup/2018.html](site/football/worldcup/2018.html) | World Cup 2018 page. Build artifact — do not edit directly. |
-| [site/football/worldcup/2022.html](site/football/worldcup/2022.html) | World Cup 2022 page. Build artifact — do not edit directly. |
-| [site/football/worldcup/2026.html](site/football/worldcup/2026.html) | World Cup 2026 page. Build artifact — do not edit directly. |
+| [site/football/worldcup/1998.html](site/football/worldcup/1998.html) | World Cup 1998 page (and one per other year: 2002, 2006, 2010, 2014, 2018, 2022, 2026). Build artifact — do not edit directly. |
 | [site/football/worldcup/flags/](site/football/worldcup/flags/) | Flag SVGs served alongside the World Cup pages. |
 
 ## Admin (local-only, not deployed)

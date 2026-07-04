@@ -143,13 +143,13 @@ Since this site has no admin mode at all, there is exactly one signal: **local v
 | Local | cream | dashed |
 | Live | cream | solid |
 
-**Implementation:** the icon is not a static image file. It's a small inline SVG (a circle + a pentagon, evoking a soccer ball) built as a data URI at load time by `window.__setFavicon()`, deriving `isLocal` once from `location.hostname`. The function is duplicated in two places rather than shared, because it must run before any page-specific data exists: `scripts/build.py`'s `FAVICON_SCRIPT` constant (reused for `history.html` and every year page) and a hand-copied version in `../site/index.html`, since the homepage is hand-authored and not a build artifact.
+**Implementation:** the icon is not a static image file. It's a small inline SVG (a circle + a pentagon, evoking a soccer ball) built as a data URI at load time by `window.__setFavicon()`, deriving `isLocal` once from `location.hostname`. The function is duplicated in two places rather than shared, because it must run before any page-specific data exists: `worldcup/scripts/build.py`'s `FAVICON_SCRIPT` constant (reused for `history.html` and every year page) and a hand-copied version in `../site/index.html`, since the homepage is hand-authored and not a build artifact.
 
 ---
 
 ## Overview
 
-A tool for soccer fans to follow and compare how different continental confederations perform across FIFA World Cups — who's gaining rating ground, who's losing it, and how each tournament's results play out game by game. It does this by tracking ELO rating transfers between confederations as matches are played, across the 2018, 2022, and 2026 World Cups.
+A tool for soccer fans to follow and compare how different continental confederations perform across FIFA World Cups — who's gaining rating ground, who's losing it, and how each tournament's results play out game by game. It does this by tracking ELO rating transfers between confederations as matches are played, across every World Cup from 1998 through 2026.
 
 Where the underlying ELO/match data comes from, how it's stored, and how it gets entered are not this doc's concern — see `requirements-admin.md` for all of that.
 
@@ -157,7 +157,7 @@ Where the underlying ELO/match data comes from, how it's stored, and how it gets
 
 ### Pages & navigation
 
-- Each World Cup (2018, 2022, 2026) has its own page with its own URL (`2018.html`, `2022.html`, `2026.html`), so it can be linked/bookmarked directly.
+- Each World Cup from 1998 through 2026 has its own page with its own URL (`1998.html`, `2002.html`, `2006.html`, `2010.html`, `2014.html`, `2018.html`, `2022.html`, `2026.html`), so it can be linked/bookmarked directly.
 - `index.html` is a minimal landing page with a short summary and links to each World Cup's page.
 - Each World Cup page has a utility bar to switch between World Cup pages and back to the landing page — see *Navigation* under *World Cup pages* above for the full tier structure.
 
@@ -177,7 +177,7 @@ The table has two groups of columns: **Game columns** and **Confederation column
   5. **[score separator]** — a column displaying a literal `-` for every played game, visually joining the home and away scores (e.g. the row reads "3 - 1"). No super-header.
   6. **Away** super-header spanning: Score, Flag, ELO.
 - The ELO column for each team combines pre-game ELO and delta into a single cell displayed as a concatenated string, e.g. `1873+4` or `1938-16`. When `eloChange` is null the cell is empty; when only `homeEloPre`/`awayEloPre` is null the pre-ELO portion is omitted and just the delta is shown.
-- Each team is shown as its flag (an SVG image from `data/flags/`) only (no name), with the team's name shown on hover (e.g. via a tooltip).
+- Each team is shown as its flag (an SVG image served from `../site/football/worldcup/flags/`, kept in sync with the source copy at `data/flags/`) only (no name), with the team's name shown on hover (e.g. via a tooltip).
 - Both header rows stay fixed/visible at the top of the viewport when scrolling. The game-column headers (rowspan 2) and the toggle cell are in row 1; the confederation name headers are in row 2, pinned just below row 1. This requires the row-2 `th` elements to have `top` set to the measured height of row 1 (done in JS after each render).
 - Each column is sized to fit its content — no fixed widths are set. If the table is wider than the viewport, it scrolls horizontally.
 - Rows are not clickable and there is no expand panel on this site. Data entry is a completely separate tool — see `requirements-admin.md`.
@@ -220,7 +220,7 @@ Only confederations with at least one team participating in the selected World C
 
 ## Tournament ELO Rankings
 
-A standalone view — only one page view is visible at a time. The World Cup page has a segmented toggle that switches between **Match List**, **Groups**, **Knockout**, and **Rankings**; they never appear simultaneously. The utility bar (links to other years) stays fixed regardless of which view is active. All three World Cup pages (2018, 2022, 2026) have the Rankings view, since all have `teamElos` data.
+A standalone view — only one page view is visible at a time. The World Cup page has a segmented toggle that switches between **Match List**, **Groups**, **Knockout**, and **Rankings**; they never appear simultaneously. The utility bar (links to other years) stays fixed regardless of which view is active. All eight World Cup pages (1998–2026) have the Rankings view, since all have `teamElos` data.
 
 Each view has its own URL via the hash fragment: `2026.html#matches`, `#rankings`, `#groups`, `#knockout`. Switching views updates the hash; loading the page with a hash pre-selects that view. The default (no hash) is Match List.
 
@@ -230,7 +230,7 @@ A **gameset** is a batch of games in which each active team plays at most once �
 
 Gamesets are defined per tournament. The boundary for each gameset is `lastGameNumber` — games up to and including that number belong to the gameset.
 
-**2018 and 2022** (32 teams, 64 games total):
+**1998–2022** (32 teams, 64 games total):
 
 | Gameset | Column label | Description | Game count | Last game # |
 |---------|--------------|-------------|------------|-------------|
@@ -243,7 +243,7 @@ Gamesets are defined per tournament. The boundary for each gameset is `lastGameN
 | 6 | 4 | Semifinals | 2 | 62 |
 | 7 | Final | Third-place game + Final | 2 | 64 |
 
-All 8 gameset columns are always shown for 2018 and 2022.
+All 8 gameset columns are always shown for 1998–2022.
 
 **2026** (48 teams, 104 games total):
 

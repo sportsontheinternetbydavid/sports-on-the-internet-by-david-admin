@@ -4,11 +4,11 @@ What the admin site should do/look like. This is a **completely separate site** 
 
 **Terminology note**, because "admin" gets used two different ways in this project and they must not be conflated:
 - The **private admin repo** (`sportsontheworldwidewebadmin`) is where all source code lives — scripts, data, docs, `shared.js`/`shared.css`, and the templates for *both* sites. This already exists and is unchanged by this doc; see `../way-of-working.md`.
-- The **admin site** is a second, separate deployable website described by this doc — a small internal tool for data entry. It is new. It does not exist yet as a build target.
+- The **admin site** is a second, separate deployable website described by this doc — a small internal tool for data entry. It is new; see *Status* below for what's built.
 
 ## Status
 
-Implemented. `scripts/build_admin.py` generates one page per year into `../admin/` (e.g. `../admin/2026.html`). The old single-site behavior (a `?admin` URL param / Data Entry toggle bolted onto the public pages) has been retired — see `requirements-public.md`, which describes the public site with all of that removed.
+Implemented. `worldcup/scripts/build_admin.py` generates one page per year into `../admin/` (e.g. `../admin/2026.html`). The old single-site behavior (a `?admin` URL param / Data Entry toggle bolted onto the public pages) has been retired — see `requirements-public.md`, which describes the public site with all of that removed.
 
 ## Hosting
 
@@ -41,7 +41,7 @@ Clicking a game row expands an inline panel directly below that row (spanning th
 
 1. The game label (e.g. "#7: Haiti vs Scotland").
 2. Home score, away score, ELO magnitude (optional), and — only when both scores are filled in and equal (a draw) — a "Who gains ELO?" selector showing the two team names.
-3. A "Generate command" button, a read-only copyable text field showing the resulting `scripts/set_result.py` command, and a "Copy" button. (See *Data → Scripts* below for the command format.)
+3. A "Generate command" button, a read-only copyable text field showing the resulting `worldcup/scripts/set_result.py` command, and a "Copy" button. (See *Data → Scripts* below for the command format.)
 
 All inputs are pre-filled with the game's existing values if already set. The "Who gains" selector is pre-selected based on the sign of the existing `eloChange`. Clicking the same row again (or a different row) collapses the open panel. Only one panel is open at a time.
 
@@ -175,8 +175,8 @@ Fix: when a MD2 game appears before the final MD1 game in the TSV, swap their po
 5. Build the `games` array in TSV order, applying any MD boundary swaps
 6. Check `data/teams.json` for any teams not yet present; add them with confederation and flag-icons code
 7. Download missing flag SVGs from `https://github.com/lipis/flag-icons/tree/main/flags/4x3` into **both** `data/flags/` and `../site/football/worldcup/flags/` — the HTML pages load flags from the latter; `data/flags/` is the source copy kept in sync
-8. Add the year to `YEARS` and a matching entry to `PER_YEAR_CONFIG` in `scripts/build.py` (32-team format uses the same gameset structure as 2018/2022)
-9. Run `scripts/build.py`
+8. Add the year to `YEARS` and a matching entry to `PER_YEAR_CONFIG` in `worldcup/scripts/build.py` (32-team format uses the same gameset structure as 2018/2022)
+9. Run `worldcup/scripts/build.py`
 
 ## Data
 
@@ -190,13 +190,13 @@ Fix: when a MD2 game appears before the final MD1 game in the TSV, swap their po
 
 Entering the result of a played game is done via a command-line script, not by hand-editing files. The row-click panel in the admin site's match list (see *Row click — data entry panel* above) generates the command for you.
 
-- `scripts/fetch_results.py` is the primary daily-update tool for the live 2026 tournament. It fetches `https://www.eloratings.net/latest.tsv`, finds any WC games in `2026.json` with null scores that now have results, sets `homeScore`/`awayScore`/`eloChange` for all of them, and runs `build.py`. Run it once (or a few times throughout the day) with no arguments. Supports `--dry-run` to preview changes and `--all` to also include future-dated games. The TSV lists teams in eloratings.net order, which may differ from our home/away assignment; the script detects and corrects for this automatically.
-- `scripts/update_day.py [--date YYYY-MM-DD] SCORE [SCORE ...]` is a manual fallback for when the TSV hasn't caught up yet. Accepts scores in `HOME-AWAY` format (e.g. `2-1 0-0`) in game-number order for the given date (default: yesterday). Updates scores only — ELO changes must be set separately with `set_result.py`. Use `--list` to preview the day's games without updating. After updating the data and rebuilding the HTML, it commits and pushes the change to the private admin repo, then deploys the rebuilt site to the public GitHub Pages repo (same as running `deploy.py`) — pass `--no-push` to update local files only.
-- `scripts/set_team_elo.py YEAR TEAM_SHORTHAND ELO` sets a team's initial ELO in the `teamElos` dict of `data/YEAR.json`, then runs `build.py`. If the data file is a plain list (legacy format), it is automatically upgraded to the `{"teamElos": {}, "games": [...]}` dict format. Use this for 2018 and 2022 data entry before entering game results.
-- `scripts/set_result.py YEAR GAME_NUMBER HOME_SCORE AWAY_SCORE [ELO_CHANGE --gains {home|away}]` finds the game with that `gameNumber` in `data/YEAR.json`, sets its `homeScore`/`awayScore` (and `eloChange` if provided), then runs `build.py` to regenerate derived fields and embedded data. Like `update_day.py`, it then commits and pushes the change to the private admin repo and deploys the rebuilt site to the public GitHub Pages repo by default — pass `--no-push` to update local files only.
+- `worldcup/scripts/fetch_results.py` is the primary daily-update tool for the live 2026 tournament. It fetches `https://www.eloratings.net/latest.tsv`, finds any WC games in `2026.json` with null scores that now have results, sets `homeScore`/`awayScore`/`eloChange` for all of them, and runs `build.py`. Run it once (or a few times throughout the day) with no arguments. Supports `--dry-run` to preview changes and `--all` to also include future-dated games. The TSV lists teams in eloratings.net order, which may differ from our home/away assignment; the script detects and corrects for this automatically.
+- `worldcup/scripts/update_day.py [--date YYYY-MM-DD] SCORE [SCORE ...]` is a manual fallback for when the TSV hasn't caught up yet. Accepts scores in `HOME-AWAY` format (e.g. `2-1 0-0`) in game-number order for the given date (default: yesterday). Updates scores only — ELO changes must be set separately with `set_result.py`. Use `--list` to preview the day's games without updating. After updating the data and rebuilding the HTML, it commits and pushes the change to the private admin repo, then deploys the rebuilt site to the public GitHub Pages repo (same as running `deploy.py`) — pass `--no-push` to update local files only.
+- `worldcup/scripts/set_team_elo.py YEAR TEAM_SHORTHAND ELO` sets a team's initial ELO in the `teamElos` dict of `data/YEAR.json`, then runs `build.py`. If the data file is a plain list (legacy format), it is automatically upgraded to the `{"teamElos": {}, "games": [...]}` dict format. Use this for 2018 and 2022 data entry before entering game results.
+- `worldcup/scripts/set_result.py YEAR GAME_NUMBER HOME_SCORE AWAY_SCORE [ELO_CHANGE --gains {home|away}]` finds the game with that `gameNumber` in `data/YEAR.json`, sets its `homeScore`/`awayScore` (and `eloChange` if provided), then runs `build.py` to regenerate derived fields and embedded data. Like `update_day.py`, it then commits and pushes the change to the private admin repo and deploys the rebuilt site to the public GitHub Pages repo by default — pass `--no-push` to update local files only.
 - When supplying an ELO change, two things are required: the magnitude as a positive number, and which team gains it (`--gains home` or `--gains away`). The script applies the sign and stores the result.
-- `scripts/set_result.py --list-teams` prints the index of every team's shorthand, full name, and confederation, sourced from `data/teams.json`.
-- `scripts/build.py` computes `homeEloPre`/`awayEloPre` for every game (chaining `teamElos` starting ratings through prior results), then regenerates the embedded data in all three `*.html` pages. Run this after any manual edit to a data file.
+- `worldcup/scripts/set_result.py --list-teams` prints the index of every team's shorthand, full name, and confederation, sourced from `data/teams.json`.
+- `worldcup/scripts/build.py` computes `homeEloPre`/`awayEloPre` for every game (chaining `teamElos` starting ratings through prior results), then regenerates the embedded data in all three `*.html` pages. Run this after any manual edit to a data file.
 - All scripts are plain Python 3 with no dependencies and support `-h` / `--help`.
 
 ### Tournament data file structure
@@ -218,7 +218,7 @@ Each entry in the `games` array:
 
 | Field | Type | Notes |
 |-------|------|-------|
-| gameNumber | number | 1-based, chronological order within the World Cup. Stable identifier used by `scripts/set_result.py`. |
+| gameNumber | number | 1-based, chronological order within the World Cup. Stable identifier used by `worldcup/scripts/set_result.py`. |
 | homeTeam | string | |
 | homeScore | number \| null | `null` if not yet played. |
 | awayTeam | string | |
@@ -235,8 +235,8 @@ A single shared file `data/teams.json`, used across all World Cups.
 | Field | Type | Notes |
 |-------|------|-------|
 | name | string | Must match team names used in game records |
-| shorthand | string | FIFA 3-letter code, e.g. `BEL`. Used as a shorthand identifier in `scripts/set_result.py` |
+| shorthand | string | FIFA 3-letter code, e.g. `BEL`. Used as a shorthand identifier in `worldcup/scripts/set_result.py` |
 | confederation | string | One of: Europe, Asia, Africa, South America, North America, Oceania |
 | flag | string | [flag-icons](https://github.com/lipis/flag-icons) code for the team's flag (e.g. `be`), used to look up the SVG at `../site/football/worldcup/flags/<flag>.svg` (also kept in `data/flags/`) |
 
-To add a new team: add its row to `data/teams.json` with the appropriate flag-icons code, download the corresponding SVG from the [flag-icons 4x3 flags folder](https://github.com/lipis/flag-icons/tree/main/flags/4x3) into **both** `data/flags/<flag>.svg` and `../site/football/worldcup/flags/<flag>.svg` (the HTML loads flags from the latter; `data/flags/` is kept in sync as the source copy), then run `scripts/build.py`.
+To add a new team: add its row to `data/teams.json` with the appropriate flag-icons code, download the corresponding SVG from the [flag-icons 4x3 flags folder](https://github.com/lipis/flag-icons/tree/main/flags/4x3) into **both** `data/flags/<flag>.svg` and `../site/football/worldcup/flags/<flag>.svg` (the HTML loads flags from the latter; `data/flags/` is kept in sync as the source copy), then run `worldcup/scripts/build.py`.
