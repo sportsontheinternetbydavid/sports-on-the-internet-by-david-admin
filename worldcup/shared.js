@@ -75,22 +75,32 @@ const matchState = { view: 'elo', colCount: GAME_COL_COUNT };
 
 function gameColsHeader() {
   return (
-    `<th class="narrow" rowspan="2">Date</th>` +
-    `<th class="narrow" rowspan="2">#</th>` +
-    `<th class="spacer" rowspan="2"></th>` +
-    `<th colspan="3" rowspan="2" style="text-align:center">Home</th>` +
-    `<th class="score-sep" rowspan="2"></th>` +
-    `<th colspan="3" rowspan="2" style="text-align:center">Away</th>`
+    `<th class="narrow">Date</th>` +
+    `<th class="narrow">#</th>` +
+    `<th class="spacer"></th>` +
+    `<th colspan="3" style="text-align:center">Home</th>` +
+    `<th class="score-sep"></th>` +
+    `<th colspan="3" style="text-align:center">Away</th>`
   );
 }
 
-function toggleCellHtml(colspan) {
-  return `<th colspan="${colspan}" class="toggle-cell">` +
-    `<div class="view-toggle">` +
-    `<button data-view="elo"${matchState.view === 'elo' ? ' class="active"' : ''}>ELO Shift</button>` +
-    `<button data-view="wld"${matchState.view === 'wld' ? ' class="active"' : ''}>W / D / L</button>` +
-    `<button data-view="stats"${matchState.view === 'stats' ? ' class="active"' : ''}>Stats</button>` +
-    `</div></th>`;
+// The first cell gets a divider border, separating the fixed game-info
+// columns (built by gameColsHeader) from the confederation/stat columns.
+function confHeaderRow(labels) {
+  return labels.map((label, i) => `<th class="conf${i === 0 ? ' conf-first' : ''}">${label}</th>`).join('');
+}
+
+function renderMatchViewToggle() {
+  const container = document.getElementById('match-view-toggle');
+  const views = [['elo', 'ELO Shift'], ['wld', 'W / D / L'], ['stats', 'Stats']];
+  container.innerHTML = views.map(([view, label]) =>
+    `<button class="${matchState.view === view ? 'active' : ''}" onclick="setMatchView('${view}')">${label}</button>`
+  ).join('');
+}
+
+function setMatchView(view) {
+  matchState.view = view;
+  render();
 }
 
 // A knockout-bracket game may not have a concrete team yet — it defers to
@@ -173,19 +183,6 @@ function computeWldRowTotals(games, confederations) {
   return rowTotals;
 }
 
-function wireToggle() {
-  thead.querySelectorAll('.view-toggle button').forEach(btn => {
-    btn.addEventListener('click', () => { matchState.view = btn.dataset.view; render(); });
-  });
-}
-
-function fixStickyHeader() {
-  const rows = thead.querySelectorAll('tr');
-  if (rows.length < 2) return;
-  const row1H = rows[0].getBoundingClientRect().height;
-  rows[1].querySelectorAll('th').forEach(th => { th.style.top = row1H + 'px'; });
-}
-
 function render() {
   const games = GAMES;
   const participating = new Set();
@@ -200,7 +197,7 @@ function render() {
   tbody.innerHTML = '';
 
   if (games.length === 0) {
-    thead.innerHTML = `<tr><th>No games</th></tr><tr></tr>`;
+    thead.innerHTML = `<tr><th>No games</th></tr>`;
     tbody.innerHTML = `<tr><td>No games yet</td></tr>`;
     return;
   }
@@ -215,17 +212,14 @@ function render() {
   else if (matchState.view === 'wld') renderWld(games, ordered, eloRowTotals);
   else renderStats(games, ordered, eloRowTotals);
 
-  wireToggle();
-  fixStickyHeader();
+  renderMatchViewToggle();
 }
 
 function renderElo(games, ordered, rowTotals) {
   const N = ordered.length;
   matchState.colCount = GAME_COL_COUNT + N;
 
-  thead.innerHTML =
-    `<tr>${gameColsHeader()}${toggleCellHtml(N)}</tr>` +
-    `<tr>${ordered.map(c => `<th class="conf">${c}</th>`).join('')}</tr>`;
+  thead.innerHTML = `<tr>${gameColsHeader()}${confHeaderRow(ordered)}</tr>`;
 
   games.forEach((game, i) => {
     const tr = document.createElement('tr');
@@ -244,9 +238,7 @@ function renderWld(games, ordered, eloRowTotals) {
   const N = ordered.length;
   matchState.colCount = GAME_COL_COUNT + N;
 
-  thead.innerHTML =
-    `<tr>${gameColsHeader()}${toggleCellHtml(N)}</tr>` +
-    `<tr>${ordered.map(c => `<th class="conf">${c}</th>`).join('')}</tr>`;
+  thead.innerHTML = `<tr>${gameColsHeader()}${confHeaderRow(ordered)}</tr>`;
 
   const STICKY = '#FAD7A0';
   games.forEach((game, i) => {
@@ -285,9 +277,7 @@ function renderStats(games, ordered, _eloRowTotals) {
   const extra = N - nStats; // padding columns to reach N total
 
   const emptyTh = Array(extra).fill('<th class="conf"></th>').join('');
-  thead.innerHTML =
-    `<tr>${gameColsHeader()}${toggleCellHtml(N)}</tr>` +
-    `<tr>${statDefs.map(d => `<th class="conf">${d.label}</th>`).join('')}${emptyTh}</tr>`;
+  thead.innerHTML = `<tr>${gameColsHeader()}${confHeaderRow(statDefs.map(d => d.label))}${emptyTh}</tr>`;
 
   const emptyTd = Array(N).fill('<td class="num conf"></td>').join('');
   const extraTd = Array(extra).fill('<td class="num conf"></td>').join('');
@@ -910,48 +900,72 @@ function bracketTeamRowHtml(game, side, decided) {
   return `<div class="${cls}">${flag}<span class="bracket-team-name">${esc(team)}</span>${scoreHtml}</div>`;
 }
 
-// Which rounds are hidden from the bracket tree, by round index. Resets on
-// reload — not meant to be a durable/shareable setting, just decluttering
-// while browsing.
-const bracketState = { hiddenRounds: new Set() };
+// Which contiguous range of rounds [lo, hi] (inclusive, by round index) is
+// visible in the bracket tree. hi: null means "through the last round" —
+// resolved lazily in bracketRange() since KNOCKOUT_SIZE may not be known yet
+// when this runs. Resets on reload — not meant to be a durable/shareable
+// setting, just decluttering while browsing. Kept contiguous (shrinking only
+// moves one edge in at a time; growing can jump straight to any hidden
+// round) so the visible set never has a gap in the middle.
+const bracketState = { lo: 0, hi: null };
+
+function bracketRange() {
+  const lastRound = knockoutRounds(KNOCKOUT_SIZE).length - 1;
+  return { lo: bracketState.lo, hi: bracketState.hi === null ? lastRound : bracketState.hi };
+}
 
 function toggleBracketRound(roundIdx) {
-  if (bracketState.hiddenRounds.has(roundIdx)) {
-    bracketState.hiddenRounds.delete(roundIdx);
-  } else {
-    // Always leave at least one round visible — an all-hidden tree reads as
-    // broken, not as "nothing to show."
-    const totalRounds = knockoutRounds(KNOCKOUT_SIZE).length;
-    if (totalRounds - bracketState.hiddenRounds.size <= 1) return;
-    bracketState.hiddenRounds.add(roundIdx);
+  const { lo, hi } = bracketRange();
+  if (roundIdx >= lo && roundIdx <= hi) {
+    // Hiding a visible round: only the two edges can shrink, one round at a
+    // time, and never past a single remaining round — an all-hidden tree
+    // reads as broken.
+    if (lo === hi) return;
+    if (roundIdx === lo) bracketState.lo = lo + 1;
+    else if (roundIdx === hi) bracketState.hi = hi - 1;
+    else return;
+  } else if (roundIdx < lo) {
+    // Revealing: jump straight to whichever hidden round was clicked,
+    // showing everything between it and the current edge in one click.
+    bracketState.lo = roundIdx;
+  } else if (roundIdx > hi) {
+    bracketState.hi = roundIdx;
   }
   renderKnockout();
 }
 
 function renderKnockout() {
   const container = document.getElementById('knockout-outer');
+  const toggleContainer = document.getElementById('bracket-round-toggle');
   if (!KNOCKOUT_SIZE) {
+    toggleContainer.innerHTML = '';
     container.innerHTML = '<p style="opacity:0.6; font-style:italic;">Knockout bracket not yet configured for this tournament.</p>';
     return;
   }
 
   const rounds = knockoutRounds(KNOCKOUT_SIZE);
   const lastRound = rounds.length - 1;
+  const { lo, hi } = bracketRange();
 
-  const toggleHtml = `<div class="sub-toggle bracket-round-toggle">` +
-    rounds.map(([label], roundIdx) => {
-      const active = !bracketState.hiddenRounds.has(roundIdx);
-      return `<button class="${active ? 'active' : ''}" onclick="toggleBracketRound(${roundIdx})">${esc(label)}</button>`;
-    }).join('') +
-    `</div>`;
+  toggleContainer.innerHTML = rounds.map(([label], roundIdx) => {
+    const visible = roundIdx >= lo && roundIdx <= hi;
+    // Hidden rounds are always clickable (jump straight to them). Visible
+    // rounds are only clickable at the current edge, one step at a time.
+    const clickable = visible ? lo !== hi && (roundIdx === lo || roundIdx === hi) : true;
+    return `<button class="${visible ? 'active' : ''}"${clickable ? '' : ' disabled'} onclick="toggleBracketRound(${roundIdx})">${esc(label)}</button>`;
+  }).join('');
 
   const html = rounds.map(([label, count], roundIdx) => {
-    if (bracketState.hiddenRounds.has(roundIdx)) return '';
+    if (roundIdx < lo || roundIdx > hi) return '';
     const games = GAMES.filter(g => g.round === roundIdx).sort((a, b) => a.gameNumber - b.gameNumber);
-    const gamesHtml = games.map((game, gameIdx) => {
+    // The last round bundles the Final (higher game number) and the
+    // Third-Place Match (lower game number, scheduled earlier). Show the
+    // Final on top since it's the headline game.
+    const orderedGames = roundIdx === lastRound ? [...games].reverse() : games;
+    const gamesHtml = orderedGames.map((game, gameIdx) => {
       const decided = game.homeScore != null && game.awayScore != null;
       const sub = roundIdx === lastRound
-        ? `<div class="bracket-game-sub">${gameIdx === 0 ? 'Third-Place Match' : 'Final'}</div>`
+        ? `<div class="bracket-game-sub">${gameIdx === 0 ? 'Final' : 'Third-Place Match'}</div>`
         : '';
       return `<div class="bracket-game-wrap"><div class="bracket-game">` +
         sub +
@@ -963,12 +977,14 @@ function renderKnockout() {
     return `<div class="bracket-round"><div class="bracket-round-label">${esc(label)}</div><div class="bracket-round-games">${gamesHtml}</div></div>`;
   }).join('');
 
-  container.innerHTML = toggleHtml + `<div class="bracket">${html}</div>`;
+  container.innerHTML = `<div class="bracket">${html}</div>`;
 }
 
 // ── Page view (Match List / Rankings / Groups / Knockout) ────────────────
 
 const PAGE_VIEWS = ['matches', 'rankings', 'groups', 'knockout'];
+// Every view's second-tier row in the fused nav — see .page-nav in shared.css.
+const VIEW_TOGGLE_ID = { matches: 'match-view-toggle', rankings: 'rankings-view-toggle', groups: 'groups-view-toggle', knockout: 'bracket-round-toggle' };
 let currentPageView = null;
 
 function setPageView(view) {
@@ -978,6 +994,7 @@ function setPageView(view) {
   for (const v of PAGE_VIEWS) {
     document.getElementById(v + '-view').style.display = v === view ? 'block' : 'none';
     document.getElementById('tab-' + v).classList.toggle('active', v === view);
+    document.getElementById(VIEW_TOGGLE_ID[v]).style.display = v === view ? 'flex' : 'none';
   }
   if (view === 'matches') render();
   if (view === 'rankings') renderRankings();

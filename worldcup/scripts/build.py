@@ -334,19 +334,22 @@ def validate(data, year, team_names):
 
 
 def build_nav(current_year):
-    """Utility bar: year switcher + History on the left, Home on the right.
-    Deliberately understated — this is meta navigation between pages, not
-    the primary content tabs on the page."""
-    parts = []
+    """Utility bar: Home, History, then a WC-YY item per tournament year plus
+    a disabled WC 30 placeholder for the next one — a single flat row of
+    equally-spaced segmented items using the same .view-toggle look (and
+    CSS) as every other nav row on the site. On tournament pages this is the
+    first tier of the fused 3-row nav (see page_html); standalone elsewhere
+    (e.g. history.html). The current page's item is a non-link
+    <strong class="active">, styled as the same white "selected" pill used
+    everywhere else in the nav."""
+    items = ['<a href="../../index.html">Home</a>']
+    items.append('<strong class="active">History</strong>' if current_year == 'history' else '<a href="history.html">History</a>')
     for y in YEARS:
-        parts.append(f'<strong>{y}</strong>' if y == current_year else f'<a href="{y}.html">{y}</a>')
-    parts.append('<strong>History</strong>' if current_year == 'history' else '<a href="history.html">History</a>')
-    year_links = ' | '.join(parts)
+        label = f'WC {str(y)[-2:]}'
+        items.append(f'<strong class="active">{label}</strong>' if y == current_year else f'<a href="{y}.html">{label}</a>')
+    items.append('<span class="disabled">WC 30</span>')  # placeholder — no 2030 data/page yet
 
-    actions = '<a href="../../index.html">Home</a>'
-
-    return (f'<nav class="utility-bar"><span class="year-links">{year_links}</span>'
-            f'<span class="utility-actions">{actions}</span></nav>')
+    return f'<nav class="utility-bar view-toggle">{"".join(items)}</nav>'
 
 
 def flag_rotation(team_name):
@@ -590,10 +593,9 @@ table.dimming .hist-cell.team-highlight {{ opacity: 1; }}
 </head>
 <body>
 {nav}
-<h1>World Cup History</h1>
 <p style="color:#555;margin-top:-0.5rem">Final 4 / 8 / 16 for each tournament, ranked by ELO entering that round.</p>
 
-<div class="view-toggle" style="margin-bottom:1rem">
+<div class="view-toggle history-round-toggle" style="margin-bottom:1rem">
   <button id="btn-f4"  class="active" onclick="toggleRound('f4')">F4</button>
   <button id="btn-f8"  class="active" onclick="toggleRound('f8')">F8</button>
   <button id="btn-f16" class="active" onclick="toggleRound('f16')">F16</button>
@@ -716,36 +718,43 @@ def page_html(year, script_block, shared_css, shared_js):
 </style>
 </head>
 <body>
+<div class="page-nav">
 {nav}
-<h1>World Cup ELO - {year}</h1>
-
-<div class="page-toggle primary-tabs view-toggle">
-  <button id="tab-matches" class="active" onclick="setPageView('matches')">Match List</button>
-  <button id="tab-groups" onclick="setPageView('groups')">Groups</button>
-  <button id="tab-knockout" onclick="setPageView('knockout')">Knockout</button>
-  <button id="tab-rankings" onclick="setPageView('rankings')">Rankings</button>
+  <div class="page-toggle primary-tabs view-toggle">
+    <button id="tab-matches" class="active" onclick="setPageView('matches')">Match List</button>
+    <button id="tab-groups" onclick="setPageView('groups')">Groups</button>
+    <button id="tab-knockout" onclick="setPageView('knockout')">Knockout</button>
+    <button id="tab-rankings" onclick="setPageView('rankings')">Rankings</button>
+  </div>
+  <div id="match-view-toggle" class="match-view-toggle view-toggle"></div>
+  <div id="rankings-view-toggle" class="rankings-view-toggle">
+    <div class="rankings-checks">
+      <label><input type="checkbox" id="chk-show-elim" onchange="toggleShowEliminated()"> Show eliminated</label>
+      <label id="true-rank-label" style="opacity:1"><input type="checkbox" id="chk-true-rank" onchange="toggleTrueRank()"> True rank</label>
+      <label class="debug-label">
+        <input type="checkbox" id="debug-clusters" onchange="renderRankings()"> debug: show binding clusters
+      </label>
+    </div>
+    <div class="rankings-toggle view-toggle">
+      <button id="tab-rank" class="active" onclick="setRankView('rank')">Rank</button>
+      <button id="tab-scale" onclick="setRankView('scale')">Scale</button>
+    </div>
+  </div>
+  <div id="groups-view-toggle" class="groups-view-toggle view-toggle"><span class="disabled">Group Stage view — coming soon.</span></div>
+  <div id="bracket-round-toggle" class="bracket-round-toggle view-toggle"></div>
 </div>
 
 <div id="matches-view">
-  <table>
-    <thead></thead>
-    <tbody id="games"></tbody>
-  </table>
+  <div class="table-wrap">
+    <table>
+      <thead></thead>
+      <tbody id="games"></tbody>
+    </table>
+  </div>
 </div>
 
 <div id="rankings-view">
   <div class="rankings-panel">
-    <div class="rankings-controls">
-      <label><input type="checkbox" id="chk-show-elim" onchange="toggleShowEliminated()"> Show eliminated</label>
-      <label id="true-rank-label" style="opacity:1"><input type="checkbox" id="chk-true-rank" onchange="toggleTrueRank()"> True rank</label>
-      <label style="color:#c00;">
-        <input type="checkbox" id="debug-clusters" onchange="renderRankings()"> debug: show binding clusters
-      </label>
-      <div class="rankings-toggle sub-toggle">
-        <button id="tab-rank" class="active" onclick="setRankView('rank')">Rank</button>
-        <button id="tab-scale" onclick="setRankView('scale')">Scale</button>
-      </div>
-    </div>
     <div id="rankings-outer">
       <div id="rank-info"></div>
       <div class="rankings-cols" id="rankings-cols">
@@ -756,9 +765,7 @@ def page_html(year, script_block, shared_css, shared_js):
   </div>
 </div>
 
-<div id="groups-view">
-  <p style="opacity:0.6; font-style:italic;">Group Stage view — coming soon.</p>
-</div>
+<div id="groups-view"></div>
 
 <div id="knockout-view">
   <div id="knockout-outer"></div>

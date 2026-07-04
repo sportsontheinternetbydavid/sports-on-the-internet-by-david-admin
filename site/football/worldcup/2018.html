@@ -39,6 +39,13 @@ h1 { font-family: 'Permanent Marker', cursive; font-size: 2.2rem; margin: 0.5rem
 a { color: #1A5276; }
 table { border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem; white-space: nowrap; }
 .table-wrap { overflow-x: auto; }
+/* Match List's table is Level 4, fused flush under Level 3 with no gap
+   (see .page-nav) — this table specifically overrides the generic
+   margin-top above so nothing but the nav's own border sits between them.
+   .table-wrap (not the table itself) is what scrolls horizontally when the
+   confederation columns need more room than the nav's width allows, so the
+   page — and the nav above it — never grows wider than Levels 1-3. */
+#matches-view table { margin-top: 0; }
 th, td { padding: 0.4rem 0.6rem; text-align: left; border-bottom: 1px solid #ddd; }
 th { font-family: 'Permanent Marker', cursive; background: #C0392B; color: #FFFFFF; position: sticky; top: 0; z-index: 2; }
 .num { text-align: right; }
@@ -79,20 +86,23 @@ tbody tr:hover { background: #EDE8DC; }
    the cream page background instead of the red bar it's meant to sit on. */
 .history-round-toggle { background: #C0392B; }
 
-/* Fused 3-row nav on tournament pages: utility bar (years/History/Home),
-   primary tabs (which view), and a second-tier row of detail controls for whichever
-   view is active — every view has one, even if it's just a blank red bar
-   (Groups), so the nav is always the same shape no matter which tab you're
-   on. display:flex + column + width:100% spans the same max content width
-   as the rest of the page, and align-items:stretch makes every row exactly
-   that width. Only one second-tier row is shown at a time — setPageView()
-   hides the rest. */
-.page-nav { display: flex; flex-direction: column; align-items: stretch; width: 100%; margin-bottom: 1rem; }
+/* Fused Levels 1-3 on tournament pages: Level 1 (years/History/Home),
+   Level 2 (which view), and Level 3 detail controls for whichever view is
+   active — every view has one, even if it's just a note (Groups), so the
+   nav is always the same shape no matter which tab you're on. display:flex
+   + column + width:100% spans the same max content width as the rest of
+   the page, and align-items:stretch makes every level exactly that width.
+   Only one Level 3 variant is shown at a time — setPageView() hides the
+   rest. margin-bottom:0 — Level 4 (each view's own table/grid header, see
+   requirements-public.md) fuses flush underneath with no gap; views without
+   a fusable Level 4 (Knockout) add their own top margin back instead (see
+   #knockout-view). */
+.page-nav { display: flex; flex-direction: column; align-items: stretch; width: 100%; margin-bottom: 0; }
 .page-nav .utility-bar { margin-bottom: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
-/* All three rows share one height, always — regardless of which view is
-   active and regardless of a row-3 variant's content (e.g. Rankings'
+/* All three levels share one height, always — regardless of which view is
+   active and regardless of a Level 3 variant's content (e.g. Rankings'
    checkboxes are natively a different size than plain text buttons).
-   min-height (not height) so a row can still grow if its items wrap to a
+   min-height (not height) so a level can still grow if its items wrap to a
    second line on a narrow viewport instead of clipping that line. */
 .utility-bar, .page-toggle, .bracket-round-toggle, .match-view-toggle, .groups-view-toggle, .rankings-view-toggle { min-height: 2.5rem; }
 /* flex-basis:auto (not 0) so a button never shrinks below its own label's
@@ -101,10 +111,9 @@ tbody tr:hover { background: #EDE8DC; }
 .page-toggle button, .bracket-round-toggle button, .match-view-toggle button, .groups-view-toggle button, .groups-view-toggle span, .utility-bar a, .utility-bar strong, .utility-bar span { flex: 1 1 auto; white-space: nowrap; }
 .primary-tabs.view-toggle, .bracket-round-toggle.view-toggle, .match-view-toggle.view-toggle, .groups-view-toggle.view-toggle { background: #C0392B; }
 .primary-tabs.view-toggle button { font-size: 0.95rem; padding: 0.45rem 1.1rem; }
-/* Primary tabs are the middle tier now that the utility bar sits above them
-   — square off both top and bottom, with a divider line against the bar
-   above (the second-tier rows below already divide themselves the same way
-   against the tabs). */
+/* Level 2 (primary tabs) sits between Level 1 and Level 3 — square off both
+   top and bottom, with a divider line against Level 1 above (each Level 3
+   variant below already divides itself the same way against Level 2). */
 .page-toggle { border-radius: 0; border-top: 1px solid rgba(0,0,0,0.15); }
 .bracket-round-toggle, .match-view-toggle, .groups-view-toggle, .rankings-view-toggle { flex-wrap: wrap; border-top-left-radius: 0; border-top-right-radius: 0; border-top: 1px solid rgba(0,0,0,0.15); }
 
@@ -124,19 +133,26 @@ tbody tr:hover { background: #EDE8DC; }
    dedicated warning pink flags this as a developer-facing debug control. */
 .rankings-view-toggle .debug-label { color: #ffb3b3; }
 .rankings-toggle.view-toggle button { flex: 1 1 auto; }
-.rankings-panel { border: 1px solid rgba(0,0,0,0.08); border-radius: 6px; background: rgba(255,255,255,0.35); padding: 0.6rem 0.8rem 0.3rem; }
+/* No top padding/radius — Level 4 below (.rankings-header) fuses flush
+   against Level 3 above with no gap, same as Match List's table. */
+.rankings-panel { border: 1px solid rgba(0,0,0,0.08); border-radius: 0 0 6px 6px; background: rgba(255,255,255,0.35); padding: 0 0.8rem 0.3rem; }
 .rankings-cols { font-size: 0.85rem; white-space: nowrap; }
+/* This view's Level 4 (see requirements-public.md → Navigation) — red/white
+   like every other Level 4. The negative left/right margin cancels
+   .rankings-panel's padding so this bleeds all the way to the panel's
+   edges, aligning with Levels 1-3 above instead of sitting inset. */
 .rankings-header {
   display: grid;
   /* grid-template-columns set dynamically by renderRankings() */
   position: sticky;
   top: 0;
-  background: #f0f0f0;
-  border-bottom: 2px solid #ccc;
+  margin: 0 -0.8rem;
+  background: #C0392B;
+  color: #fff;
   z-index: 10;
 }
 .rankings-header > div { padding: 0.3rem 0.5rem; text-align: center; font-weight: bold; }
-.rankings-header .axis-head { text-align: right; padding-right: 0.6rem; color: #555; }
+.rankings-header .axis-head { text-align: right; padding-right: 0.6rem; color: rgba(255,255,255,0.7); }
 .rankings-body { display: grid; /* grid-template-columns set dynamically by renderRankings() */ }
 .scale-error { position: absolute; top: 4px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: #c00; pointer-events: none; }
 .rankings-axis { position: relative; }
@@ -152,7 +168,7 @@ tbody tr:hover { background: #EDE8DC; }
 .snap-body-col { position: relative; border-left: 1px solid #333; }
 .grid-line { position: absolute; left: 0; right: 0; height: 1px; background: repeating-linear-gradient(to right, #bbb 0, #bbb 4px, transparent 4px, transparent 8px); pointer-events: none; z-index: 0; }
 .debug-cluster { position: absolute; left: 4px; right: 4px; border: 2px solid red; border-radius: 3px; pointer-events: none; z-index: 9999; box-sizing: border-box; }
-.rankings-header > div:not(.axis-head) { border-left: 1px solid #333; }
+.rankings-header > div:not(.axis-head) { border-left: 1px solid rgba(255,255,255,0.3); }
 .flag-pin {
   position: absolute;
   left: 50%;
@@ -228,13 +244,18 @@ tbody tr:hover { background: #EDE8DC; }
 #rank-info .tip-delta-pos { color: #6c6; }
 #rank-info .tip-delta-neg { color: #f77; }
 
-/* Groups — no controls yet, so its second tier is just an empty red bar
-   (the invisible button in the markup gives it the same height as the
-   others) kept for visual consistency with the other three views. */
+/* Groups — no controls yet, so Level 3 just holds a muted "coming soon"
+   note (see .disabled below), kept present for visual consistency with the
+   other three views' Level 3. */
 #groups-view-toggle { display: none; }
 
 /* Knockout bracket */
-#knockout-view { display: none; }
+/* Round labels aren't one continuous bar the way a table header is (they're
+   per-column, with gaps matching the bracket's own column gaps below), so
+   unlike Match List/Rankings this view doesn't fuse its Level 4 flush
+   against Level 3 above — this margin restores the breathing room that
+   .page-nav's margin-bottom:0 removed. */
+#knockout-view { display: none; margin-top: 1rem; }
 #bracket-round-toggle { display: none; }
 /* Which contiguous range of rounds to show. Shrinking only moves one edge in
    at a time (only the current edge round is clickable — see
@@ -250,7 +271,10 @@ tbody tr:hover { background: #EDE8DC; }
 .bracket-round-toggle.view-toggle button:not(.active):hover { background: rgba(255,255,255,0.45); }
 .bracket { display: flex; align-items: stretch; gap: 2.5rem; overflow-x: auto; padding: 0.5rem 0 1.5rem; }
 .bracket-round { display: flex; flex-direction: column; min-width: 190px; }
-.bracket-round-label { font-family: 'Permanent Marker', cursive; font-size: 0.9rem; color: #C0392B; text-align: center; margin-bottom: 0.6rem; }
+/* This round's Level 4 (see requirements-public.md → Navigation) — a small
+   red bar with white text, matching every other view's Level 4 coloring,
+   rather than plain red text on the page background. */
+.bracket-round-label { font-family: 'Permanent Marker', cursive; font-size: 0.9rem; background: #C0392B; color: #fff; text-align: center; padding: 0.3rem 0.5rem; border-radius: 4px; margin-bottom: 0.6rem; }
 .bracket-round-games { flex: 1; display: flex; flex-direction: column; justify-content: space-around; }
 /* Connector lines imply a 1-to-1 feed from the previous round. That's true
    for every round except the last, which bundles the Final and Third-Place
