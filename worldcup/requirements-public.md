@@ -346,6 +346,14 @@ The highlight uses debounced activation and deactivation to avoid flicker:
 - **Deactivate grace period (300 ms):** when the cursor moves to empty space or leaves the rankings area, the highlight holds for 300 ms before clearing. This prevents flicker when crossing flag edges.
 - **Instant cancel:** if the cursor returns to the already-highlighted team's flag during the grace period, the deactivation is cancelled immediately with no re-delay.
 
+### Result badge
+
+While a team is highlighted, each of its flags across all gameset columns shows a small badge in its bottom-right corner: a single-letter result (**W** / **L** / **D**, green/red/gray) plus a miniature flag of that round's opponent. The badge is only visible on the highlighted team's flags — it is not shown by default, keeping the grid uncluttered when nothing is hovered.
+
+- The result is derived from the score of the team's game in that gameset column (win/loss/draw from the hovered team's perspective). This is independent of the ELO Δ shown in the side panel — a team can win a game and still be shown losing ELO, or vice versa.
+- No badge is shown when there is no game in that column (Initial snapshot, or no game scheduled that gameset) or when the game is pending (live column, result not yet entered).
+- A draw settled on penalties still shows **D** — same caveat as the Knockout Bracket view, penalty-shootout winners aren't tracked in the data (see *Game boxes* below).
+
 ---
 
 ### Rank view

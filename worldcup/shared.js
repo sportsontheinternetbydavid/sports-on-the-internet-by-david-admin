@@ -579,6 +579,32 @@ function renderRankings() {
     return html;
   }
 
+  function buildResultBadge(team, g) {
+    if (!g || typeof g.homeScore !== 'number' || typeof g.awayScore !== 'number') return null;
+    const isHome = g.homeTeam === team;
+    const teamScore = isHome ? g.homeScore : g.awayScore;
+    const oppScore = isHome ? g.awayScore : g.homeScore;
+    const opponent = isHome ? g.awayTeam : g.homeTeam;
+    const result = teamScore > oppScore ? 'w' : teamScore < oppScore ? 'l' : 'd';
+    const oppFlag = flagByTeam[opponent] || '';
+
+    const badge = document.createElement('span');
+    badge.className = `result-badge result-${result}`;
+
+    const letter = document.createElement('span');
+    letter.className = 'result-letter';
+    letter.textContent = result.toUpperCase();
+    badge.appendChild(letter);
+
+    if (oppFlag) {
+      const oppIcon = document.createElement('span');
+      oppIcon.className = 'result-opp-flag';
+      oppIcon.style.backgroundImage = `url('flags/${oppFlag}.svg')`;
+      badge.appendChild(oppIcon);
+    }
+    return badge;
+  }
+
   const numTeams = ranked[0].length;
   const isScale = rankState.view === 'scale';
 
@@ -704,6 +730,9 @@ function renderRankings() {
         const icon = document.createElement('span');
         icon.className = 'icon';
         icon.style.cssText = iconStyle;
+        const g = si > 0 ? gamesByTeamInSnap[si][team] : null;
+        const badge = buildResultBadge(team, g);
+        if (badge) icon.appendChild(badge);
         pin.appendChild(icon);
 
         col.appendChild(pin);
@@ -816,6 +845,7 @@ function initRankingsHover() {
       const isHovered = el.dataset.team === team;
       el.style.opacity = isHovered ? '1' : '0.15';
       el.style.zIndex = isHovered ? '9999' : (el.dataset.baseZ || '');
+      el.classList.toggle('flag-highlighted', isHovered);
     });
   };
 
@@ -824,6 +854,7 @@ function initRankingsHover() {
     container.querySelectorAll('[data-team]').forEach(el => {
       el.style.opacity = '';
       el.style.zIndex = el.dataset.baseZ || '';
+      el.classList.remove('flag-highlighted');
     });
   };
 
