@@ -879,6 +879,24 @@ function bracketTeamRowHtml(game, side, decided) {
   return `<div class="${cls}">${flag}<span class="bracket-team-name">${esc(team)}</span>${scoreHtml}</div>`;
 }
 
+// Which rounds are hidden from the bracket tree, by round index. Resets on
+// reload — not meant to be a durable/shareable setting, just decluttering
+// while browsing.
+const bracketState = { hiddenRounds: new Set() };
+
+function toggleBracketRound(roundIdx) {
+  if (bracketState.hiddenRounds.has(roundIdx)) {
+    bracketState.hiddenRounds.delete(roundIdx);
+  } else {
+    // Always leave at least one round visible — an all-hidden tree reads as
+    // broken, not as "nothing to show."
+    const totalRounds = knockoutRounds(KNOCKOUT_SIZE).length;
+    if (totalRounds - bracketState.hiddenRounds.size <= 1) return;
+    bracketState.hiddenRounds.add(roundIdx);
+  }
+  renderKnockout();
+}
+
 function renderKnockout() {
   const container = document.getElementById('knockout-outer');
   if (!KNOCKOUT_SIZE) {
@@ -889,7 +907,15 @@ function renderKnockout() {
   const rounds = knockoutRounds(KNOCKOUT_SIZE);
   const lastRound = rounds.length - 1;
 
+  const toggleHtml = `<div class="sub-toggle bracket-round-toggle">` +
+    rounds.map(([label], roundIdx) => {
+      const active = !bracketState.hiddenRounds.has(roundIdx);
+      return `<button class="${active ? 'active' : ''}" onclick="toggleBracketRound(${roundIdx})">${esc(label)}</button>`;
+    }).join('') +
+    `</div>`;
+
   const html = rounds.map(([label, count], roundIdx) => {
+    if (bracketState.hiddenRounds.has(roundIdx)) return '';
     const games = GAMES.filter(g => g.round === roundIdx).sort((a, b) => a.gameNumber - b.gameNumber);
     const gamesHtml = games.map((game, gameIdx) => {
       const decided = game.homeScore != null && game.awayScore != null;
@@ -906,7 +932,7 @@ function renderKnockout() {
     return `<div class="bracket-round"><div class="bracket-round-label">${esc(label)}</div><div class="bracket-round-games">${gamesHtml}</div></div>`;
   }).join('');
 
-  container.innerHTML = `<div class="bracket">${html}</div>`;
+  container.innerHTML = toggleHtml + `<div class="bracket">${html}</div>`;
 }
 
 // ── Page view (Match List / Rankings / Groups / Knockout) ────────────────

@@ -420,6 +420,10 @@ Each bracket game shows its date and its two participants, top-to-bottom. A part
 
 This placeholder behavior also applies to any knockout game appearing in the Match List before it's resolved — the flag cell shows the same placeholder text instead of a broken flag image.
 
+### Round toggles
+
+Above the bracket tree, a sub-toggle row has one button per round in the tournament's configured sequence (e.g. Round of 32 / Round of 16 / Quarterfinals / Semifinals / Final), labelled with that round's name. All rounds are on (shown) by default. Unlike the primary tabs and the History page's F4/F8/F16 toggle, these buttons aren't a single either/or choice — each round's button toggles independently, so any combination of rounds can be hidden at once (e.g. hide Round of 32 to start the tree at Round of 16, or hide Semifinals and Final to see only the first three rounds). Hiding a round removes its column entirely rather than just dimming it, so later rounds close the gap and the tree reflows — there's no blank column left behind. At least one round is always kept visible; clicking the only remaining active round's button does nothing, since an all-hidden tree would just look broken rather than intentionally empty. This state isn't persisted anywhere (URL, storage) — it's a browsing convenience that resets on reload, same as the Rankings view's toggles.
+
 ---
 
 ## Debug
