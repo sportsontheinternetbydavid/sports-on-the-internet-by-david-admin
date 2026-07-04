@@ -11,10 +11,10 @@ Decisions locked:
 - [x] Add `site/CNAME` (`sports-on-the-internet-by-david.com`)
 - [x] Repoint `origin`/`public` remotes → new org/repos
 - [x] Update `deploy.py`'s `PUBLIC_REMOTE` and printed URL → new public repo/domain
-- [ ] Push full history to new admin repo — **blocked**: local git credentials are for the old account (`sportsontheworldwideweb`), which has no access to the new repos. Needs `gh auth login` (or one manual push) as `sportsontheinternetbydavid`.
-- [ ] Run `deploy.py` against new public repo; confirm CNAME survives
-- [ ] Verify GitHub Pages settings (custom domain + HTTPS) on new public repo
-- [ ] Verify live domain end-to-end in a browser
+- [x] Push full history to new admin repo (after `gh auth login` as `sportsontheinternetbydavid`)
+- [x] Run `deploy.py` against new public repo; CNAME survived unchanged
+- [x] Verified GitHub Pages settings — custom domain configured, HTTPS certificate approved for apex + `www`; enabled HTTPS enforcement (was off)
+- [x] Verified live domain end-to-end: homepage, all World Cup year pages, history page, and flags all return 200 with correct content; `http://` correctly redirects to `https://`. (First deployment attempt failed with a generic GitHub-side error and a retry got stuck queued for several minutes — resolved by requesting a fresh build directly via the Pages API rather than waiting on the stuck Actions run.)
 
 ## Phase 2 — Remove "World Wide Web" branding
 - [x] `way-of-working.md` — two-repo structure table + remotes
