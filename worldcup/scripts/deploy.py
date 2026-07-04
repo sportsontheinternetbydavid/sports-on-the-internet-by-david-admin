@@ -47,8 +47,10 @@ def main():
             else:
                 item.unlink()
 
-        # Copy site/ contents into the clone root
-        shutil.copytree(SITE, tmp, dirs_exist_ok=True)
+        # Copy site/ contents into the clone root, skipping OS junk files
+        # (e.g. .DS_Store) that live on disk but were never meant to be
+        # tracked or deployed.
+        shutil.copytree(SITE, tmp, dirs_exist_ok=True, ignore=shutil.ignore_patterns(".DS_Store"))
 
         # Stage all changes
         run(["git", "-C", str(tmp), "add", "-A"])
