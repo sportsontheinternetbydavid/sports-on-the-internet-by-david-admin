@@ -47,9 +47,9 @@ The homepage is the SportsOnTheInternet landing page. It reflects the brand: kid
 
 ---
 
-## World Cup pages (`2018.html`, `2022.html`, `2026.html`)
+## World Cup pages (`1998.html`, `2002.html`, `2006.html`, `2010.html`, `2014.html`, `2018.html`, `2022.html`, `2026.html`)
 
-Styling is defined in `shared.css` and inlined at build time. All three pages share the same visual treatment.
+Styling is defined in `shared.css` and inlined at build time. All eight pages share the same visual treatment.
 
 ### Typography
 - Body font: Fredoka One (Google Fonts), loaded via `<link>` in the page `<head>`.
@@ -397,9 +397,28 @@ Intended scope (not yet designed in detail): one standings table per group, each
 
 ## Knockout Bracket
 
-**Status: placeholder.** The tab strip includes a **Knockout** tab (`#knockout` hash) alongside Match List, Groups, and Rankings. It currently renders a "coming soon" placeholder only.
+**Status: implemented.** The **Knockout** tab (`#knockout` hash) renders a bracket-tree visualization of the selected tournament's knockout stage — one column per round, growing gaps between games each round, connected by simple stub lines. Distinct from `history.html`, which compares knockout fields *across* tournaments rather than visualizing a single bracket.
 
-Intended scope (not yet designed in detail): a bracket-tree visualization of the knockout rounds (Round of 32/16, quarterfinals, semifinals, final) for the selected tournament, showing each matchup and the winner's progression. Distinct from `history.html`, which compares knockout fields *across* tournaments rather than visualizing a single bracket.
+If the tournament has no bracket configured yet (see `requirements-admin.md` → *Knockout Bracket* for how that's set), the tab shows "Knockout bracket not yet configured for this tournament" instead.
+
+### Rounds
+
+The bracket's round sequence is determined by its **size** — the number of teams entering the knockout stage (32/16/8/4), set once per tournament in the admin site. Rounds halve down to the semifinals, followed by a **Final** round holding two games: the third-place playoff and the final (the earlier-numbered of the two is the third-place match).
+
+| Size | Round sequence |
+|------|----------------|
+| 32 | Round of 32 → Round of 16 → Quarterfinals → Semifinals → Final |
+| 16 | Round of 16 → Quarterfinals → Semifinals → Final |
+| 8 | Quarterfinals → Semifinals → Final |
+| 4 | Semifinals → Final |
+
+### Game boxes
+
+Each bracket game shows its date and its two participants, top-to-bottom. A participant is either:
+- A resolved team (flag + name), shown with its score once played. If the game is decided by a clear winner (not a draw), the winner is bolded and the loser dimmed — a draw settled on penalties shows neither, since penalty-shootout winners aren't tracked in the data (see `requirements-admin.md`).
+- An unresolved slot, shown as italic placeholder text: "Winner of Game N" / "Loser of Game N" if the admin has recorded which earlier game feeds it, or "TBD" if not. "Date TBD" is shown in place of a date if it isn't set yet.
+
+This placeholder behavior also applies to any knockout game appearing in the Match List before it's resolved — the flag cell shows the same placeholder text instead of a broken flag image.
 
 ---
 

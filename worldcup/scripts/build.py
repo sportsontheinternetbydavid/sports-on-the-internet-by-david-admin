@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Regenerate 2018.html / 2022.html / 2026.html from data/*.json and the
-page template defined in this file.
+page template defined in this file. Also regenerates the admin site's pages
+(via build_admin.py) at the end, so both sites' embedded data stay in sync
+from a single call — see build_admin.py for why it also embeds rather than
+serving over HTTP.
 
 Run this after editing any data/*.json file by hand, or use
 worldcup/scripts/set_result.py for a one-line score update.
@@ -15,6 +18,9 @@ the HTML files directly.
 import json
 import sys
 from pathlib import Path
+
+import build_admin
+import knockout
 
 ROOT = Path(__file__).resolve().parent.parent  # worldcup/ — data/, shared.css, shared.js live here
 PROJECT_ROOT = ROOT.parent  # repo root — site/ (deployed output) lives here, not under worldcup/
@@ -212,6 +218,13 @@ def validate(data, year, team_names):
     if not isinstance(games, list):
         raise ValueError(f"{year}.json: 'games' must be an array")
 
+    knockout_size = data.get("knockoutSize")
+    kr = None
+    if knockout_size is not None:
+        if knockout_size not in knockout.VALID_SIZES:
+            raise ValueError(f"{year}.json: 'knockoutSize' must be one of {knockout.VALID_SIZES}, got {knockout_size!r}")
+        kr = knockout.rounds_for_size(knockout_size)
+
     seen_numbers = {}
     for i, g in enumerate(games):
         ctx = f"{year}.json game #{g.get('gameNumber', f'[index {i}]')}"
@@ -229,10 +242,34 @@ def validate(data, year, team_names):
             raise ValueError(f"{ctx}: duplicate gameNumber {gn} (first seen at index {seen_numbers[gn]})")
         seen_numbers[gn] = i
 
-        # Team names must exist in teams.json
-        for side in ("homeTeam", "awayTeam"):
+        # 'round' identifies a knockout-bracket game (0-based index into this
+        # tournament's knockout.rounds_for_size(knockoutSize)). Only bracket
+        # games may leave homeTeam/awayTeam null, via homeFrom/awayFrom
+        # ({"game": N, "result": "winner"|"loser"}) referencing an earlier
+        # game instead of naming a team directly.
+        round_idx = g.get("round")
+        if round_idx is not None:
+            if kr is None:
+                raise ValueError(f"{ctx}: has 'round' but tournament has no 'knockoutSize' set")
+            if not isinstance(round_idx, int) or not (0 <= round_idx < len(kr)):
+                raise ValueError(f"{ctx}: 'round' {round_idx!r} out of range for knockoutSize {knockout_size} (0..{len(kr)-1})")
+
+        # Team names must exist in teams.json, unless this is an unresolved
+        # knockout-bracket slot deferring to an earlier game's winner/loser.
+        for side, from_key in (("homeTeam", "homeFrom"), ("awayTeam", "awayFrom")):
             name = g.get(side)
-            if name not in team_names:
+            if name is None:
+                if round_idx is None:
+                    raise ValueError(f"{ctx}: '{side}' is null but game has no 'round' — only knockout-bracket games may leave a team unresolved")
+                frm = g.get(from_key)
+                if frm is not None:
+                    if not isinstance(frm, dict) or set(frm) != {"game", "result"}:
+                        raise ValueError(f"{ctx}: '{from_key}' must be an object with exactly 'game' and 'result'")
+                    if not isinstance(frm["game"], int):
+                        raise ValueError(f"{ctx}: '{from_key}.game' must be an integer gameNumber")
+                    if frm["result"] not in ("winner", "loser"):
+                        raise ValueError(f"{ctx}: '{from_key}.result' must be 'winner' or 'loser', got {frm['result']!r}")
+            elif name not in team_names:
                 raise ValueError(f"{ctx}: {side} '{name}' not found in data/teams.json")
 
         # Scores must be non-negative integers or null
@@ -268,6 +305,32 @@ def validate(data, year, team_names):
         if actual != expected:
             missing = sorted(set(expected) - set(actual))
             raise ValueError(f"{year}.json: game numbers are not contiguous from 1; missing: {missing}")
+
+    # homeFrom/awayFrom must reference an earlier, existing game
+    for g in games:
+        for from_key in ("homeFrom", "awayFrom"):
+            frm = g.get(from_key)
+            if frm is None:
+                continue
+            if frm["game"] not in seen_numbers:
+                raise ValueError(f"{year}.json game #{g['gameNumber']}: {from_key} references game #{frm['game']} which does not exist")
+            if frm["game"] >= g["gameNumber"]:
+                raise ValueError(f"{year}.json game #{g['gameNumber']}: {from_key} must reference an earlier game (#{frm['game']} is not before #{g['gameNumber']})")
+
+    # Each knockout round is either fully scaffolded (exact expected game
+    # count) or not yet created (0) — catches a partial/corrupted scaffold.
+    if kr is not None:
+        round_counts = {}
+        for g in games:
+            r = g.get("round")
+            if r is not None:
+                round_counts[r] = round_counts.get(r, 0) + 1
+        for idx, (label, expected_count) in enumerate(kr):
+            actual_count = round_counts.get(idx, 0)
+            if actual_count not in (0, expected_count):
+                raise ValueError(
+                    f"{year}.json: round {idx} ('{label}') has {actual_count} games, expected {expected_count}"
+                )
 
 
 def build_nav(current_year):
@@ -325,14 +388,21 @@ def build_history_page(shared_css):
         return {'name': name, 'flag': t.get('flag', ''), 'elo': elo}
 
     def round_participants(games_by_num, game_range):
-        """Return dict of {team_name: team_info} for all teams in the given games."""
+        """Return dict of {team_name: team_info} for all teams in the given games.
+
+        A knockout-bracket game's homeTeam/awayTeam may still be null (not yet
+        decided by an earlier round) — such a slot simply contributes no
+        participant yet, same as if the game didn't exist.
+        """
         result = {}
         for gn in game_range:
             g = games_by_num.get(gn)
             if g is None:
                 continue
-            result[g['homeTeam']] = team_info(g['homeTeam'], g.get('homeEloPre'))
-            result[g['awayTeam']] = team_info(g['awayTeam'], g.get('awayEloPre'))
+            if g['homeTeam'] is not None:
+                result[g['homeTeam']] = team_info(g['homeTeam'], g.get('homeEloPre'))
+            if g['awayTeam'] is not None:
+                result[g['awayTeam']] = team_info(g['awayTeam'], g.get('awayEloPre'))
         return result
 
     year_data = []
@@ -588,7 +658,7 @@ def format_gamesets_js(gamesets):
     return '\n'.join(lines)
 
 
-def build_script_block(year, games_js, teams_js, team_elos_js, config):
+def build_script_block(year, games_js, teams_js, team_elos_js, config, knockout_size):
     conf_js = json.dumps(CONFEDERATIONS)
     gamesets_comment = config['gamesets_comment']
     gamesets_js = format_gamesets_js(config['gamesets'])
@@ -621,6 +691,7 @@ def build_script_block(year, games_js, teams_js, team_elos_js, config):
         f'const CONFEDERATIONS = {conf_js};',
         gamesets_comment,
         f'const GAMESETS = {gamesets_js};',
+        f'const KNOCKOUT_SIZE = {json.dumps(knockout_size)}; // 32/16/8/4, or null if not yet configured',
         "const tbody = document.getElementById('games');",
         "const thead = document.querySelector('#matches-view thead');",
     ]
@@ -690,7 +761,7 @@ def page_html(year, script_block, shared_css, shared_js):
 </div>
 
 <div id="knockout-view">
-  <p style="opacity:0.6; font-style:italic;">Knockout Bracket view — coming soon.</p>
+  <div id="knockout-outer"></div>
 </div>
 
 <script>
@@ -742,8 +813,9 @@ def main():
         if isinstance(data, dict) and "teamElos" in data:
             team_elos_js = f"const teamElos{year} = " + json.dumps(data["teamElos"], separators=(',', ':')) + ";"
 
+        knockout_size = data.get("knockoutSize") if isinstance(data, dict) else None
         config = PER_YEAR_CONFIG[year]
-        script_block = build_script_block(year, games_js, teams_js, team_elos_js, config)
+        script_block = build_script_block(year, games_js, teams_js, team_elos_js, config, knockout_size)
         html = page_html(year, script_block, shared_css, shared_js)
 
         path = PROJECT_ROOT / "site" / "football" / "worldcup" / f"{year}.html"
@@ -755,6 +827,8 @@ def main():
     history_path = PROJECT_ROOT / "site" / "football" / "worldcup" / "history.html"
     history_path.write_text(history_html)
     print("Updated site/football/worldcup/history.html")
+
+    build_admin.main()
 
 
 if __name__ == "__main__":

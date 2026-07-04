@@ -46,19 +46,1278 @@ tbody tr:hover { background: #f5f5f5; }
 .ur-line label { display: flex; align-items: center; gap: 0.3rem; white-space: nowrap; }
 .ur-line input[type=number] { width: 4.5rem; padding: 0.2rem; }
 .ur-cmd { font-family: monospace; flex: 1; min-width: 16rem; padding: 0.3rem; }
-.loading { color: #888; font-style: italic; }
+h2 { font-size: 1.05rem; margin: 2rem 0 0.6rem; }
+.tab-strip { display: flex; gap: 0.4rem; margin-bottom: 1rem; }
+.tab-strip button { padding: 0.35rem 0.9rem; cursor: pointer; border: 1px solid #ccc; background: #f2f2f2; }
+.tab-strip button.active { background: #333; color: #fff; border-color: #333; }
+#groups-view, #knockout-view { display: none; }
+.br-size-picker { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem; }
+.br-size-picker button { padding: 0.3rem 0.8rem; cursor: pointer; }
+.br-slot { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
+.br-slot select, .br-slot input[type=text], .br-slot input[type=number] { padding: 0.2rem; }
+.br-slot input[type=text] { width: 5.5rem; }
+.br-slot input[type=number] { width: 4rem; }
+.ab-wrap { display: flex; align-items: stretch; gap: 2rem; overflow-x: auto; padding: 0.5rem 0 1rem; }
+.ab-round { display: flex; flex-direction: column; min-width: 170px; }
+.ab-round-label { font-weight: bold; text-align: center; margin-bottom: 0.5rem; color: #333; }
+.ab-round-games { flex: 1; display: flex; flex-direction: column; justify-content: space-around; }
+.ab-round:not(:first-child) .ab-game-wrap { position: relative; }
+.ab-round:not(:first-child) .ab-game-wrap::before { content: ''; position: absolute; left: -1rem; top: 50%; width: 1rem; height: 0; border-top: 1px solid #999; }
+.ab-game-wrap { padding: 0.3rem 0; }
+.ab-game { border: 1px solid #ccc; border-radius: 4px; background: #fff; font-size: 0.82rem; cursor: pointer; overflow: hidden; }
+.ab-game:hover { border-color: #888; }
+.ab-game.selected { border-color: #333; box-shadow: 0 0 0 1px #333; }
+.ab-sub { font-size: 0.68rem; color: #888; text-align: center; padding: 0.15rem 0.3rem 0; }
+.ab-date { font-size: 0.68rem; color: #888; text-align: center; padding: 0.2rem 0.3rem; border-bottom: 1px solid #eee; }
+.ab-team { display: flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.5rem; }
+.ab-team + .ab-team { border-top: 1px solid #eee; }
+.ab-team .icon { display: inline-block; width: 1.4em; height: 1em; flex: none; background-size: cover; background-position: center; background-repeat: no-repeat; border: 1px solid #ccc; }
+.ab-team-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ab-team.winner { font-weight: bold; }
+.ab-team.loser { opacity: 0.55; }
+.ab-score { font-weight: bold; }
+.ab-team.loser .ab-score { font-weight: normal; }
+.ab-tbd { color: #999; font-style: italic; font-size: 0.72rem; }
+#bracket-edit-panel:not(:empty) { border: 1px solid #ccc; border-radius: 4px; padding: 0.6rem 0.8rem; background: #f4f8ff; margin-top: 0.5rem; }
 </style>
 </head>
 <body>
 <nav><a href="1998.html">1998</a><a href="2002.html">2002</a><strong>2006</strong><a href="2010.html">2010</a><a href="2014.html">2014</a><a href="2018.html">2018</a><a href="2022.html">2022</a><a href="2026.html">2026</a></nav>
 <h1>World Cup 2006 — Admin</h1>
+
+<div class="tab-strip">
+  <button id="tab-matches" class="active" onclick="setView('matches')">Match List</button>
+  <button id="tab-groups" onclick="setView('groups')">Groups</button>
+  <button id="tab-knockout" onclick="setView('knockout')">Knockout</button>
+</div>
+
+<div id="matches-view">
 <table>
   <thead><tr><th>Date</th><th>#</th><th>Home</th><th>Away</th></tr></thead>
-  <tbody id="games"><tr><td colspan="4" class="loading">Loading…</td></tr></tbody>
+  <tbody id="games"></tbody>
 </table>
+</div>
+
+<div id="groups-view">
+<p style="opacity:0.6; font-style:italic;">Group Stage — coming soon.</p>
+</div>
+
+<div id="knockout-view">
+<div id="knockout-admin"></div>
+</div>
 
 <script>
 const YEAR = 2006;
+// BEGIN:data2006 — embedded from worldcup/data/2006.json, kept in sync by build.py
+const DATA = {
+  "teamElos": {
+    "Angola": 1565,
+    "Argentina": 1922,
+    "Australia": 1798,
+    "Brazil": 2034,
+    "Costa Rica": 1724,
+    "Croatia": 1837,
+    "Czechia": 1971,
+    "Ecuador": 1700,
+    "England": 1972,
+    "France": 1971,
+    "Germany": 1895,
+    "Ghana": 1616,
+    "Iran": 1841,
+    "Italy": 1943,
+    "Ivory Coast": 1766,
+    "Japan": 1789,
+    "Mexico": 1839,
+    "Netherlands": 1994,
+    "Paraguay": 1779,
+    "Poland": 1822,
+    "Portugal": 1915,
+    "Saudi Arabia": 1554,
+    "Serbia and Montenegro": 1800,
+    "South Korea": 1743,
+    "Spain": 1964,
+    "Sweden": 1859,
+    "Switzerland": 1800,
+    "Togo": 1488,
+    "Trinidad and Tobago": 1567,
+    "Tunisia": 1703,
+    "Ukraine": 1790,
+    "USA": 1824
+  },
+  "games": [
+    {
+      "gameNumber": 1,
+      "homeTeam": "Ecuador",
+      "awayTeam": "Poland",
+      "homeScore": 2,
+      "awayScore": 0,
+      "date": "2006-06-09",
+      "eloChange": 60,
+      "homeEloPre": 1700,
+      "awayEloPre": 1822
+    },
+    {
+      "gameNumber": 2,
+      "homeTeam": "Germany",
+      "awayTeam": "Costa Rica",
+      "homeScore": 4,
+      "awayScore": 2,
+      "date": "2006-06-09",
+      "eloChange": 16,
+      "homeEloPre": 1895,
+      "awayEloPre": 1724
+    },
+    {
+      "gameNumber": 3,
+      "homeTeam": "Argentina",
+      "awayTeam": "Ivory Coast",
+      "homeScore": 2,
+      "awayScore": 1,
+      "date": "2006-06-10",
+      "eloChange": 17,
+      "homeEloPre": 1922,
+      "awayEloPre": 1766
+    },
+    {
+      "gameNumber": 4,
+      "homeTeam": "England",
+      "awayTeam": "Paraguay",
+      "homeScore": 1,
+      "awayScore": 0,
+      "date": "2006-06-10",
+      "eloChange": 15,
+      "homeEloPre": 1972,
+      "awayEloPre": 1779
+    },
+    {
+      "gameNumber": 5,
+      "homeTeam": "Sweden",
+      "awayTeam": "Trinidad and Tobago",
+      "homeScore": 0,
+      "awayScore": 0,
+      "date": "2006-06-10",
+      "eloChange": -21,
+      "homeEloPre": 1859,
+      "awayEloPre": 1567
+    },
+    {
+      "gameNumber": 6,
+      "homeTeam": "Mexico",
+      "awayTeam": "Iran",
+      "homeScore": 3,
+      "awayScore": 1,
+      "date": "2006-06-11",
+      "eloChange": 45,
+      "homeEloPre": 1839,
+      "awayEloPre": 1841
+    },
+    {
+      "gameNumber": 7,
+      "homeTeam": "Netherlands",
+      "awayTeam": "Serbia and Montenegro",
+      "homeScore": 1,
+      "awayScore": 0,
+      "date": "2006-06-11",
+      "eloChange": 15,
+      "homeEloPre": 1994,
+      "awayEloPre": 1800
+    },
+    {
+      "gameNumber": 8,
+      "homeTeam": "Portugal",
+      "awayTeam": "Angola",
+      "homeScore": 1,
+      "awayScore": 0,
+      "date": "2006-06-11",
+      "eloChange": 7,
+      "homeEloPre": 1915,
+      "awayEloPre": 1565
+    },
+    {
+      "gameNumber": 9,
+      "homeTeam": "Australia",
+      "awayTeam": "Japan",
+      "homeScore": 3,
+      "awayScore": 1,
+      "date": "2006-06-12",
+      "eloChange": 44,
+      "homeEloPre": 1798,
+      "awayEloPre": 1789
+    },
+    {
+      "gameNumber": 10,
+      "homeTeam": "Czechia",
+      "awayTeam": "USA",
+      "homeScore": 3,
+      "awayScore": 0,
+      "date": "2006-06-12",
+      "eloChange": 32,
+      "homeEloPre": 1971,
+      "awayEloPre": 1824
+    },
+    {
+      "gameNumber": 11,
+      "homeTeam": "Italy",
+      "awayTeam": "Ghana",
+      "homeScore": 2,
+      "awayScore": 0,
+      "date": "2006-06-12",
+      "eloChange": 12,
+      "homeEloPre": 1943,
+      "awayEloPre": 1616
+    },
+    {
+      "gameNumber": 12,
+      "homeTeam": "Brazil",
+      "awayTeam": "Croatia",
+      "homeScore": 1,
+      "awayScore": 0,
+      "date": "2006-06-13",
+      "eloChange": 15,
+      "homeEloPre": 2034,
+      "awayEloPre": 1837
+    },
+    {
+      "gameNumber": 13,
+      "homeTeam": "France",
+      "awayTeam": "Switzerland",
+      "homeScore": 0,
+      "awayScore": 0,
+      "date": "2006-06-13",
+      "eloChange": -14,
+      "homeEloPre": 1971,
+      "awayEloPre": 1800
+    },
+    {
+      "gameNumber": 14,
+      "homeTeam": "South Korea",
+      "awayTeam": "Togo",
+      "homeScore": 2,
+      "awayScore": 1,
+      "date": "2006-06-13",
+      "eloChange": 11,
+      "homeEloPre": 1743,
+      "awayEloPre": 1488
+    },
+    {
+      "gameNumber": 15,
+      "homeTeam": "Saudi Arabia",
+      "awayTeam": "Tunisia",
+      "homeScore": 2,
+      "awayScore": 2,
+      "date": "2006-06-14",
+      "eloChange": 12,
+      "homeEloPre": 1554,
+      "awayEloPre": 1703
+    },
+    {
+      "gameNumber": 16,
+      "homeTeam": "Spain",
+      "awayTeam": "Ukraine",
+      "homeScore": 4,
+      "awayScore": 0,
+      "date": "2006-06-14",
+      "eloChange": 30,
+      "homeEloPre": 1964,
+      "awayEloPre": 1790
+    },
+    {
+      "gameNumber": 17,
+      "homeTeam": "Germany",
+      "awayTeam": "Poland",
+      "homeScore": 1,
+      "awayScore": 0,
+      "date": "2006-06-14",
+      "eloChange": 12,
+      "homeEloPre": 1911,
+      "awayEloPre": 1762
+    },
+    {
+      "gameNumber": 18,
+      "homeTeam": "Ecuador",
+      "awayTeam": "Costa Rica",
+      "homeScore": 3,
+      "awayScore": 0,
+      "date": "2006-06-15",
+      "eloChange": 45,
+      "homeEloPre": 1760,
+      "awayEloPre": 1708
+    },
+    {
+      "gameNumber": 19,
+      "homeTeam": "England",
+      "awayTeam": "Trinidad and Tobago",
+      "homeScore": 2,
+      "awayScore": 0,
+      "date": "2006-06-15",
+      "eloChange": 8,
+      "homeEloPre": 1987,
+      "awayEloPre": 1588
+    },
+    {
+      "gameNumber": 20,
+      "homeTeam": "Sweden",
+      "awayTeam": "Paraguay",
+      "homeScore": 1,
+      "awayScore": 0,
+      "date": "2006-06-15",
+      "eloChange": 24,
+      "homeEloPre": 1838,
+      "awayEloPre": 1764
+    },
+    {
+      "gameNumber": 21,
+      "homeTeam": "Angola",
+      "awayTeam": "Mexico",
+      "homeScore": 0,
+      "awayScore": 0,
+      "date": "2006-06-16",
+      "eloChange": 22,
+      "homeEloPre": 1558,
+      "awayEloPre": 1884
+    },
+    {
+      "gameNumber": 22,
+      "homeTeam": "Argentina",
+      "awayTeam": "Serbia and Montenegro",
+      "homeScore": 6,
+      "awayScore": 0,
+      "date": "2006-06-16",
+      "eloChange": 37,
+      "homeEloPre": 1939,
+      "awayEloPre": 1785
+    },
+    {
+      "gameNumber": 23,
+      "homeTeam": "Netherlands",
+      "awayTeam": "Ivory Coast",
+      "homeScore": 2,
+      "awayScore": 1,
+      "date": "2006-06-16",
+      "eloChange": 11,
+      "homeEloPre": 2009,
+      "awayEloPre": 1749
+    },
+    {
+      "gameNumber": 24,
+      "homeTeam": "Ghana",
+      "awayTeam": "Czechia",
+      "homeScore": 2,
+      "awayScore": 0,
+      "date": "2006-06-17",
+      "eloChange": 82,
+      "homeEloPre": 1604,
+      "awayEloPre": 2003
+    },
+    {
+      "gameNumber": 25,
+      "homeTeam": "Italy",
+      "awayTeam": "USA",
+      "homeScore": 1,
+      "awayScore": 1,
+      "date": "2006-06-17",
+      "eloChange": -13,
+      "homeEloPre": 1955,
+      "awayEloPre": 1792
+    },
+    {
+      "gameNumber": 26,
+      "homeTeam": "Portugal",
+      "awayTeam": "Iran",
+      "homeScore": 2,
+      "awayScore": 0,
+      "date": "2006-06-17",
+      "eloChange": 29,
+      "homeEloPre": 1922,
+      "awayEloPre": 1796
+    },
+    {
+      "gameNumber": 27,
+      "homeTeam": "Brazil",
+      "awayTeam": "Australia",
+      "homeScore": 2,
+      "awayScore": 0,
+      "date": "2006-06-18",
+      "eloChange": 21,
+      "homeEloPre": 2049,
+      "awayEloPre": 1842
+    },
+    {
+      "gameNumber": 28,
+      "homeTeam": "Croatia",
+      "awayTeam": "Japan",
+      "homeScore": 0,
+      "awayScore": 0,
+      "date": "2006-06-18",
+      "eloChange": -7,
+      "homeEloPre": 1822,
+      "awayEloPre": 1745
+    },
+    {
+      "gameNumber": 29,
+      "homeTeam": "France",
+      "awayTeam": "South Korea",
+      "homeScore": 1,
+      "awayScore": 1,
+      "date": "2006-06-18",
+      "eloChange": -16,
+      "homeEloPre": 1957,
+      "awayEloPre": 1754
+    },
+    {
+      "gameNumber": 30,
+      "homeTeam": "Spain",
+      "awayTeam": "Tunisia",
+      "homeScore": 3,
+      "awayScore": 1,
+      "date": "2006-06-19",
+      "eloChange": 13,
+      "homeEloPre": 1994,
+      "awayEloPre": 1691
+    },
+    {
+      "gameNumber": 31,
+      "homeTeam": "Switzerland",
+      "awayTeam": "Togo",
+      "homeScore": 2,
+      "awayScore": 0,
+      "date": "2006-06-19",
+      "eloChange": 11,
+      "homeEloPre": 1814,
+      "awayEloPre": 1477
+    },
+    {
+      "gameNumber": 32,
+      "homeTeam": "Ukraine",
+      "awayTeam": "Saudi Arabia",
+      "homeScore": 4,
+      "awayScore": 0,
+      "date": "2006-06-19",
+      "eloChange": 28,
+      "homeEloPre": 1760,
+      "awayEloPre": 1566
+    },
+    {
+      "gameNumber": 33,
+      "homeTeam": "England",
+      "awayTeam": "Sweden",
+      "homeScore": 2,
+      "awayScore": 2,
+      "date": "2006-06-20",
+      "eloChange": -11,
+      "homeEloPre": 1995,
+      "awayEloPre": 1862
+    },
+    {
+      "gameNumber": 34,
+      "homeTeam": "Germany",
+      "awayTeam": "Ecuador",
+      "homeScore": 3,
+      "awayScore": 0,
+      "date": "2006-06-20",
+      "eloChange": 23,
+      "homeEloPre": 1923,
+      "awayEloPre": 1805
+    },
+    {
+      "gameNumber": 35,
+      "homeTeam": "Paraguay",
+      "awayTeam": "Trinidad and Tobago",
+      "homeScore": 2,
+      "awayScore": 0,
+      "date": "2006-06-20",
+      "eloChange": 26,
+      "homeEloPre": 1740,
+      "awayEloPre": 1580
+    },
+    {
+      "gameNumber": 36,
+      "homeTeam": "Poland",
+      "awayTeam": "Costa Rica",
+      "homeScore": 2,
+      "awayScore": 1,
+      "date": "2006-06-20",
+      "eloChange": 23,
+      "homeEloPre": 1750,
+      "awayEloPre": 1663
+    },
+    {
+      "gameNumber": 37,
+      "homeTeam": "Angola",
+      "awayTeam": "Iran",
+      "homeScore": 1,
+      "awayScore": 1,
+      "date": "2006-06-21",
+      "eloChange": 15,
+      "homeEloPre": 1580,
+      "awayEloPre": 1767
+    },
+    {
+      "gameNumber": 38,
+      "homeTeam": "Argentina",
+      "awayTeam": "Netherlands",
+      "homeScore": 0,
+      "awayScore": 0,
+      "date": "2006-06-21",
+      "eloChange": 4,
+      "homeEloPre": 1976,
+      "awayEloPre": 2020
+    },
+    {
+      "gameNumber": 39,
+      "homeTeam": "Ivory Coast",
+      "awayTeam": "Serbia and Montenegro",
+      "homeScore": 3,
+      "awayScore": 2,
+      "date": "2006-06-21",
+      "eloChange": 31,
+      "homeEloPre": 1738,
+      "awayEloPre": 1748
+    },
+    {
+      "gameNumber": 40,
+      "homeTeam": "Portugal",
+      "awayTeam": "Mexico",
+      "homeScore": 2,
+      "awayScore": 1,
+      "date": "2006-06-21",
+      "eloChange": 22,
+      "homeEloPre": 1951,
+      "awayEloPre": 1862
+    },
+    {
+      "gameNumber": 41,
+      "homeTeam": "Australia",
+      "awayTeam": "Croatia",
+      "homeScore": 2,
+      "awayScore": 2,
+      "date": "2006-06-22",
+      "eloChange": -1,
+      "homeEloPre": 1821,
+      "awayEloPre": 1815
+    },
+    {
+      "gameNumber": 42,
+      "homeTeam": "Brazil",
+      "awayTeam": "Japan",
+      "homeScore": 4,
+      "awayScore": 1,
+      "date": "2006-06-22",
+      "eloChange": 15,
+      "homeEloPre": 2070,
+      "awayEloPre": 1752
+    },
+    {
+      "gameNumber": 43,
+      "homeTeam": "Ghana",
+      "awayTeam": "USA",
+      "homeScore": 2,
+      "awayScore": 1,
+      "date": "2006-06-22",
+      "eloChange": 40,
+      "homeEloPre": 1686,
+      "awayEloPre": 1805
+    },
+    {
+      "gameNumber": 44,
+      "homeTeam": "Italy",
+      "awayTeam": "Czechia",
+      "homeScore": 2,
+      "awayScore": 0,
+      "date": "2006-06-22",
+      "eloChange": 42,
+      "homeEloPre": 1942,
+      "awayEloPre": 1921
+    },
+    {
+      "gameNumber": 45,
+      "homeTeam": "France",
+      "awayTeam": "Togo",
+      "homeScore": 2,
+      "awayScore": 0,
+      "date": "2006-06-23",
+      "eloChange": 5,
+      "homeEloPre": 1941,
+      "awayEloPre": 1466
+    },
+    {
+      "gameNumber": 46,
+      "homeTeam": "Spain",
+      "awayTeam": "Saudi Arabia",
+      "homeScore": 1,
+      "awayScore": 0,
+      "date": "2006-06-23",
+      "eloChange": 4,
+      "homeEloPre": 2007,
+      "awayEloPre": 1538
+    },
+    {
+      "gameNumber": 47,
+      "homeTeam": "Switzerland",
+      "awayTeam": "South Korea",
+      "homeScore": 2,
+      "awayScore": 0,
+      "date": "2006-06-23",
+      "eloChange": 38,
+      "homeEloPre": 1825,
+      "awayEloPre": 1770
+    },
+    {
+      "gameNumber": 48,
+      "homeTeam": "Ukraine",
+      "awayTeam": "Tunisia",
+      "homeScore": 1,
+      "awayScore": 0,
+      "date": "2006-06-23",
+      "eloChange": 21,
+      "homeEloPre": 1788,
+      "awayEloPre": 1678
+    },
+    {
+      "gameNumber": 49,
+      "homeTeam": "Argentina",
+      "awayTeam": "Mexico",
+      "homeScore": 2,
+      "awayScore": 1,
+      "date": "2006-06-24",
+      "eloChange": 19,
+      "homeEloPre": 1980,
+      "awayEloPre": 1840
+    },
+    {
+      "gameNumber": 50,
+      "homeTeam": "Germany",
+      "awayTeam": "Sweden",
+      "homeScore": 2,
+      "awayScore": 0,
+      "date": "2006-06-24",
+      "eloChange": 24,
+      "homeEloPre": 1946,
+      "awayEloPre": 1873
+    },
+    {
+      "gameNumber": 51,
+      "homeTeam": "England",
+      "awayTeam": "Ecuador",
+      "homeScore": 1,
+      "awayScore": 0,
+      "date": "2006-06-25",
+      "eloChange": 14,
+      "homeEloPre": 1984,
+      "awayEloPre": 1782
+    },
+    {
+      "gameNumber": 52,
+      "homeTeam": "Portugal",
+      "awayTeam": "Netherlands",
+      "homeScore": 1,
+      "awayScore": 0,
+      "date": "2006-06-25",
+      "eloChange": 34,
+      "homeEloPre": 1973,
+      "awayEloPre": 2016
+    },
+    {
+      "gameNumber": 53,
+      "homeTeam": "Italy",
+      "awayTeam": "Australia",
+      "homeScore": 1,
+      "awayScore": 0,
+      "date": "2006-06-26",
+      "eloChange": 17,
+      "homeEloPre": 1984,
+      "awayEloPre": 1820
+    },
+    {
+      "gameNumber": 54,
+      "homeTeam": "Switzerland",
+      "awayTeam": "Ukraine",
+      "homeScore": 0,
+      "awayScore": 0,
+      "date": "2006-06-26",
+      "eloChange": -5,
+      "homeEloPre": 1863,
+      "awayEloPre": 1809
+    },
+    {
+      "gameNumber": 55,
+      "homeTeam": "Brazil",
+      "awayTeam": "Ghana",
+      "homeScore": 3,
+      "awayScore": 0,
+      "date": "2006-06-27",
+      "eloChange": 12,
+      "homeEloPre": 2085,
+      "awayEloPre": 1726
+    },
+    {
+      "gameNumber": 56,
+      "homeTeam": "France",
+      "awayTeam": "Spain",
+      "homeScore": 3,
+      "awayScore": 1,
+      "date": "2006-06-27",
+      "eloChange": 53,
+      "homeEloPre": 1946,
+      "awayEloPre": 2011
+    },
+    {
+      "gameNumber": 57,
+      "homeTeam": "Germany",
+      "awayTeam": "Argentina",
+      "homeScore": 1,
+      "awayScore": 1,
+      "date": "2006-06-30",
+      "eloChange": -6,
+      "homeEloPre": 1970,
+      "awayEloPre": 1999
+    },
+    {
+      "gameNumber": 58,
+      "homeTeam": "Italy",
+      "awayTeam": "Ukraine",
+      "homeScore": 3,
+      "awayScore": 0,
+      "date": "2006-06-30",
+      "eloChange": 27,
+      "homeEloPre": 2001,
+      "awayEloPre": 1814
+    },
+    {
+      "gameNumber": 59,
+      "homeTeam": "England",
+      "awayTeam": "Portugal",
+      "homeScore": 0,
+      "awayScore": 0,
+      "date": "2006-07-01",
+      "eloChange": 1,
+      "homeEloPre": 1998,
+      "awayEloPre": 2007
+    },
+    {
+      "gameNumber": 60,
+      "homeTeam": "France",
+      "awayTeam": "Brazil",
+      "homeScore": 1,
+      "awayScore": 0,
+      "date": "2006-07-01",
+      "eloChange": 38,
+      "homeEloPre": 1999,
+      "awayEloPre": 2097
+    },
+    {
+      "gameNumber": 61,
+      "homeTeam": "Germany",
+      "awayTeam": "Italy",
+      "homeScore": 0,
+      "awayScore": 2,
+      "date": "2006-07-04",
+      "eloChange": -50,
+      "homeEloPre": 1964,
+      "awayEloPre": 2028
+    },
+    {
+      "gameNumber": 62,
+      "homeTeam": "France",
+      "awayTeam": "Portugal",
+      "homeScore": 1,
+      "awayScore": 0,
+      "date": "2006-07-05",
+      "eloChange": 27,
+      "homeEloPre": 2037,
+      "awayEloPre": 2006
+    },
+    {
+      "gameNumber": 63,
+      "homeTeam": "Germany",
+      "awayTeam": "Portugal",
+      "homeScore": 3,
+      "awayScore": 1,
+      "date": "2006-07-08",
+      "eloChange": 40,
+      "homeEloPre": 1914,
+      "awayEloPre": 1979
+    },
+    {
+      "gameNumber": 64,
+      "homeTeam": "France",
+      "awayTeam": "Italy",
+      "homeScore": 1,
+      "awayScore": 1,
+      "date": "2006-07-09",
+      "eloChange": 1,
+      "homeEloPre": 2064,
+      "awayEloPre": 2078
+    }
+  ]
+};
+// END:data2006
+// BEGIN:teams — embedded from worldcup/data/teams.json, kept in sync by build.py
+const teams = [
+  {
+    "name": "Russia",
+    "shorthand": "RUS",
+    "confederation": "Europe",
+    "flag": "ru"
+  },
+  {
+    "name": "Portugal",
+    "shorthand": "POR",
+    "confederation": "Europe",
+    "flag": "pt"
+  },
+  {
+    "name": "Spain",
+    "shorthand": "ESP",
+    "confederation": "Europe",
+    "flag": "es"
+  },
+  {
+    "name": "France",
+    "shorthand": "FRA",
+    "confederation": "Europe",
+    "flag": "fr"
+  },
+  {
+    "name": "Denmark",
+    "shorthand": "DEN",
+    "confederation": "Europe",
+    "flag": "dk"
+  },
+  {
+    "name": "Iceland",
+    "shorthand": "ISL",
+    "confederation": "Europe",
+    "flag": "is"
+  },
+  {
+    "name": "Croatia",
+    "shorthand": "CRO",
+    "confederation": "Europe",
+    "flag": "hr"
+  },
+  {
+    "name": "Serbia",
+    "shorthand": "SRB",
+    "confederation": "Europe",
+    "flag": "rs"
+  },
+  {
+    "name": "Switzerland",
+    "shorthand": "SUI",
+    "confederation": "Europe",
+    "flag": "ch"
+  },
+  {
+    "name": "Germany",
+    "shorthand": "GER",
+    "confederation": "Europe",
+    "flag": "de"
+  },
+  {
+    "name": "Sweden",
+    "shorthand": "SWE",
+    "confederation": "Europe",
+    "flag": "se"
+  },
+  {
+    "name": "Belgium",
+    "shorthand": "BEL",
+    "confederation": "Europe",
+    "flag": "be"
+  },
+  {
+    "name": "England",
+    "shorthand": "ENG",
+    "confederation": "Europe",
+    "flag": "gb-eng"
+  },
+  {
+    "name": "Poland",
+    "shorthand": "POL",
+    "confederation": "Europe",
+    "flag": "pl"
+  },
+  {
+    "name": "Netherlands",
+    "shorthand": "NED",
+    "confederation": "Europe",
+    "flag": "nl"
+  },
+  {
+    "name": "Wales",
+    "shorthand": "WAL",
+    "confederation": "Europe",
+    "flag": "gb-wls"
+  },
+  {
+    "name": "Saudi Arabia",
+    "shorthand": "KSA",
+    "confederation": "Asia",
+    "flag": "sa"
+  },
+  {
+    "name": "Iran",
+    "shorthand": "IRN",
+    "confederation": "Asia",
+    "flag": "ir"
+  },
+  {
+    "name": "Australia",
+    "shorthand": "AUS",
+    "confederation": "Asia",
+    "flag": "au"
+  },
+  {
+    "name": "South Korea",
+    "shorthand": "KOR",
+    "confederation": "Asia",
+    "flag": "kr"
+  },
+  {
+    "name": "Japan",
+    "shorthand": "JPN",
+    "confederation": "Asia",
+    "flag": "jp"
+  },
+  {
+    "name": "Qatar",
+    "shorthand": "QAT",
+    "confederation": "Asia",
+    "flag": "qa"
+  },
+  {
+    "name": "Egypt",
+    "shorthand": "EGY",
+    "confederation": "Africa",
+    "flag": "eg"
+  },
+  {
+    "name": "Morocco",
+    "shorthand": "MAR",
+    "confederation": "Africa",
+    "flag": "ma"
+  },
+  {
+    "name": "Nigeria",
+    "shorthand": "NGA",
+    "confederation": "Africa",
+    "flag": "ng"
+  },
+  {
+    "name": "Tunisia",
+    "shorthand": "TUN",
+    "confederation": "Africa",
+    "flag": "tn"
+  },
+  {
+    "name": "Senegal",
+    "shorthand": "SEN",
+    "confederation": "Africa",
+    "flag": "sn"
+  },
+  {
+    "name": "Cameroon",
+    "shorthand": "CMR",
+    "confederation": "Africa",
+    "flag": "cm"
+  },
+  {
+    "name": "Ghana",
+    "shorthand": "GHA",
+    "confederation": "Africa",
+    "flag": "gh"
+  },
+  {
+    "name": "Uruguay",
+    "shorthand": "URU",
+    "confederation": "South America",
+    "flag": "uy"
+  },
+  {
+    "name": "Peru",
+    "shorthand": "PER",
+    "confederation": "South America",
+    "flag": "pe"
+  },
+  {
+    "name": "Argentina",
+    "shorthand": "ARG",
+    "confederation": "South America",
+    "flag": "ar"
+  },
+  {
+    "name": "Brazil",
+    "shorthand": "BRA",
+    "confederation": "South America",
+    "flag": "br"
+  },
+  {
+    "name": "Colombia",
+    "shorthand": "COL",
+    "confederation": "South America",
+    "flag": "co"
+  },
+  {
+    "name": "Ecuador",
+    "shorthand": "ECU",
+    "confederation": "South America",
+    "flag": "ec"
+  },
+  {
+    "name": "Costa Rica",
+    "shorthand": "CRC",
+    "confederation": "North America",
+    "flag": "cr"
+  },
+  {
+    "name": "Mexico",
+    "shorthand": "MEX",
+    "confederation": "North America",
+    "flag": "mx"
+  },
+  {
+    "name": "Panama",
+    "shorthand": "PAN",
+    "confederation": "North America",
+    "flag": "pa"
+  },
+  {
+    "name": "USA",
+    "shorthand": "USA",
+    "confederation": "North America",
+    "flag": "us"
+  },
+  {
+    "name": "Canada",
+    "shorthand": "CAN",
+    "confederation": "North America",
+    "flag": "ca"
+  },
+  {
+    "name": "South Africa",
+    "shorthand": "RSA",
+    "confederation": "Africa",
+    "flag": "za"
+  },
+  {
+    "name": "Czechia",
+    "shorthand": "CZE",
+    "confederation": "Europe",
+    "flag": "cz"
+  },
+  {
+    "name": "Bosnia",
+    "shorthand": "BIH",
+    "confederation": "Europe",
+    "flag": "ba"
+  },
+  {
+    "name": "Paraguay",
+    "shorthand": "PAR",
+    "confederation": "South America",
+    "flag": "py"
+  },
+  {
+    "name": "Haiti",
+    "shorthand": "HAI",
+    "confederation": "North America",
+    "flag": "ht"
+  },
+  {
+    "name": "Scotland",
+    "shorthand": "SCO",
+    "confederation": "Europe",
+    "flag": "gb-sct"
+  },
+  {
+    "name": "Turkey",
+    "shorthand": "TUR",
+    "confederation": "Europe",
+    "flag": "tr"
+  },
+  {
+    "name": "Curacao",
+    "shorthand": "CUW",
+    "confederation": "North America",
+    "flag": "cw"
+  },
+  {
+    "name": "Ivory Coast",
+    "shorthand": "CIV",
+    "confederation": "Africa",
+    "flag": "ci"
+  },
+  {
+    "name": "New Zealand",
+    "shorthand": "NZL",
+    "confederation": "Oceania",
+    "flag": "nz"
+  },
+  {
+    "name": "Cape Verde",
+    "shorthand": "CPV",
+    "confederation": "Africa",
+    "flag": "cv"
+  },
+  {
+    "name": "Iraq",
+    "shorthand": "IRQ",
+    "confederation": "Asia",
+    "flag": "iq"
+  },
+  {
+    "name": "Norway",
+    "shorthand": "NOR",
+    "confederation": "Europe",
+    "flag": "no"
+  },
+  {
+    "name": "Algeria",
+    "shorthand": "ALG",
+    "confederation": "Africa",
+    "flag": "dz"
+  },
+  {
+    "name": "Austria",
+    "shorthand": "AUT",
+    "confederation": "Europe",
+    "flag": "at"
+  },
+  {
+    "name": "Jordan",
+    "shorthand": "JOR",
+    "confederation": "Asia",
+    "flag": "jo"
+  },
+  {
+    "name": "DR Congo",
+    "shorthand": "COD",
+    "confederation": "Africa",
+    "flag": "cd"
+  },
+  {
+    "name": "Uzbekistan",
+    "shorthand": "UZB",
+    "confederation": "Asia",
+    "flag": "uz"
+  },
+  {
+    "name": "Chile",
+    "shorthand": "CHI",
+    "confederation": "South America",
+    "flag": "cl"
+  },
+  {
+    "name": "Spain",
+    "shorthand": "ESP",
+    "confederation": "Europe",
+    "flag": "es"
+  },
+  {
+    "name": "Greece",
+    "shorthand": "GRE",
+    "confederation": "Europe",
+    "flag": "gr"
+  },
+  {
+    "name": "Italy",
+    "shorthand": "ITA",
+    "confederation": "Europe",
+    "flag": "it"
+  },
+  {
+    "name": "Honduras",
+    "shorthand": "HON",
+    "confederation": "North America",
+    "flag": "hn"
+  },
+  {
+    "name": "Slovenia",
+    "shorthand": "SVN",
+    "confederation": "Europe",
+    "flag": "si"
+  },
+  {
+    "name": "North Korea",
+    "shorthand": "PRK",
+    "confederation": "Asia",
+    "flag": "kp"
+  },
+  {
+    "name": "Slovakia",
+    "shorthand": "SVK",
+    "confederation": "Europe",
+    "flag": "sk"
+  },
+  {
+    "name": "Trinidad and Tobago",
+    "shorthand": "TRI",
+    "confederation": "North America",
+    "flag": "tt"
+  },
+  {
+    "name": "Angola",
+    "shorthand": "ANG",
+    "confederation": "Africa",
+    "flag": "ao"
+  },
+  {
+    "name": "Togo",
+    "shorthand": "TOG",
+    "confederation": "Africa",
+    "flag": "tg"
+  },
+  {
+    "name": "Ukraine",
+    "shorthand": "UKR",
+    "confederation": "Europe",
+    "flag": "ua"
+  },
+  {
+    "name": "Serbia and Montenegro",
+    "shorthand": "SCG",
+    "confederation": "Europe",
+    "flag": "cs"
+  },
+  {
+    "name": "Ireland",
+    "shorthand": "IRL",
+    "confederation": "Europe",
+    "flag": "ie"
+  },
+  {
+    "name": "China",
+    "shorthand": "CHN",
+    "confederation": "Asia",
+    "flag": "cn"
+  },
+  {
+    "name": "Bulgaria",
+    "shorthand": "BUL",
+    "confederation": "Europe",
+    "flag": "bg"
+  },
+  {
+    "name": "Jamaica",
+    "shorthand": "JAM",
+    "confederation": "North America",
+    "flag": "jm"
+  },
+  {
+    "name": "Yugoslavia",
+    "shorthand": "YUG",
+    "confederation": "Europe",
+    "flag": "yu"
+  },
+  {
+    "name": "Romania",
+    "shorthand": "ROU",
+    "confederation": "Europe",
+    "flag": "ro"
+  }
+];
+// END:teams
 
 function esc(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -68,6 +1327,19 @@ function flagIcon(flag, name) {
   return flag
     ? `<span class="icon" style="background-image:url('../site/football/worldcup/flags/${flag}.svg')" title="${esc(name)}"></span>`
     : '';
+}
+
+// A knockout-bracket game may not have a concrete team yet — it defers to
+// an earlier game's winner/loser via homeFrom/awayFrom (see set_bracket_game.py).
+function feedLabel(from) {
+  if (!from) return 'TBD';
+  return `${from.result === 'loser' ? 'Loser' : 'Winner'} of Game ${from.game}`;
+}
+
+function teamCellHtml(game, side, flagByTeam) {
+  const team = game[side + 'Team'];
+  if (!team) return `<em style="color:#888">${esc(feedLabel(game[side + 'From']))}</em>`;
+  return `${flagIcon(flagByTeam[team], team)}${esc(team)}`;
 }
 
 let expandRow = null;
@@ -144,12 +1416,187 @@ function toggleExpand(game, tr, flagByTeam) {
   expandRow = expandTr;
 }
 
-async function main() {
-  const [data, teams] = await Promise.all([
-    fetch(`../worldcup/data/${YEAR}.json`).then(r => r.json()),
-    fetch('../worldcup/data/teams.json').then(r => r.json()),
-  ]);
-  const games = data.games;
+// Mirrors knockout.py's rounds_for_size() — see that file for the round
+// shape rationale. Keep the two in sync if this ever changes.
+const KNOCKOUT_ROUND_LABELS = { 32: 'Round of 32', 16: 'Round of 16', 8: 'Quarterfinals', 4: 'Semifinals' };
+function knockoutRounds(size) {
+  const rounds = [];
+  let n = size;
+  while (n > 4) { rounds.push([KNOCKOUT_ROUND_LABELS[n], n / 2]); n /= 2; }
+  rounds.push(['Semifinals', 2]);
+  rounds.push(['Final', 2]);
+  return rounds;
+}
+
+let selectedBracketGameNumber = null;
+
+function bracketAdminTeamHtml(game, side, flagByTeam, decided) {
+  const team = game[side + 'Team'];
+  if (!team) return `<div class="ab-team ab-tbd">${esc(feedLabel(game[side + 'From']))}</div>`;
+  const score = game[side + 'Score'];
+  const otherScore = game[side === 'home' ? 'awayScore' : 'homeScore'];
+  let cls = 'ab-team';
+  if (decided && score !== otherScore) cls += score > otherScore ? ' winner' : ' loser';
+  const scoreHtml = score != null ? `<span class="ab-score">${score}</span>` : '';
+  return `<div class="${cls}">${flagIcon(flagByTeam[team], team)}<span class="ab-team-name">${esc(team)}</span>${scoreHtml}</div>`;
+}
+
+function renderKnockoutAdmin(data, teams, flagByTeam) {
+  const container = document.getElementById('knockout-admin');
+  const shorthandByName = {};
+  for (const t of teams) shorthandByName[t.name] = t.shorthand;
+
+  if (!data.knockoutSize) {
+    container.innerHTML = `
+      <p>No bracket configured yet for ${YEAR}.</p>
+      <div class="br-size-picker">
+        ${[32, 16, 8, 4].map(s => `<button data-size="${s}">${s}</button>`).join('')}
+      </div>
+      <div class="ur-line"><input class="ur-cmd" id="size-cmd" type="text" readonly placeholder="pick a size above"><button id="size-copy">Copy</button></div>
+    `;
+    container.querySelectorAll('.br-size-picker button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('size-cmd').value = `python3 worldcup/scripts/set_knockout_size.py ${YEAR} ${btn.dataset.size}`;
+      });
+    });
+    document.getElementById('size-copy').addEventListener('click', () => {
+      const cmdInput = document.getElementById('size-cmd');
+      cmdInput.select();
+      navigator.clipboard.writeText(cmdInput.value);
+    });
+    return;
+  }
+
+  const rounds = knockoutRounds(data.knockoutSize);
+  const lastRound = rounds.length - 1;
+  const koGames = data.games.filter(g => g.round != null).sort((a, b) => a.gameNumber - b.gameNumber);
+
+  container.innerHTML = `
+    <p>Bracket size: ${data.knockoutSize} (starts at ${rounds[0][0]})</p>
+    <div class="ab-wrap" id="ab-wrap"></div>
+    <div id="bracket-edit-panel"></div>
+  `;
+
+  const wrap = document.getElementById('ab-wrap');
+  rounds.forEach(([label], roundIdx) => {
+    const roundGames = koGames.filter(g => g.round === roundIdx);
+
+    const roundDiv = document.createElement('div');
+    roundDiv.className = 'ab-round';
+    roundDiv.innerHTML = `<div class="ab-round-label">${esc(label)}</div><div class="ab-round-games"></div>`;
+    const gamesDiv = roundDiv.querySelector('.ab-round-games');
+
+    roundGames.forEach((game, gameIdx) => {
+      const decided = game.homeScore != null && game.awayScore != null;
+      const sub = roundIdx === lastRound
+        ? `<div class="ab-sub">${gameIdx === 0 ? 'Third-Place Match' : 'Final'}</div>`
+        : '';
+      const wrapDiv = document.createElement('div');
+      wrapDiv.className = 'ab-game-wrap';
+      const box = document.createElement('div');
+      box.className = 'ab-game';
+      box.dataset.game = game.gameNumber;
+      box.innerHTML = sub +
+        `<div class="ab-date">${game.date ? esc(game.date) : 'Date TBD'}</div>` +
+        bracketAdminTeamHtml(game, 'home', flagByTeam, decided) +
+        bracketAdminTeamHtml(game, 'away', flagByTeam, decided);
+      box.addEventListener('click', () => selectBracketGame(game, box, shorthandByName));
+      wrapDiv.appendChild(box);
+      gamesDiv.appendChild(wrapDiv);
+    });
+
+    wrap.appendChild(roundDiv);
+  });
+}
+
+function selectBracketGame(game, box, shorthandByName) {
+  const panel = document.getElementById('bracket-edit-panel');
+  const allBoxes = document.querySelectorAll('.ab-game');
+
+  if (selectedBracketGameNumber === game.gameNumber) {
+    selectedBracketGameNumber = null;
+    panel.innerHTML = '';
+    allBoxes.forEach(b => b.classList.remove('selected'));
+    return;
+  }
+  selectedBracketGameNumber = game.gameNumber;
+  allBoxes.forEach(b => b.classList.toggle('selected', Number(b.dataset.game) === game.gameNumber));
+
+  const homeShorthand = game.homeTeam ? (shorthandByName[game.homeTeam] || '') : '';
+  const awayShorthand = game.awayTeam ? (shorthandByName[game.awayTeam] || '') : '';
+  const homeMode = game.homeTeam ? 'team' : 'from';
+  const awayMode = game.awayTeam ? 'team' : 'from';
+  const homeFromGame = game.homeFrom ? game.homeFrom.game : '';
+  const homeFromResult = game.homeFrom ? game.homeFrom.result : 'winner';
+  const awayFromGame = game.awayFrom ? game.awayFrom.game : '';
+  const awayFromResult = game.awayFrom ? game.awayFrom.result : 'winner';
+
+  function slotHtml(side, mode, shorthand, fromGame, fromResult) {
+    return `
+      <div class="br-slot">
+        <strong>${side === 'home' ? 'Home' : 'Away'}:</strong>
+        <select class="br-${side}-mode">
+          <option value="team" ${mode === 'team' ? 'selected' : ''}>Team</option>
+          <option value="from" ${mode === 'from' ? 'selected' : ''}>From game</option>
+        </select>
+        <input class="br-${side}-team" type="text" placeholder="shorthand e.g. CAN" value="${esc(shorthand)}" style="display:${mode === 'team' ? 'inline-block' : 'none'}">
+        <span class="br-${side}-from-wrap" style="display:${mode === 'from' ? 'inline-flex' : 'none'};gap:0.4rem;align-items:center">
+          <input class="br-${side}-from-game" type="number" placeholder="game #" value="${fromGame}">
+          <select class="br-${side}-from-result">
+            <option value="winner" ${fromResult === 'winner' ? 'selected' : ''}>winner</option>
+            <option value="loser" ${fromResult === 'loser' ? 'selected' : ''}>loser</option>
+          </select>
+        </span>
+      </div>`;
+  }
+
+  panel.innerHTML = `
+    <div class="ur-line"><strong>#${game.gameNumber}</strong></div>
+    <div class="ur-line"><label>Date: <input class="br-date" type="date" value="${game.date || ''}"></label></div>
+    <div class="ur-line">${slotHtml('home', homeMode, homeShorthand, homeFromGame, homeFromResult)}</div>
+    <div class="ur-line">${slotHtml('away', awayMode, awayShorthand, awayFromGame, awayFromResult)}</div>
+    <div class="ur-line">
+      <button class="ur-gen">Generate command</button>
+      <input class="ur-cmd" type="text" readonly placeholder="command will appear here">
+      <button class="ur-copy">Copy</button>
+    </div>
+  `;
+
+  ['home', 'away'].forEach(side => {
+    panel.querySelector(`.br-${side}-mode`).addEventListener('change', e => {
+      const isTeam = e.target.value === 'team';
+      panel.querySelector(`.br-${side}-team`).style.display = isTeam ? 'inline-block' : 'none';
+      panel.querySelector(`.br-${side}-from-wrap`).style.display = isTeam ? 'none' : 'inline-flex';
+    });
+  });
+
+  panel.querySelector('.ur-gen').addEventListener('click', () => {
+    let cmd = `python3 worldcup/scripts/set_bracket_game.py ${YEAR} ${game.gameNumber}`;
+    const date = panel.querySelector('.br-date').value;
+    if (date) cmd += ` --date ${date}`;
+    ['home', 'away'].forEach(side => {
+      const mode = panel.querySelector(`.br-${side}-mode`).value;
+      if (mode === 'team') {
+        const shorthand = panel.querySelector(`.br-${side}-team`).value.trim();
+        if (shorthand) cmd += ` --${side} ${shorthand}`;
+      } else {
+        const gameNum = panel.querySelector(`.br-${side}-from-game`).value;
+        const result = panel.querySelector(`.br-${side}-from-result`).value;
+        if (gameNum) cmd += ` --${side}-from ${gameNum}:${result}`;
+      }
+    });
+    panel.querySelector('.ur-cmd').value = cmd;
+  });
+
+  panel.querySelector('.ur-copy').addEventListener('click', () => {
+    const cmdInput = panel.querySelector('.ur-cmd');
+    cmdInput.select();
+    navigator.clipboard.writeText(cmdInput.value);
+  });
+}
+
+function main() {
+  const games = DATA.games;
   const flagByTeam = {};
   for (const t of teams) flagByTeam[t.name] = t.flag;
 
@@ -157,6 +1604,7 @@ async function main() {
   tbody.innerHTML = '';
   if (games.length === 0) {
     tbody.innerHTML = '<tr><td colspan="4">No games</td></tr>';
+    renderKnockoutAdmin(DATA, teams, flagByTeam);
     return;
   }
 
@@ -167,15 +1615,30 @@ async function main() {
     tr.innerHTML = `
       <td>${game.date || ''}</td>
       <td>#${game.gameNumber}</td>
-      <td><div class="flag-cell">${flagIcon(flagByTeam[game.homeTeam], game.homeTeam)}${esc(game.homeTeam)} <strong>${hs}</strong></div></td>
-      <td><div class="flag-cell"><strong>${as_}</strong> ${flagIcon(flagByTeam[game.awayTeam], game.awayTeam)}${esc(game.awayTeam)}</div></td>
+      <td><div class="flag-cell">${teamCellHtml(game, 'home', flagByTeam)} <strong>${hs}</strong></div></td>
+      <td><div class="flag-cell"><strong>${as_}</strong> ${teamCellHtml(game, 'away', flagByTeam)}</div></td>
     `;
     tr.addEventListener('click', () => toggleExpand(game, tr, flagByTeam));
     tbody.appendChild(tr);
   }
+
+  renderKnockoutAdmin(DATA, teams, flagByTeam);
 }
 
+const VIEWS = ['matches', 'groups', 'knockout'];
+
+function setView(view) {
+  if (!VIEWS.includes(view)) view = 'matches';
+  for (const v of VIEWS) {
+    document.getElementById(v + '-view').style.display = v === view ? 'block' : 'none';
+    document.getElementById('tab-' + v).classList.toggle('active', v === view);
+  }
+  if (location.hash.slice(1) !== view) history.replaceState(null, '', '#' + view);
+}
+window.addEventListener('hashchange', () => setView(location.hash.slice(1)));
+
 main();
+setView(location.hash.slice(1) || 'matches');
 </script>
 </body>
 </html>

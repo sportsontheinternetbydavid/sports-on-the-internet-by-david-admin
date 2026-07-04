@@ -93,6 +93,22 @@ function toggleCellHtml(colspan) {
     `</div></th>`;
 }
 
+// A knockout-bracket game may not have a concrete team yet — it defers to
+// an earlier game's winner/loser via homeFrom/awayFrom instead. Everywhere a
+// team would be shown, fall back to a "Winner/Loser of Game N" text label.
+function feedLabel(from) {
+  if (!from) return 'TBD';
+  return `${from.result === 'loser' ? 'Loser' : 'Winner'} of Game ${from.game}`;
+}
+
+function flagCellHtml(game, side) {
+  const team = game[side + 'Team'];
+  if (team) {
+    return `<td class="flag"><span class="icon" style="background-image:url('flags/${flagByTeam[team]}.svg');transform:rotate(${flagRotation(team)}deg)" title="${esc(team)}"></span></td>`;
+  }
+  return `<td class="flag tbd-slot">${esc(feedLabel(game[side + 'From']))}</td>`;
+}
+
 function gameRowCells(game) {
   const change = game.eloChange;
   const homeEloDelta = signedElo(change);
@@ -104,11 +120,11 @@ function gameRowCells(game) {
     `<td class="narrow">#${game.gameNumber}</td>` +
     `<td class="spacer"></td>` +
     `<td class="elo">${eloCell(game.homeEloPre, homeEloDelta)}</td>` +
-    `<td class="flag"><span class="icon" style="background-image:url('flags/${flagByTeam[game.homeTeam]}.svg');transform:rotate(${flagRotation(game.homeTeam)}deg)" title="${esc(game.homeTeam)}"></span></td>` +
+    flagCellHtml(game, 'home') +
     `<td class="narrow">${homeScore}</td>` +
     `<td class="score-sep">-</td>` +
     `<td class="narrow">${awayScore}</td>` +
-    `<td class="flag"><span class="icon" style="background-image:url('flags/${flagByTeam[game.awayTeam]}.svg');transform:rotate(${flagRotation(game.awayTeam)}deg)" title="${esc(game.awayTeam)}"></span></td>` +
+    flagCellHtml(game, 'away') +
     `<td class="elo">${eloCell(game.awayEloPre, awayEloDelta)}</td>`
   );
 }
@@ -830,6 +846,69 @@ function initRankingsHover() {
   container.addEventListener('mouseleave', scheduleReset);
 }
 
+// ── Knockout bracket view ─────────────────────────────────────────────────
+
+// Mirrors knockout.py's rounds_for_size() — see that file for the round
+// shape rationale. Keep the two in sync if this ever changes.
+const KNOCKOUT_ROUND_LABELS = { 32: 'Round of 32', 16: 'Round of 16', 8: 'Quarterfinals', 4: 'Semifinals' };
+function knockoutRounds(size) {
+  const rounds = [];
+  let n = size;
+  while (n > 4) {
+    rounds.push([KNOCKOUT_ROUND_LABELS[n], n / 2]);
+    n /= 2;
+  }
+  rounds.push(['Semifinals', 2]);
+  rounds.push(['Final', 2]);
+  return rounds;
+}
+
+function bracketTeamRowHtml(game, side, decided) {
+  const team = game[side + 'Team'];
+  const score = game[side + 'Score'];
+  if (!team) {
+    return `<div class="bracket-team bracket-tbd">${esc(feedLabel(game[side + 'From']))}</div>`;
+  }
+  const otherScore = game[side === 'home' ? 'awayScore' : 'homeScore'];
+  let cls = 'bracket-team';
+  if (decided && score !== otherScore) cls += score > otherScore ? ' winner' : ' loser';
+  const flag = flagByTeam[team]
+    ? `<span class="icon" style="background-image:url('flags/${flagByTeam[team]}.svg');transform:rotate(${flagRotation(team)}deg)"></span>`
+    : '';
+  const scoreHtml = score != null ? `<span class="bracket-score">${score}</span>` : '';
+  return `<div class="${cls}">${flag}<span class="bracket-team-name">${esc(team)}</span>${scoreHtml}</div>`;
+}
+
+function renderKnockout() {
+  const container = document.getElementById('knockout-outer');
+  if (!KNOCKOUT_SIZE) {
+    container.innerHTML = '<p style="opacity:0.6; font-style:italic;">Knockout bracket not yet configured for this tournament.</p>';
+    return;
+  }
+
+  const rounds = knockoutRounds(KNOCKOUT_SIZE);
+  const lastRound = rounds.length - 1;
+
+  const html = rounds.map(([label, count], roundIdx) => {
+    const games = GAMES.filter(g => g.round === roundIdx).sort((a, b) => a.gameNumber - b.gameNumber);
+    const gamesHtml = games.map((game, gameIdx) => {
+      const decided = game.homeScore != null && game.awayScore != null;
+      const sub = roundIdx === lastRound
+        ? `<div class="bracket-game-sub">${gameIdx === 0 ? 'Third-Place Match' : 'Final'}</div>`
+        : '';
+      return `<div class="bracket-game-wrap"><div class="bracket-game">` +
+        sub +
+        `<div class="bracket-date">${game.date ? formatDate(game.date) : 'Date TBD'}</div>` +
+        bracketTeamRowHtml(game, 'home', decided) +
+        bracketTeamRowHtml(game, 'away', decided) +
+        `</div></div>`;
+    }).join('');
+    return `<div class="bracket-round"><div class="bracket-round-label">${esc(label)}</div><div class="bracket-round-games">${gamesHtml}</div></div>`;
+  }).join('');
+
+  container.innerHTML = `<div class="bracket">${html}</div>`;
+}
+
 // ── Page view (Match List / Rankings / Groups / Knockout) ────────────────
 
 const PAGE_VIEWS = ['matches', 'rankings', 'groups', 'knockout'];
@@ -845,6 +924,7 @@ function setPageView(view) {
   }
   if (view === 'matches') render();
   if (view === 'rankings') renderRankings();
+  if (view === 'knockout') renderKnockout();
   if (location.hash.slice(1) !== view) history.replaceState(null, '', '#' + view);
 }
 
@@ -868,8 +948,11 @@ function validateContract() {
   }
   const teamNames = new Set(teams.map(t => t.name));
   for (const g of GAMES) {
-    if (!teamNames.has(g.homeTeam)) console.warn(`shared.js: game #${g.gameNumber} homeTeam "${g.homeTeam}" not found in teams — flag and confederation will be missing`);
-    if (!teamNames.has(g.awayTeam)) console.warn(`shared.js: game #${g.gameNumber} awayTeam "${g.awayTeam}" not found in teams — flag and confederation will be missing`);
+    // Knockout-bracket games may legitimately have a null team pending an
+    // earlier game's result (see homeFrom/awayFrom) — only warn when a team
+    // name is actually present but unrecognized.
+    if (g.homeTeam != null && !teamNames.has(g.homeTeam)) console.warn(`shared.js: game #${g.gameNumber} homeTeam "${g.homeTeam}" not found in teams — flag and confederation will be missing`);
+    if (g.awayTeam != null && !teamNames.has(g.awayTeam)) console.warn(`shared.js: game #${g.gameNumber} awayTeam "${g.awayTeam}" not found in teams — flag and confederation will be missing`);
   }
   // Full ELO chain sync check: walk every game in order, tracking each team's
   // running ELO from TEAM_ELOS through completed results (mirrors derive_elos in
