@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Regenerate 2018.html / 2022.html / 2026.html from data/*.json and the
-page template defined in this file. Also regenerates the admin site's pages
-(via build_admin.py) at the end, so both sites' embedded data stay in sync
-from a single call — see build_admin.py for why it also embeds rather than
-serving over HTTP.
+page template defined in this file. Also regenerates the homepage (via
+build_home.py) and the admin site's pages (via build_admin.py) at the end,
+so every surface's shared nav component and embedded data stay in sync from
+a single call — see build_home.py for why the homepage is a build artifact
+too, and build_admin.py for why it also embeds rather than serving over
+HTTP.
 
 Run this after editing any data/*.json file by hand, or use
 worldcup/scripts/set_result.py for a one-line score update.
@@ -20,7 +22,9 @@ import sys
 from pathlib import Path
 
 import build_admin
+import build_home
 import knockout
+import nav
 
 ROOT = Path(__file__).resolve().parent.parent  # worldcup/ — data/, shared.css, shared.js live here
 PROJECT_ROOT = ROOT.parent  # repo root — site/ (deployed output) lives here, not under worldcup/
@@ -335,21 +339,19 @@ def validate(data, year, team_names):
 
 def build_nav(current_year):
     """Utility bar: Home, History, then a WC-YY item per tournament year plus
-    a disabled WC 30 placeholder for the next one — a single flat row of
-    equally-spaced segmented items using the same .view-toggle look (and
-    CSS) as every other nav row on the site. On tournament pages this is the
-    first tier of the fused 3-row nav (see page_html); standalone elsewhere
-    (e.g. history.html). The current page's item is a non-link
-    <strong class="active">, styled as the same white "selected" pill used
-    everywhere else in the nav."""
-    items = ['<a href="../../index.html">Home</a>']
-    items.append('<strong class="active">History</strong>' if current_year == 'history' else '<a href="history.html">History</a>')
+    a disabled WC 30 placeholder for the next one — Level 1 of the shared
+    fused nav (see nav.py and ../nav.css), same component the homepage uses
+    (build_home.py). On tournament pages this is the first tier of the
+    fused 3-row nav (see page_html); standalone elsewhere (e.g.
+    history.html)."""
+    items = [('Home', '../../index.html', None)]
+    items.append(('History', 'history.html', 'active' if current_year == 'history' else None))
     for y in YEARS:
         label = f'WC {str(y)[-2:]}'
-        items.append(f'<strong class="active">{label}</strong>' if y == current_year else f'<a href="{y}.html">{label}</a>')
-    items.append('<span class="disabled">WC 30</span>')  # placeholder — no 2030 data/page yet
+        items.append((label, f'{y}.html', 'active' if y == current_year else None))
+    items.append(('WC 30', None, 'disabled'))  # placeholder — no 2030 data/page yet
 
-    return f'<nav class="utility-bar view-toggle">{"".join(items)}</nav>'
+    return nav.render_row(items, 'utility-bar')
 
 
 def flag_rotation(team_name):
@@ -788,7 +790,10 @@ def main():
         print(__doc__)
         sys.exit(0)
 
-    shared_css = (ROOT / "shared.css").read_text()
+    # nav.css (the shared Level 1-3 component, also used by build_home.py)
+    # is concatenated ahead of shared.css so every page embeds one combined
+    # stylesheet, even though the two are separate files for editing.
+    shared_css = (ROOT / "nav.css").read_text() + "\n" + (ROOT / "shared.css").read_text()
     shared_js = (ROOT / "shared.js").read_text()
 
     teams = load("teams.json")
@@ -835,6 +840,7 @@ def main():
     history_path.write_text(history_html)
     print("Updated site/football/worldcup/history.html")
 
+    build_home.main()
     build_admin.main()
 
 

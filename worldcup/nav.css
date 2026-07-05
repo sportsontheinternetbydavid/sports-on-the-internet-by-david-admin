@@ -1,37 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sports! On the Internet. By David</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Fredoka+One&display=swap" rel="stylesheet">
-<script>
-(function() {
-  function faviconHref(isLocal) {
-    var dash = isLocal ? ' stroke-dasharray="3 2.5"' : '';
-    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">'
-      + '<circle cx="16" cy="16" r="14" fill="#F5F0E8" stroke="#1A5276" stroke-width="2.5"' + dash + '/>'
-      + '<path d="M16,10 L21.7,14.2 L19.5,20.9 L12.5,20.9 L10.3,14.2 Z" fill="#1A5276"/>'
-      + '</svg>';
-    return 'data:image/svg+xml,' + encodeURIComponent(svg);
-  }
-  window.__setFavicon = function() {
-    var isLocal = ['localhost', '127.0.0.1', ''].indexOf(location.hostname) !== -1;
-    var link = document.querySelector('link[rel="icon"]');
-    if (!link) {
-      link = document.createElement('link');
-      link.rel = 'icon';
-      document.head.appendChild(link);
-    }
-    link.type = 'image/svg+xml';
-    link.href = faviconHref(isLocal);
-  };
-  window.__setFavicon();
-})();
-</script>
-<style>
 /* Shared fused nav component — Level 1-3's generic visual system, used by
    every page on the public site: the homepage (build_home.py) and every
    World Cup page (build.py). This is the single source of truth for it —
@@ -83,21 +49,3 @@
 .detail-bar { min-height: 2.5rem; flex-wrap: wrap; border-top-left-radius: 0; border-top-right-radius: 0; border-top: 1px solid rgba(0,0,0,0.15); }
 .detail-bar.view-toggle { background: #C0392B; }
 .detail-bar a, .detail-bar strong, .detail-bar span { flex: 1 1 auto; white-space: nowrap; }
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Fredoka One', cursive; font-size: 1rem; line-height: 1.5; background: #F5F0E8; color: #1a1a1a; }
-.page { max-width: 800px; margin: 0 auto; padding: 2.5rem 1.5rem 5rem; }
-.site-header h1 { font-family: 'Permanent Marker', cursive; font-size: 3rem; color: #1a1a1a; line-height: 1.1; text-align: center; }
-.site-header .tagline { margin-top: 0.5rem; font-size: 1.1rem; color: #555; text-align: center; }
-</style>
-</head>
-<body>
-<div class="page-nav"><nav class="utility-bar view-toggle"><strong class="active">Football</strong><span class="disabled">Hockey</span><span class="disabled">Swimming</span></nav><nav class="page-toggle primary-tabs view-toggle"><strong class="active">World Cup</strong></nav><nav class="detail-bar view-toggle"><a href="football/worldcup/history.html">History</a><a href="football/worldcup/2026.html">Tournaments</a></nav></div>
-<div class="page">
-  <header class="site-header">
-    <h1>Sports! On the Internet. By David</h1>
-    <p class="tagline">Sports data and visualizations. On the internet.</p>
-  </header>
-</div>
-</body>
-</html>

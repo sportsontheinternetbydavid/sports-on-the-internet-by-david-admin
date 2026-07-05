@@ -1,14 +1,14 @@
 # Requirements — Admin Site
 
-What the admin site should do/look like. This is a **completely separate site** from the public one (see `requirements-public.md`) — not a mirror of it, not the public site with a toggle flipped. It exists for exactly one job: entering/correcting tournament data — match results and knockout-bracket structure. Nothing here is meant for a visitor to ever see.
+What the admin site should do/look like. This is a **completely separate site** from the public one (see `public.md`) — not a mirror of it, not the public site with a toggle flipped. It exists for exactly one job: entering/correcting tournament data — match results and knockout-bracket structure. Nothing here is meant for a visitor to ever see.
 
 **Terminology note**, because "admin" gets used two different ways in this project and they must not be conflated:
-- The **private admin repo** (`sports-on-the-internet-by-david-admin`) is where all source code lives — scripts, data, docs, `shared.js`/`shared.css`, and the templates for *both* sites. This already exists and is unchanged by this doc; see `../way-of-working.md`.
+- The **private admin repo** (`sports-on-the-internet-by-david-admin`) is where all source code lives — scripts, data, docs, `worldcup/shared.js`/`worldcup/shared.css`, and the templates for *both* sites. This already exists and is unchanged by this doc; see `../way-of-working.md`.
 - The **admin site** is a second, separate deployable website described by this doc — a small internal tool for data entry. It is new; see *Status* below for what's built.
 
 ## Status
 
-Implemented. `worldcup/scripts/build_admin.py` generates one page per year into `../admin/` (e.g. `../admin/2026.html`). The old single-site behavior (a `?admin` URL param / Data Entry toggle bolted onto the public pages) has been retired — see `requirements-public.md`, which describes the public site with all of that removed.
+Implemented. `worldcup/scripts/build_admin.py` generates one page per year into `../admin/` (e.g. `../admin/2026.html`). The old single-site behavior (a `?admin` URL param / Data Entry toggle bolted onto the public pages) has been retired — see `public.md`, which describes the public site with all of that removed.
 
 ## Hosting
 
@@ -25,11 +25,11 @@ A minimal internal tool, used by one person (you), for entering and correcting W
 - One page per World Cup year (1998–2026), same year set as the public site.
 - A simple year switcher at the top to jump between years — no `History`, no `Home`, no link back to the public site. This tool has one purpose; there's nothing else to navigate to.
 - A plain tab strip — **Match List / Groups / Knockout** — one view visible at a time, same hash-fragment convention as the public site (`#matches`/`#groups`/`#knockout`, default `#matches`). No **Rankings** tab — that's an exploratory view for correct data, not a data-entry concern, so it has no place here. Unlike the public site's tabs, this strip has no particular visual weight or styling — plain bordered buttons, active = filled dark.
-- No brand styling requirement. Legible and fast beats polished — flags are shown plainly for identification, not as the public site's tilted/desaturated "stickers." Construction-paper aesthetic (`../brand.md`) does not apply here.
+- No brand styling requirement. Legible and fast beats polished — flags are shown plainly for identification, not as the public site's tilted/desaturated "stickers." Construction-paper aesthetic (`../brand-guidelines.md`) does not apply here — this doc's styling rules above are all that apply to admin.
 
 ## Match list
 
-Same underlying game data as the public site's Match List (see `requirements-public.md`), but trimmed to only what's needed to find and correct a game:
+Same underlying game data as the public site's Match List (see `public.md`), but trimmed to only what's needed to find and correct a game:
 
 - Columns: Date, Game #, Home (flag + team name + score), Away (score + flag + team name).
 - No confederation panel, no ELO-shift columns, no W/D/L/Stats views. Nothing here helps you find or fix a result; all of it was cut.
@@ -49,7 +49,7 @@ This still only *generates* a command — it does not submit or write anything i
 
 ## Group Stage
 
-**Status: placeholder**, matching the public site's Group Stage view (see `requirements-public.md`). Renders a "coming soon" message only; no data-entry surface yet.
+**Status: placeholder**, matching the public site's Group Stage view (see `public.md`). Renders a "coming soon" message only; no data-entry surface yet.
 
 ## Knockout Bracket
 
@@ -63,7 +63,7 @@ This UI only ever generates the simple form of the command. A historical tournam
 
 ### Editing a bracket game
 
-Once a size is set, the tab instead shows a bracket tree — one column per round, connected by simple stub lines — not a flat table, so it's visually obvious which game feeds which. Same tree shape as the public site's Knockout tab (see `requirements-public.md`), plainly styled to match the rest of admin (no fonts/colors, just borders): each game is a box showing its date and its two participants, with the score and a bold winner / dimmed loser once decided. An unresolved participant shows "Winner/Loser of Game N" (or "TBD") the same way the public site does.
+Once a size is set, the tab instead shows a bracket tree — one column per round, connected by simple stub lines — not a flat table, so it's visually obvious which game feeds which. Same tree shape as the public site's Knockout tab (see `public.md`), plainly styled to match the rest of admin (no fonts/colors, just borders): each game is a box showing its date and its two participants, with the score and a bold winner / dimmed loser once decided. An unresolved participant shows "Winner/Loser of Game N" (or "TBD") the same way the public site does.
 
 Clicking a game box selects it (highlighted border) and populates a single edit panel below the whole tree — not an inline expansion, since that would shift the tree's spacing. The panel has:
 
@@ -77,7 +77,7 @@ Only the fields you touch end up in the generated command — this only ever cha
 
 ## Favicon
 
-Same mechanism as the public site (see `requirements-public.md` → *Favicon*), but this site only ever renders the **admin** fill, since there's no non-admin state to distinguish — every page on this site is data entry. The only signal is local vs. live.
+Same mechanism as the public site (see `public.md` → *Favicon*), but this site only ever renders the **admin** fill, since there's no non-admin state to distinguish — every page on this site is data entry. The only signal is local vs. live.
 
 | State | Fill | Ring |
 |-------|------|------|
@@ -201,8 +201,8 @@ Fix: when a MD2 game appears before the final MD1 game in the TSV, swap their po
 3. Derive `teamElos` from each team's first appearance (see above)
 4. Map TSV team codes to `teams.json` names (see code map above)
 5. Build the `games` array in TSV order, applying any MD boundary swaps
-6. Check `data/teams.json` for any teams not yet present; add them with confederation and flag-icons code
-7. Download missing flag SVGs from `https://github.com/lipis/flag-icons/tree/main/flags/4x3` into **both** `data/flags/` and `../site/football/worldcup/flags/` — the HTML pages load flags from the latter; `data/flags/` is the source copy kept in sync
+6. Check `worldcup/data/teams.json` for any teams not yet present; add them with confederation and flag-icons code
+7. Download missing flag SVGs from `https://github.com/lipis/flag-icons/tree/main/flags/4x3` into **both** `worldcup/data/flags/` and `../site/football/worldcup/flags/` — the HTML pages load flags from the latter; `worldcup/data/flags/` is the source copy kept in sync
 8. Add the year to `YEARS` and a matching entry to `PER_YEAR_CONFIG` in `worldcup/scripts/build.py` (32-team format uses the same gameset structure as 2018/2022)
 9. Run `worldcup/scripts/build.py`
 10. Configure the knockout bracket: `worldcup/scripts/set_knockout_size.py YEAR 16 --start-game 49` (32-team format's Round of 16 always starts at game 49) — since every round is already in the `games` array built in step 5, this tags all of them and scaffolds nothing. See *Knockout Bracket* above.
@@ -211,8 +211,8 @@ Fix: when a MD2 game appears before the final MD1 game in the TSV, swap their po
 
 ### Storage & delivery
 
-- Match data is stored in separate data files (one per World Cup, e.g. `data/2018.json`), plus `data/teams.json`. These files are the source of truth.
-- Both the public and admin sites open directly via `file://` with no server (per *Hosting* above), so neither can `fetch` the data files at runtime — every page, public or admin, embeds the contents of its corresponding data file plus `data/teams.json` as JS constants, generated at build time (`build.py` for the public pages, `build_admin.py` for the admin pages). The embedded constants must be kept in sync with the data files and are clearly marked (e.g. a comment noting the source file) so it's obvious they are a copy, not hand-edited separately.
+- Match data is stored in separate data files (one per World Cup, e.g. `worldcup/data/2018.json`), plus `worldcup/data/teams.json`. These files are the source of truth.
+- Both the public and admin sites open directly via `file://` with no server (per *Hosting* above), so neither can `fetch` the data files at runtime — every page, public or admin, embeds the contents of its corresponding data file plus `worldcup/data/teams.json` as JS constants, generated at build time (`build.py` for the public pages, `build_admin.py` for the admin pages). The embedded constants must be kept in sync with the data files and are clearly marked (e.g. a comment noting the source file) so it's obvious they are a copy, not hand-edited separately.
 - This sync happens automatically: `build.py` calls `build_admin.py` at the end of its own run, and every data-entry script calls `build.py`. So running any data-entry script (or `build.py` directly) regenerates both sites from the same data in one step — there's no separate "don't forget to rebuild admin" step to remember.
 
 ### Scripts
@@ -221,18 +221,18 @@ Entering the result of a played game is done via a command-line script, not by h
 
 - `worldcup/scripts/fetch_results.py` is the primary daily-update tool for the live 2026 tournament. It fetches `https://www.eloratings.net/latest.tsv`, finds any WC games in `2026.json` with null scores that now have results, sets `homeScore`/`awayScore`/`eloChange` for all of them, and runs `build.py`. Run it once (or a few times throughout the day) with no arguments. Supports `--dry-run` to preview changes and `--all` to also include future-dated games. The TSV lists teams in eloratings.net order, which may differ from our home/away assignment; the script detects and corrects for this automatically.
 - `worldcup/scripts/update_day.py [--date YYYY-MM-DD] SCORE [SCORE ...]` is a manual fallback for when the TSV hasn't caught up yet. Accepts scores in `HOME-AWAY` format (e.g. `2-1 0-0`) in game-number order for the given date (default: yesterday). Updates scores only — ELO changes must be set separately with `set_result.py`. Use `--list` to preview the day's games without updating. After updating the data and rebuilding the HTML, it commits and pushes the change to the private admin repo, then deploys the rebuilt site to the public GitHub Pages repo (same as running `deploy.py`) — pass `--no-push` to update local files only.
-- `worldcup/scripts/set_team_elo.py YEAR TEAM_SHORTHAND ELO` sets a team's initial ELO in the `teamElos` dict of `data/YEAR.json`, then runs `build.py`. If the data file is a plain list (legacy format), it is automatically upgraded to the `{"teamElos": {}, "games": [...]}` dict format. Use this for 2018 and 2022 data entry before entering game results.
-- `worldcup/scripts/set_result.py YEAR GAME_NUMBER HOME_SCORE AWAY_SCORE [ELO_CHANGE --gains {home|away}]` finds the game with that `gameNumber` in `data/YEAR.json`, sets its `homeScore`/`awayScore` (and `eloChange` if provided), then runs `build.py` to regenerate derived fields and embedded data. Like `update_day.py`, it then commits and pushes the change to the private admin repo and deploys the rebuilt site to the public GitHub Pages repo by default — pass `--no-push` to update local files only.
+- `worldcup/scripts/set_team_elo.py YEAR TEAM_SHORTHAND ELO` sets a team's initial ELO in the `teamElos` dict of `worldcup/data/YEAR.json`, then runs `build.py`. If the data file is a plain list (legacy format), it is automatically upgraded to the `{"teamElos": {}, "games": [...]}` dict format. Use this for 2018 and 2022 data entry before entering game results.
+- `worldcup/scripts/set_result.py YEAR GAME_NUMBER HOME_SCORE AWAY_SCORE [ELO_CHANGE --gains {home|away}]` finds the game with that `gameNumber` in `worldcup/data/YEAR.json`, sets its `homeScore`/`awayScore` (and `eloChange` if provided), then runs `build.py` to regenerate derived fields and embedded data. Like `update_day.py`, it then commits and pushes the change to the private admin repo and deploys the rebuilt site to the public GitHub Pages repo by default — pass `--no-push` to update local files only.
 - When supplying an ELO change, two things are required: the magnitude as a positive number, and which team gains it (`--gains home` or `--gains away`). The script applies the sign and stores the result.
-- `worldcup/scripts/set_result.py --list-teams` prints the index of every team's shorthand, full name, and confederation, sourced from `data/teams.json`.
+- `worldcup/scripts/set_result.py --list-teams` prints the index of every team's shorthand, full name, and confederation, sourced from `worldcup/data/teams.json`.
 - `worldcup/scripts/build.py` computes `homeEloPre`/`awayEloPre` for every game (chaining `teamElos` starting ratings through prior results), then regenerates every public World Cup page plus `history.html`, then calls `build_admin.py` to regenerate every admin page too. Run this after any manual edit to a data file.
-- `worldcup/scripts/set_knockout_size.py YEAR {32|16|8|4} [--start-game N]` is a one-time setup step: it sets `knockoutSize` on `data/YEAR.json`, then walks the bracket's rounds in order (see `worldcup/scripts/knockout.py` for the round shape per size). For each round, if its games already exist as ordinary entries — real homeTeam/awayTeam, however their scores stand — it tags them with a `"round"` index in place; the first round it finds *not* already present, it scaffolds (a stub game per slot: null teams/date/scores, gameNumbers continuing from the last existing game) along with every round after it. Without `--start-game`, it assumes only the entry round exists yet (the common case for a live tournament) and takes the last N existing games as that round, N being its game count. `--start-game` gives the entry round's first gameNumber explicitly — required once the knockout stage already extends past the entry round (e.g. retrofitting a fully complete historical tournament, where every round is already in the file and nothing needs scaffolding at all). Refuses to run if the tournament already has a `knockoutSize` set. Same push/`--no-push` behavior as `set_result.py`.
+- `worldcup/scripts/set_knockout_size.py YEAR {32|16|8|4} [--start-game N]` is a one-time setup step: it sets `knockoutSize` on `worldcup/data/YEAR.json`, then walks the bracket's rounds in order (see `worldcup/scripts/knockout.py` for the round shape per size). For each round, if its games already exist as ordinary entries — real homeTeam/awayTeam, however their scores stand — it tags them with a `"round"` index in place; the first round it finds *not* already present, it scaffolds (a stub game per slot: null teams/date/scores, gameNumbers continuing from the last existing game) along with every round after it. Without `--start-game`, it assumes only the entry round exists yet (the common case for a live tournament) and takes the last N existing games as that round, N being its game count. `--start-game` gives the entry round's first gameNumber explicitly — required once the knockout stage already extends past the entry round (e.g. retrofitting a fully complete historical tournament, where every round is already in the file and nothing needs scaffolding at all). Refuses to run if the tournament already has a `knockoutSize` set. Same push/`--no-push` behavior as `set_result.py`.
 - `worldcup/scripts/set_bracket_game.py YEAR GAME_NUMBER [--date YYYY-MM-DD] [--home SHORTHAND | --home-from GAME:{winner|loser}] [--away SHORTHAND | --away-from GAME:{winner|loser}]` edits a knockout game's date and/or participants — only the options passed are changed. `--home`/`--away` set a concrete team directly (once known) and clear any `*-from` reference on that side; `--home-from`/`--away-from` defer to an earlier game's winner or loser instead (`loser` is only meaningful for the third-place game) and clear the concrete team. Refuses to run on a game with no `round` (i.e. not a knockout-bracket game) — use `set_result.py` for regular results. Same push/`--no-push` behavior as `set_result.py`.
 - All scripts are plain Python 3 with no dependencies and support `-h` / `--help`.
 
 ### Tournament data file structure
 
-Each World Cup data file (`data/1998.json` through `data/2026.json`, one per year) is a JSON object with these top-level keys:
+Each World Cup data file (`worldcup/data/1998.json` through `worldcup/data/2026.json`, one per year) is a JSON object with these top-level keys:
 
 - **`teamElos`** — an object mapping each participating team's name to its ELO rating at the start of the tournament. This is the source of truth for pre-tournament ratings; per-game pre-ELOs are derived from this by `build.py`.
 - **`games`** — the ordered list of game records (see below).
@@ -268,13 +268,13 @@ Note: penalty-shootout winners aren't tracked anywhere in the data — `eloChang
 
 ### Teams data
 
-A single shared file `data/teams.json`, used across all World Cups.
+A single shared file `worldcup/data/teams.json`, used across all World Cups.
 
 | Field | Type | Notes |
 |-------|------|-------|
 | name | string | Must match team names used in game records |
 | shorthand | string | FIFA 3-letter code, e.g. `BEL`. Used as a shorthand identifier in `worldcup/scripts/set_result.py` |
 | confederation | string | One of: Europe, Asia, Africa, South America, North America, Oceania |
-| flag | string | [flag-icons](https://github.com/lipis/flag-icons) code for the team's flag (e.g. `be`), used to look up the SVG at `../site/football/worldcup/flags/<flag>.svg` (also kept in `data/flags/`) |
+| flag | string | [flag-icons](https://github.com/lipis/flag-icons) code for the team's flag (e.g. `be`), used to look up the SVG at `../site/football/worldcup/flags/<flag>.svg` (also kept in `worldcup/data/flags/`) |
 
-To add a new team: add its row to `data/teams.json` with the appropriate flag-icons code, download the corresponding SVG from the [flag-icons 4x3 flags folder](https://github.com/lipis/flag-icons/tree/main/flags/4x3) into **both** `data/flags/<flag>.svg` and `../site/football/worldcup/flags/<flag>.svg` (the HTML loads flags from the latter; `data/flags/` is kept in sync as the source copy), then run `worldcup/scripts/build.py`.
+To add a new team: add its row to `worldcup/data/teams.json` with the appropriate flag-icons code, download the corresponding SVG from the [flag-icons 4x3 flags folder](https://github.com/lipis/flag-icons/tree/main/flags/4x3) into **both** `worldcup/data/flags/<flag>.svg` and `../site/football/worldcup/flags/<flag>.svg` (the HTML loads flags from the latter; `worldcup/data/flags/` is kept in sync as the source copy), then run `worldcup/scripts/build.py`.

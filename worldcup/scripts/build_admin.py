@@ -8,7 +8,7 @@ like the public pages. build.py calls this automatically after every data
 change, so the embedded copy stays in sync; run this script directly only
 if you've changed the admin page template itself without touching data.
 
-The admin site is local-only (see worldcup/requirements-admin.md) — it has
+The admin site is local-only (see requirements/admin.md) — it has
 no deployment target and must never be pushed to the public repo.
 """
 import json

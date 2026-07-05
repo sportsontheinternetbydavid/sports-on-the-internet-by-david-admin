@@ -24,64 +24,30 @@ th { font-family: 'Permanent Marker', cursive; background: #C0392B; color: #FFFF
 .conf { text-align: center; min-width: 5em; }
 .conf-first { border-left: 2px solid rgba(255,255,255,0.3); }
 
-/* Utility bar — Home, History, then one WC-YY item per World Cup year plus
-   a disabled "WC 30" placeholder for the next tournament: a single flat row
-   of equally-spaced segmented items, using the .view-toggle look below
-   (this is why it carries that class too — see build_nav()). On tournament
-   pages it's the first tier of the fused 3-row nav (see .page-nav
-   .utility-bar, which squares off its bottom corners); standalone on pages
-   without those tabs (history.html) it keeps all four corners rounded and
-   its own bottom margin. */
-.utility-bar { display: flex; align-items: center; flex-wrap: wrap; margin: 0 0 1rem; background: #C0392B; border-radius: 4px; }
-.utility-bar.view-toggle { display: flex; } /* override .view-toggle's inline-flex so this row is full-width even standalone */
+/* Level 1 (utility bar — Home, History, WC-YY items), the .page-nav fused
+   wrapper, the base .view-toggle look, and Level 2 (.page-toggle
+   .primary-tabs) are all defined once in ../nav.css, shared with the
+   homepage's own nav (see build_home.py) — see requirements/public.md ->
+   Navigation. Only this page's own Level 3 variants (below) are specific
+   to World Cup pages. */
 
 tbody tr:hover { background: #EDE8DC; }
-.view-toggle { display: inline-flex; align-items: center; border: 1px solid rgba(255,255,255,0.6); border-radius: 4px; overflow: hidden; }
-.view-toggle button, .view-toggle a, .view-toggle strong, .view-toggle span { border: none; border-right: 1px solid rgba(255,255,255,0.4); background: transparent; padding: 0.2rem 0.7rem; cursor: pointer; font-family: 'Permanent Marker', cursive; font-size: 0.75rem; color: rgba(255,255,255,0.85); text-decoration: none; text-align: center; }
-.view-toggle button:last-child, .view-toggle a:last-child, .view-toggle strong:last-child, .view-toggle span:last-child { border-right: none; }
-.view-toggle button.active, .view-toggle a.active, .view-toggle strong.active { background: rgba(255,255,255,0.95); color: #C0392B; }
-.view-toggle button:hover:not(.active):not(:disabled), .view-toggle a:hover:not(.active) { background: rgba(255,255,255,0.18); color: #fff; }
-.view-toggle button:disabled { cursor: default; }
-.view-toggle strong, .view-toggle span.disabled { cursor: default; }
-/* "WC 30" placeholder — not a link, not selectable as a page, just muted to
-   signal "not available yet" without looking like a broken/dead link. */
-.view-toggle span.disabled { opacity: 0.5; }
 /* history.html's F4/F8/F16 toggle — a standalone .view-toggle instance (not
-   part of the fused nav), so unlike the compound selectors below it needs
-   its own background rule or its "default" state text is invisible against
-   the cream page background instead of the red bar it's meant to sit on. */
+   part of the fused nav), so unlike the Level-3-variant selectors below it
+   needs its own background rule or its "default" state text is invisible
+   against the cream page background instead of the red bar it's meant to
+   sit on. */
 .history-round-toggle { background: #C0392B; }
 
-/* Fused Levels 1-3 on tournament pages: Level 1 (years/History/Home),
-   Level 2 (which view), and Level 3 detail controls for whichever view is
-   active — every view has one, even if it's just a note (Groups), so the
-   nav is always the same shape no matter which tab you're on. display:flex
-   + column + width:100% spans the same max content width as the rest of
-   the page, and align-items:stretch makes every level exactly that width.
-   Only one Level 3 variant is shown at a time — setPageView() hides the
-   rest. margin-bottom:0 — Level 4 (each view's own table/grid header, see
-   requirements-public.md) fuses flush underneath with no gap; views without
-   a fusable Level 4 (Knockout) add their own top margin back instead (see
-   #knockout-view). */
-.page-nav { display: flex; flex-direction: column; align-items: stretch; width: 100%; margin-bottom: 0; }
-.page-nav .utility-bar { margin-bottom: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
-/* All three levels share one height, always — regardless of which view is
-   active and regardless of a Level 3 variant's content (e.g. Rankings'
-   checkboxes are natively a different size than plain text buttons).
-   min-height (not height) so a level can still grow if its items wrap to a
-   second line on a narrow viewport instead of clipping that line. */
-.utility-bar, .page-toggle, .bracket-round-toggle, .match-view-toggle, .groups-view-toggle, .rankings-view-toggle { min-height: 2.5rem; }
-/* flex-basis:auto (not 0) so a button never shrinks below its own label's
-   width — only the leftover space from filling the row's full width gets
-   distributed, so long labels like "Match List" never wrap. */
-.page-toggle button, .bracket-round-toggle button, .match-view-toggle button, .groups-view-toggle button, .groups-view-toggle span, .utility-bar a, .utility-bar strong, .utility-bar span { flex: 1 1 auto; white-space: nowrap; }
-.primary-tabs.view-toggle, .bracket-round-toggle.view-toggle, .match-view-toggle.view-toggle, .groups-view-toggle.view-toggle { background: #C0392B; }
-.primary-tabs.view-toggle button { font-size: 0.95rem; padding: 0.45rem 1.1rem; }
-/* Level 2 (primary tabs) sits between Level 1 and Level 3 — square off both
-   top and bottom, with a divider line against Level 1 above (each Level 3
-   variant below already divides itself the same way against Level 2). */
-.page-toggle { border-radius: 0; border-top: 1px solid rgba(0,0,0,0.15); }
-.bracket-round-toggle, .match-view-toggle, .groups-view-toggle, .rankings-view-toggle { flex-wrap: wrap; border-top-left-radius: 0; border-top-right-radius: 0; border-top: 1px solid rgba(0,0,0,0.15); }
+/* World Cup pages' own Level 3 variants — each has unique layout beyond the
+   shared shape (checkboxes, a note, a bracket-round picker), so unlike
+   Level 1/2 they aren't reusable as-is and keep their own CSS here. All
+   still share the generic "last fused level" treatment: same min-height as
+   Levels 1-2, red background, and only the top corners squared off (the
+   bottom stays rounded, since Level 3 is always the last level). */
+.bracket-round-toggle, .match-view-toggle, .groups-view-toggle, .rankings-view-toggle { min-height: 2.5rem; flex-wrap: wrap; border-top-left-radius: 0; border-top-right-radius: 0; border-top: 1px solid rgba(0,0,0,0.15); }
+.bracket-round-toggle button, .match-view-toggle button, .groups-view-toggle button, .groups-view-toggle span { flex: 1 1 auto; white-space: nowrap; }
+.bracket-round-toggle.view-toggle, .match-view-toggle.view-toggle, .groups-view-toggle.view-toggle { background: #C0392B; }
 
 /* Rankings */
 #rankings-view { display: none; }
@@ -103,7 +69,7 @@ tbody tr:hover { background: #EDE8DC; }
    against Level 3 above with no gap, same as Match List's table. */
 .rankings-panel { border: 1px solid rgba(0,0,0,0.08); border-radius: 0 0 6px 6px; background: rgba(255,255,255,0.35); padding: 0 0.8rem 0.3rem; }
 .rankings-cols { font-size: 0.85rem; white-space: nowrap; }
-/* This view's Level 4 (see requirements-public.md → Navigation) — red/white
+/* This view's Level 4 (see requirements/public.md → Navigation) — red/white
    like every other Level 4. The negative left/right margin cancels
    .rankings-panel's padding so this bleeds all the way to the panel's
    edges, aligning with Levels 1-3 above instead of sitting inset. */
@@ -237,7 +203,7 @@ tbody tr:hover { background: #EDE8DC; }
 .bracket-round-toggle.view-toggle button:not(.active):hover { background: rgba(255,255,255,0.45); }
 .bracket { display: flex; align-items: stretch; gap: 2.5rem; overflow-x: auto; padding: 0.5rem 0 1.5rem; }
 .bracket-round { display: flex; flex-direction: column; min-width: 190px; }
-/* This round's Level 4 (see requirements-public.md → Navigation) — a small
+/* This round's Level 4 (see requirements/public.md → Navigation) — a small
    red bar with white text, matching every other view's Level 4 coloring,
    rather than plain red text on the page background. */
 .bracket-round-label { font-family: 'Permanent Marker', cursive; font-size: 0.9rem; background: #C0392B; color: #fff; text-align: center; padding: 0.3rem 0.5rem; border-radius: 4px; margin-bottom: 0.6rem; }

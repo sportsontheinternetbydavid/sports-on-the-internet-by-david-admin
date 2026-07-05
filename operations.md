@@ -27,7 +27,7 @@ Account inventory, domain/DNS, and hosting facts for the live project. Reference
 ## Repositories
 
 - Public: `sportsontheinternetbydavid/sports-on-the-internet-by-david` — GitHub Pages source, custom domain configured via `site/CNAME`.
-- Admin (private): `sportsontheinternetbydavid/sports-on-the-internet-by-david-admin` — everything else (see `way-of-working.md` → *Two-repo structure*).
+- Admin (private): `sportsontheinternetbydavid/sports-on-the-internet-by-david-admin` — everything else (see `technical.md` → *Two-repo structure*).
 
 ### Push access
 
