@@ -65,8 +65,10 @@ window.addEventListener('DOMContentLoaded', function() {
    every World Cup page (build.py). Single source of truth — see
    requirements/public.md -> Navigation for the spec this file implements.
    Page-specific Level 3 variants with their own unique layout (Rankings'
-   checkboxes, the Knockout round toggle, etc.) keep their own CSS in
-   shared.css instead; only what's identical everywhere lives here. Level 4
+   on/off toggles, the Knockout round picker, etc.) keep their own CSS in
+   shared.css instead; only what's identical everywhere lives here — including
+   the .bool-toggle corner-dot variant (below), since any Level 1-3 chip
+   might need it, not just World Cup pages'. Level 4
    (table/grid column headers) is not a chip row and isn't styled here —
    see shared.css / build.py for its own torn-strip treatment.
 
@@ -127,18 +129,29 @@ window.addEventListener('DOMContentLoaded', function() {
 
 /* Tape on every chip — a physical scrap of board needs holding down
    whether or not it's the current selection; selection is differentiated
-   below instead (lift/scale/shadow + a bigger piece of tape). Alternating
-   angle/position per item for the same reason colors/cuts vary — nothing
+   below instead (lift/scale/shadow + a bigger piece of tape). Size/angle/
+   position cycle by position mod 7 — a length that shares no common
+   factor with the shape cycle (mod 4) or color cycle (mod 5) above, so
+   tape variety never lines up with either in lockstep; nothing
    hand-assembled repeats identically. */
+.view-toggle > * {
+  --tape-w: 26px; --tape-h: 11px; --tape-rot: -5deg; --tape-left: 50%;
+}
 .view-toggle > *::before {
   content: "";
-  position: absolute; top: -8px; left: 50%;
-  width: 26px; height: 11px; margin-left: -13px;
+  position: absolute; top: -8px; left: var(--tape-left);
+  width: var(--tape-w); height: var(--tape-h); margin-left: calc(var(--tape-w) / -2);
   background: rgba(230, 225, 208, 0.8);
   border: 1px solid rgba(0, 0, 0, 0.05);
-  transform: rotate(-5deg);
+  transform: rotate(var(--tape-rot));
 }
-.view-toggle > :nth-child(odd)::before { left: 42%; transform: rotate(4deg); }
+.view-toggle > :nth-child(7n+1) { --tape-w: 22px; --tape-h: 10px; --tape-rot: -7deg; --tape-left: 46%; }
+.view-toggle > :nth-child(7n+2) { --tape-w: 32px; --tape-h: 13px; --tape-rot: 3deg;  --tape-left: 40%; }
+.view-toggle > :nth-child(7n+3) { --tape-w: 24px; --tape-h: 11px; --tape-rot: 6deg;  --tape-left: 54%; }
+.view-toggle > :nth-child(7n+4) { --tape-w: 34px; --tape-h: 13px; --tape-rot: -3deg; --tape-left: 50%; }
+.view-toggle > :nth-child(7n+5) { --tape-w: 20px; --tape-h: 9px;  --tape-rot: 8deg;  --tape-left: 44%; }
+.view-toggle > :nth-child(7n+6) { --tape-w: 28px; --tape-h: 12px; --tape-rot: -6deg; --tape-left: 58%; }
+.view-toggle > :nth-child(7n+7) { --tape-w: 26px; --tape-h: 11px; --tape-rot: 2deg;  --tape-left: 48%; }
 
 /* Hover — a clickable, not-yet-selected chip lifts slightly. Disabled
    items are excluded by element type (span isn't in this selector list). */
@@ -150,19 +163,33 @@ window.addEventListener('DOMContentLoaded', function() {
 
 /* Selected — no recolor (background stays whatever this chip already drew
    from the palette above); lifts with a stronger shadow and a slight
-   scale-up (visibly picked up and pressed down), plus a larger, more
-   deliberate piece of tape than every other chip's. Text stays the same
-   near-black — marker only comes in black, so a colored background never
-   flips to white text. Covers both single-choice "current selection" and
-   multi-select "shown" (a currently-visible Knockout round) — both mean
-   "this is on." */
+   scale-up (visibly picked up and pressed down). Tape is exactly whatever
+   piece this chip already had — real tape doesn't grow because the thing
+   under it got picked up, so selection is shadow/scale only, never a tape
+   resize. Text stays the same near-black — marker only comes in black, so
+   a colored background never flips to white text. Covers both single-choice
+   "current selection" and multi-select "shown" (a currently-visible
+   Knockout round) — both mean "this is on." */
 .view-toggle button.active, .view-toggle a.active, .view-toggle strong.active {
   box-shadow: 4px 6px 0 rgba(0, 0, 0, 0.3);
   transform: scale(1.08) rotate(var(--rot));
   z-index: 2;
 }
-.view-toggle button.active::before, .view-toggle a.active::before, .view-toggle strong.active::before {
-  width: 36px; height: 14px; margin-left: -18px;
+
+/* Independent on/off toggles (Show eliminated, True rank, the debug toggle,
+   each Knockout round chip) — the same chip + Selected treatment above,
+   plus a small dot sticker in the corner: muted gray off, brand green on.
+   Distinguishes "this is its own switch" from plain tab selection above,
+   where highlighting one chip already implies the others are not chosen. */
+.view-toggle .bool-toggle::after {
+  content: "";
+  position: absolute; top: 3px; right: 5px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #B9AF9E;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+}
+.view-toggle .bool-toggle.active::after {
+  background: #27AE60;
 }
 
 /* Disabled — muted, flatter than a live chip, no hover, dimmed near-black
