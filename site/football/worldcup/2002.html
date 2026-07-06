@@ -410,15 +410,18 @@ tbody tr:hover { background: #EDE8DC; }
    toggleBracketRound), but growing can jump straight to any hidden round in
    one click, revealing everything between it and the current edge — so the
    visible set can never have a gap in the middle. */
-/* Shown/hidden rounds use the base .view-toggle fills as-is (white =
-   shown, lighter-red = hidden) — see requirements/public.md -> Navigation.
-   No bespoke color rules needed here. */
-.bracket { display: flex; align-items: stretch; gap: 2.5rem; overflow-x: auto; padding: 0.5rem 0 1.5rem; }
-.bracket-round { display: flex; flex-direction: column; min-width: 190px; }
-/* This round's Level 4 (see requirements/public.md → Navigation) — a small
-   red bar with white text, matching every other view's Level 4 coloring,
-   rather than plain red text on the page background. */
-.bracket-round-label { display: flex; align-items: center; justify-content: center; min-height: 2.5rem; font-family: 'Permanent Marker', cursive; font-size: 0.9rem; background: #C0392B; color: #fff; text-align: center; padding: 0.3rem 0.5rem; border-radius: 4px; margin-bottom: 0.6rem; }
+/* Each round is positioned absolutely at a fixed offset by its own round
+   index (set inline by shared.js's renderKnockout, in lockstep with
+   BRACKET_COL_W/BRACKET_GAP there) rather than flowing left-to-right among
+   whichever rounds are currently rendered — see requirements/public.md ->
+   Knockout Bracket -> Round toggles. That's what keeps a round in the same
+   horizontal spot regardless of which other rounds are shown/hidden: showing
+   or hiding one never moves any other round sideways. .bracket needs its own
+   height set by JS too (layoutBracketColumns) since absolutely-positioned
+   children don't contribute to a parent's natural height the way flex/grid
+   children do. */
+.bracket { position: relative; overflow-x: auto; padding: 0.5rem 0 1.5rem; }
+.bracket-round { position: absolute; top: 0; width: 190px; display: flex; flex-direction: column; }
 .bracket-round-games { flex: 1; display: flex; flex-direction: column; justify-content: space-around; }
 /* Connector lines imply a 1-to-1 feed from the previous round. That's true
    for every round except the last, which bundles the Final and Third-Place
@@ -2328,25 +2331,57 @@ function bracketColumnEl(roundIdx) {
   return document.querySelector(`.bracket-round[data-round-idx="${roundIdx}"]`);
 }
 
-// Flies newly-added columns in, staggered rapid-fire per
-// requirements/public.md -> Knockout Bracket -> Round toggles.
-function bracketScrollEl() {
-  return document.querySelector('#knockout-outer .bracket');
+// Fixed pixel step between rounds' absolute left offsets — must match
+// .bracket-round's CSS width (nav.css... no, shared.css) plus the gap that
+// used to come from .bracket's flex `gap`. Kept as one JS constant instead
+// of reading the CSS width back, since renderKnockout is the only thing
+// that needs it.
+const BRACKET_COL_W = 190;
+const BRACKET_GAP = 40;
+const BRACKET_STEP = BRACKET_COL_W + BRACKET_GAP;
+
+// Fades newly-added round columns in, in place — see requirements/public.md
+// -> Knockout Bracket -> Round toggles. No horizontal movement: each column
+// is already sitting at its own fixed slot (see renderKnockout), so this is
+// an opacity transition only, not the sitewide translateX fly.
+function fadeInBracketColumns(added) {
+  if (!added.length) return;
+  const cols = added.map(bracketColumnEl).filter(Boolean);
+  cols.forEach(function(el) { el.style.transition = 'none'; el.style.opacity = '0'; });
+  void (cols[0] && cols[0].offsetWidth);
+  requestAnimationFrame(function() {
+    cols.forEach(function(el) { el.style.transition = `opacity ${FLY_MS}ms linear`; el.style.opacity = '1'; });
+    window.setTimeout(function() {
+      cols.forEach(function(el) { el.style.transition = ''; el.style.opacity = ''; });
+    }, FLY_MS);
+  });
 }
 
-// Flies newly-revealed round columns in, staggered rapid-fire per
-// requirements/public.md -> Knockout Bracket -> Round toggles. Re-locks the
-// (possibly freshly-rendered) .bracket for the duration, since flying even
-// a single column fully off-screen can inflate its scroll width otherwise.
-function revealBracketColumns(added) {
-  if (!added.length) return;
-  const scrollEl = bracketScrollEl();
-  if (scrollEl) scrollEl.classList.add('fly-scroll-lock');
-  const cols = added.slice().sort((a, b) => a - b).map(bracketColumnEl).filter(Boolean);
-  flyIn(cols, {
-    stagger: 90,
-    onSettled: function() { if (scrollEl) scrollEl.classList.remove('fly-scroll-lock'); }
+// Fades `els` out in place and resolves once the transition finishes —
+// the Knockout-specific counterpart to the sitewide flyOut() above, used
+// because round columns never move sideways (see fadeInBracketColumns).
+function fadeOutBracketColumns(els) {
+  return new Promise(function(resolve) {
+    els.forEach(function(el) { el.style.transition = `opacity ${FLY_MS}ms linear`; el.style.opacity = '0'; });
+    window.setTimeout(resolve, FLY_MS);
   });
+}
+
+// Every visible round is absolutely positioned (see renderKnockout), which
+// opts it out of the flex/grid stretch-to-tallest that used to give every
+// column the same height. Reproduce that by hand: measure each visible
+// column's natural height, then stretch all of them (and the .bracket
+// container, which needs an explicit height since absolutely-positioned
+// children don't contribute to a parent's natural size) to the tallest.
+function layoutBracketColumns() {
+  const bracket = document.querySelector('#knockout-outer .bracket');
+  if (!bracket) return;
+  const cols = Array.from(bracket.querySelectorAll('.bracket-round'));
+  if (!cols.length) { bracket.style.height = ''; return; }
+  cols.forEach(function(el) { el.style.height = 'auto'; });
+  const maxH = Math.max.apply(null, cols.map(function(el) { return el.scrollHeight; }));
+  cols.forEach(function(el) { el.style.height = maxH + 'px'; });
+  bracket.style.height = maxH + 'px';
 }
 
 function toggleBracketRound(roundIdx) {
@@ -2374,23 +2409,19 @@ function toggleBracketRound(roundIdx) {
   for (let i = after.lo; i <= after.hi; i++) if (i < before.lo || i > before.hi) added.push(i);
 
   if (removed.length === 0) {
-    // Pure growth — nothing to wait on flying out, render immediately and
-    // fly the newly-revealed columns in.
+    // Pure growth — nothing to wait on fading out, render immediately and
+    // fade the newly-revealed columns in.
     renderKnockout();
-    revealBracketColumns(added);
+    fadeInBracketColumns(added);
     return;
   }
   // Shrinking always removes exactly one edge column (see the guard above) —
-  // fly it out, then rebuild once it's clear and fly any newly-revealed
-  // columns in (a shrink never also reveals a column, but kept generic).
-  // renderKnockout() below replaces .bracket entirely, so this lock only
-  // needs to cover the brief fly-out; revealBracketColumns re-locks the
-  // fresh .bracket itself if there's anything to fly in afterward.
-  const scrollEl = bracketScrollEl();
-  if (scrollEl) scrollEl.classList.add('fly-scroll-lock');
-  flyOut(removed.map(bracketColumnEl).filter(Boolean)).then(function() {
+  // fade it out in place, then rebuild once it's clear and fade in whatever
+  // was newly revealed (a shrink never also reveals a column, but kept
+  // generic). Nothing else on screen shifts horizontally at any point here.
+  fadeOutBracketColumns(removed.map(bracketColumnEl).filter(Boolean)).then(function() {
     renderKnockout();
-    revealBracketColumns(added);
+    fadeInBracketColumns(added);
   });
 }
 
@@ -2415,6 +2446,11 @@ function renderKnockout() {
     return `<button class="bool-toggle${visible ? ' active' : ''}"${clickable ? '' : ' disabled'} onclick="toggleBracketRound(${roundIdx})">${esc(label)}</button>`;
   }).join('');
 
+  // Only currently-visible rounds are rendered at all, each pinned to the
+  // fixed horizontal slot matching its own round index (not its position
+  // among the rounds that happen to be visible) — see requirements/public.md
+  // -> Knockout Bracket -> Round toggles. That's what keeps a round from
+  // shifting sideways when a different round is shown/hidden.
   const html = rounds.map(([label, count], roundIdx) => {
     if (roundIdx < lo || roundIdx > hi) return '';
     const games = GAMES.filter(g => g.round === roundIdx).sort((a, b) => a.gameNumber - b.gameNumber);
@@ -2434,10 +2470,11 @@ function renderKnockout() {
         bracketTeamRowHtml(game, 'away', decided) +
         `</div></div>`;
     }).join('');
-    return `<div class="bracket-round" data-round-idx="${roundIdx}"><div class="bracket-round-label">${esc(label)}</div><div class="bracket-round-games">${gamesHtml}</div></div>`;
+    return `<div class="bracket-round" data-round-idx="${roundIdx}" style="left:${roundIdx * BRACKET_STEP}px"><div class="bracket-round-games">${gamesHtml}</div></div>`;
   }).join('');
 
   container.innerHTML = `<div class="bracket">${html}</div>`;
+  layoutBracketColumns();
 }
 
 // ── Page view (Match List / Rankings / Groups / Knockout) ────────────────

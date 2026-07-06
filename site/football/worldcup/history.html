@@ -410,15 +410,18 @@ tbody tr:hover { background: #EDE8DC; }
    toggleBracketRound), but growing can jump straight to any hidden round in
    one click, revealing everything between it and the current edge — so the
    visible set can never have a gap in the middle. */
-/* Shown/hidden rounds use the base .view-toggle fills as-is (white =
-   shown, lighter-red = hidden) — see requirements/public.md -> Navigation.
-   No bespoke color rules needed here. */
-.bracket { display: flex; align-items: stretch; gap: 2.5rem; overflow-x: auto; padding: 0.5rem 0 1.5rem; }
-.bracket-round { display: flex; flex-direction: column; min-width: 190px; }
-/* This round's Level 4 (see requirements/public.md → Navigation) — a small
-   red bar with white text, matching every other view's Level 4 coloring,
-   rather than plain red text on the page background. */
-.bracket-round-label { display: flex; align-items: center; justify-content: center; min-height: 2.5rem; font-family: 'Permanent Marker', cursive; font-size: 0.9rem; background: #C0392B; color: #fff; text-align: center; padding: 0.3rem 0.5rem; border-radius: 4px; margin-bottom: 0.6rem; }
+/* Each round is positioned absolutely at a fixed offset by its own round
+   index (set inline by shared.js's renderKnockout, in lockstep with
+   BRACKET_COL_W/BRACKET_GAP there) rather than flowing left-to-right among
+   whichever rounds are currently rendered — see requirements/public.md ->
+   Knockout Bracket -> Round toggles. That's what keeps a round in the same
+   horizontal spot regardless of which other rounds are shown/hidden: showing
+   or hiding one never moves any other round sideways. .bracket needs its own
+   height set by JS too (layoutBracketColumns) since absolutely-positioned
+   children don't contribute to a parent's natural height the way flex/grid
+   children do. */
+.bracket { position: relative; overflow-x: auto; padding: 0.5rem 0 1.5rem; }
+.bracket-round { position: absolute; top: 0; width: 190px; display: flex; flex-direction: column; }
 .bracket-round-games { flex: 1; display: flex; flex-direction: column; justify-content: space-around; }
 /* Connector lines imply a 1-to-1 feed from the previous round. That's true
    for every round except the last, which bundles the Final and Third-Place
