@@ -32,57 +32,165 @@
 })();
 </script>
 <style>
-/* Shared fused nav component — Level 1-3's generic visual system, used by
-   every page on the public site: the homepage (build_home.py) and every
-   World Cup page (build.py). This is the single source of truth for it —
-   see requirements/public.md -> Navigation for the spec this file
-   implements. Page-specific Level 3 variants with their own unique layout
-   (Rankings' checkboxes, the Knockout round toggle, etc.) keep their own
-   CSS in shared.css instead; only what's identical everywhere lives here. */
+/* Shared "cardboard cutout" nav component — Level 1-3's chip visual system,
+   used by every page on the public site: the homepage (build_home.py) and
+   every World Cup page (build.py). Single source of truth — see
+   requirements/public.md -> Navigation for the spec this file implements.
+   Page-specific Level 3 variants with their own unique layout (Rankings'
+   checkboxes, the Knockout round toggle, etc.) keep their own CSS in
+   shared.css instead; only what's identical everywhere lives here. Level 4
+   (table/grid column headers) is not a chip row and isn't styled here —
+   see shared.css / build.py for its own torn-strip treatment.
 
-.view-toggle { display: inline-flex; align-items: center; border: 1px solid rgba(255,255,255,0.6); border-radius: 4px; overflow: hidden; }
-.view-toggle button, .view-toggle a, .view-toggle strong, .view-toggle span { border: none; border-right: 1px solid rgba(255,255,255,0.4); background: transparent; padding: 0.2rem 0.7rem; cursor: pointer; font-family: 'Permanent Marker', cursive; font-size: 0.75rem; color: rgba(255,255,255,0.85); text-decoration: none; text-align: center; }
-.view-toggle button:last-child, .view-toggle a:last-child, .view-toggle strong:last-child, .view-toggle span:last-child { border-right: none; }
-.view-toggle button.active, .view-toggle a.active, .view-toggle strong.active { background: rgba(255,255,255,0.95); color: #C0392B; }
-.view-toggle button:hover:not(.active):not(:disabled), .view-toggle a:hover:not(.active) { background: rgba(255,255,255,0.18); color: #fff; }
-.view-toggle button:disabled { cursor: default; }
+   This was originally piloted as a homepage-only experiment (irregular cut
+   edges, tape on every chip, no color-flip on selection, black-marker-only
+   text, varied paper color) before being promoted here to apply everywhere —
+   see way-of-working.md history / requirements/public.md for that call.
+
+   Also home to the site's universal fly in/out transition primitives
+   (--fly-ms, .fly-panel, .fly-scroll-lock, below) — not chip styling, but
+   this is the one CSS file loaded on every public page (homepage included;
+   shared.css isn't), which is what these need to actually be universal. */
+
+.page-nav { display: flex; flex-direction: column; width: 100%; gap: 10px; }
+
+.view-toggle { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+
+/* Each item is its own paper cutout, not a segment of a shared background:
+   an irregular hand-cut outline (cycling through 4 distinct polygons by
+   position, mod 4 — no two neighboring chips share the same cut), a hard
+   offset shadow suggesting real thickness (poster board, not a thin sheet),
+   and a small deterministic rotation (alternating by position, not random
+   per page load). */
+.view-toggle button, .view-toggle a, .view-toggle strong, .view-toggle span {
+  --rot: 0deg;
+  --chip-bg: #EFE6DA;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: none; cursor: pointer; text-decoration: none; text-align: center; white-space: nowrap;
+  font-family: 'Permanent Marker', cursive; font-size: 0.75rem; padding: 0.2rem 0.7rem;
+  border-radius: 0;
+  background: var(--chip-bg); color: #1A1A1A;
+  box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.22);
+  transform: rotate(var(--rot));
+  position: relative;
+}
 .view-toggle strong, .view-toggle span.disabled { cursor: default; }
-/* Disabled state — an item with no destination yet ("WC 30", a not-yet-live
-   sport on the homepage): muted, not a link, not a broken/dead link either. */
-.view-toggle span.disabled { opacity: 0.5; }
 
-/* Level 1 — a single flat row of equally-spaced segmented items. On pages
-   with a fused nav below it (.page-nav .utility-bar) it squares off its
-   bottom corners; standalone (history.html) it keeps all four rounded and
-   its own bottom margin. */
-.utility-bar { display: flex; align-items: center; flex-wrap: wrap; margin: 0 0 1rem; background: #C0392B; border-radius: 4px; min-height: 2.5rem; }
-.utility-bar.view-toggle { display: flex; } /* override .view-toggle's inline-flex so this row is full-width even standalone */
-.utility-bar a, .utility-bar strong, .utility-bar span { flex: 1 1 auto; white-space: nowrap; }
+.view-toggle > :nth-child(odd) { --rot: -1.6deg; }
+.view-toggle > :nth-child(even) { --rot: 1.4deg; }
+.view-toggle > :nth-child(3n) { --rot: -0.8deg; }
 
-/* The fused wrapper: display:flex + column + width:100% spans the same max
-   content width as the rest of the page, and align-items:stretch makes
-   every level (regardless of its own display type) exactly that width. */
-.page-nav { display: flex; flex-direction: column; align-items: stretch; width: 100%; margin-bottom: 0; }
-.page-nav .utility-bar { margin-bottom: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+/* Irregular hand-cut outline, cycling mod 4 — decoupled from the mod-5
+   color cycle below so shape and color don't repeat in lockstep. */
+.view-toggle > :nth-child(4n+1) { clip-path: polygon(2% 6%, 97% 0%, 100% 90%, 92% 100%, 5% 96%, 0% 16%); }
+.view-toggle > :nth-child(4n+2) { clip-path: polygon(0% 3%, 93% 0%, 100% 94%, 7% 100%, 2% 88%, 0% 28%); }
+.view-toggle > :nth-child(4n+3) { clip-path: polygon(4% 0%, 100% 5%, 96% 100%, 3% 95%, 0% 55%); }
+.view-toggle > :nth-child(4n+4) { clip-path: polygon(0% 9%, 90% 0%, 100% 82%, 95% 100%, 6% 91%); }
+
+/* Paper color variety — each position pulls a different sheet from the
+   stack instead of one repeated color. Disabled chips are the exception
+   (see below): they stay muted gray-tan regardless of position, so "not
+   available yet" is never mistaken for a color choice. */
+.view-toggle > :nth-child(5n+1):not(.disabled) { --chip-bg: #C0392B; }
+.view-toggle > :nth-child(5n+2):not(.disabled) { --chip-bg: #1A5276; }
+.view-toggle > :nth-child(5n+3):not(.disabled) { --chip-bg: #F4D03F; }
+.view-toggle > :nth-child(5n+4):not(.disabled) { --chip-bg: #1E8449; }
+.view-toggle > :nth-child(5n+5):not(.disabled) { --chip-bg: #E67E22; }
+
+/* Tape on every chip — a physical scrap of board needs holding down
+   whether or not it's the current selection; selection is differentiated
+   below instead (lift/scale/shadow + a bigger piece of tape). Alternating
+   angle/position per item for the same reason colors/cuts vary — nothing
+   hand-assembled repeats identically. */
+.view-toggle > *::before {
+  content: "";
+  position: absolute; top: -8px; left: 50%;
+  width: 26px; height: 11px; margin-left: -13px;
+  background: rgba(230, 225, 208, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transform: rotate(-5deg);
+}
+.view-toggle > :nth-child(odd)::before { left: 42%; transform: rotate(4deg); }
+
+/* Hover — a clickable, not-yet-selected chip lifts slightly. Disabled
+   items are excluded by element type (span isn't in this selector list). */
+.view-toggle button:hover:not(.active):not(:disabled),
+.view-toggle a:hover:not(.active) {
+  transform: translateY(-2px) rotate(var(--rot));
+  box-shadow: 4px 6px 0 rgba(0, 0, 0, 0.28);
+}
+
+/* Selected — no recolor (background stays whatever this chip already drew
+   from the palette above); lifts with a stronger shadow and a slight
+   scale-up (visibly picked up and pressed down), plus a larger, more
+   deliberate piece of tape than every other chip's. Text stays the same
+   near-black — marker only comes in black, so a colored background never
+   flips to white text. Covers both single-choice "current selection" and
+   multi-select "shown" (a currently-visible Knockout round) — both mean
+   "this is on." */
+.view-toggle button.active, .view-toggle a.active, .view-toggle strong.active {
+  box-shadow: 4px 6px 0 rgba(0, 0, 0, 0.3);
+  transform: scale(1.08) rotate(var(--rot));
+  z-index: 2;
+}
+.view-toggle button.active::before, .view-toggle a.active::before, .view-toggle strong.active::before {
+  width: 36px; height: 14px; margin-left: -18px;
+}
+
+/* Disabled — muted, flatter than a live chip, no hover, dimmed near-black
+   text (never nav.css's old washed-out white — marker-only-black applies
+   here too). Used for an item with no destination yet (the homepage's
+   `Hockey`/`Swimming`, `WC 30` on tournament pages) and the Groups
+   placeholder note. */
+.view-toggle span.disabled {
+  --chip-bg: #B9AF9E;
+  color: rgba(26, 26, 26, 0.55);
+  box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.12);
+}
 
 /* Level 2 — the single most visually dominant level, wherever it appears
-   (the homepage's "World Cup" segment, World Cup pages' primary tabs):
-   bigger font/padding than every other level. Sits between Level 1 and
-   Level 3 — square off both top and bottom, with a divider line against
-   Level 1 above (each Level 3 variant divides itself the same way below). */
-.page-toggle { min-height: 2.5rem; border-radius: 0; border-top: 1px solid rgba(0,0,0,0.15); }
-.page-toggle button, .page-toggle a, .page-toggle strong { flex: 1 1 auto; white-space: nowrap; }
-.primary-tabs.view-toggle { background: #C0392B; }
-.primary-tabs.view-toggle button, .primary-tabs.view-toggle a, .primary-tabs.view-toggle strong { font-size: 0.95rem; padding: 0.45rem 1.1rem; }
+   (the homepage's Football competition row, World Cup pages' primary
+   tabs): bigger font/padding than every other level, applied to every item
+   type alike (including disabled spans) so nothing in this row renders at
+   a different size than its siblings. Dominance comes from size alone now
+   — it shares the same varied paper color / black text system as every
+   other level rather than a special always-red default. */
+.primary-tabs.view-toggle > * { font-size: 0.95rem; padding: 0.45rem 1.1rem; }
 
-/* Level 3 (plain variant) — for a page whose detail row is just equal-width
-   links/buttons with no bespoke layout of its own (currently: the
-   homepage's History/Tournaments row). Only zeroes the top corners — this
-   is the last level, so the bottom stays rounded, same shape every
-   page-specific Level 3 variant in shared.css already follows. */
-.detail-bar { min-height: 2.5rem; flex-wrap: wrap; border-top-left-radius: 0; border-top-right-radius: 0; border-top: 1px solid rgba(0,0,0,0.15); }
-.detail-bar.view-toggle { background: #C0392B; }
-.detail-bar a, .detail-bar strong, .detail-bar span { flex: 1 1 auto; white-space: nowrap; }
+/* Universal transition duration — the single source of truth for pacing,
+   see requirements/public.md -> Navigation -> Transitions. A unitless
+   number (not "850ms") so JS can read it back with a plain parseFloat on
+   the computed style with no unit-string parsing — see FLY_MS in
+   shared.js and build.py's history script, both of which derive their
+   setTimeout delay from this instead of hardcoding a matching number.
+   Change the pace in exactly this one place. */
+:root { --fly-ms: 850; }
+
+/* Shared "fly panel" swap mechanism — the universal transition speed *and*
+   distance, see requirements/public.md -> Navigation -> Transitions. Any
+   page applies these classes to whatever it's swapping (a whole view, a
+   table's tbody, a bracket column, the homepage's Sports!/Football groups)
+   so both only ever need to change in one place. Always flies fully
+   off-screen (105vw) — production feedback said a modest nearby shift
+   didn't read as "flying in," it read as barely moving. Pair this with
+   `.fly-scroll-lock` (below) on whatever scrollable ancestor the panel
+   lives inside (a `.table-wrap`, `.bracket`, or `body` itself) for the
+   transition's duration — an off-screen translateX briefly inflates that
+   ancestor's scrollable area otherwise, since scrollable overflow is
+   computed from an element's transformed position. JS should also clear
+   these classes back to no-transform once a panel settles (see each call
+   site in shared.js) rather than leaving `transform: translateX(0)`
+   sitting on it forever — an identity transform still establishes a new
+   containing block, which would silently break any `position: fixed`
+   descendant (see #rank-info in build.py) from that point on. */
+.fly-panel { transition: transform calc(var(--fly-ms) * 1ms) linear, opacity calc(var(--fly-ms) * 1ms) linear; }
+.fly-panel.fly-out { transform: translateX(105vw) rotate(8deg); opacity: 0; }
+.fly-panel.fly-in-start { transform: translateX(-105vw) rotate(-8deg); opacity: 0; transition: none !important; }
+.fly-panel.fly-in-active { transform: translateX(0) rotate(0deg); opacity: 1; transition: transform calc(var(--fly-ms) * 1ms) cubic-bezier(.1,.6,.2,1), opacity calc(var(--fly-ms) * 1ms) linear; }
+
+/* Applied to a scrollable ancestor (never the flying panel itself) for
+   exactly the transition's duration — see the comment above. */
+.fly-scroll-lock { overflow-x: hidden !important; }
 
 /* Shared styles for all World Cup pages */
 
@@ -99,7 +207,7 @@ table { border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem; white-sp
    page — and the nav above it — never grows wider than Levels 1-3. */
 #matches-view table { margin-top: 0; }
 th, td { padding: 0.4rem 0.6rem; text-align: left; border-bottom: 1px solid #ddd; }
-th { font-family: 'Permanent Marker', cursive; background: #C0392B; color: #FFFFFF; position: sticky; top: 0; z-index: 2; }
+th { font-family: 'Permanent Marker', cursive; background: #C0392B; color: #FFFFFF; position: sticky; top: 0; z-index: 2; height: 2.5rem; vertical-align: middle; }
 .num { text-align: right; }
 .narrow { text-align: center; }
 .spacer { padding: 0 0.3rem; }
@@ -118,20 +226,15 @@ th { font-family: 'Permanent Marker', cursive; background: #C0392B; color: #FFFF
    to World Cup pages. */
 
 tbody tr:hover { background: #EDE8DC; }
-/* history.html's F4/F8/F16 toggle — a standalone .view-toggle instance (not
-   part of the fused nav), so unlike the Level-3-variant selectors below it
-   needs its own background rule or its "default" state text is invisible
-   against the cream page background instead of the red bar it's meant to
-   sit on. */
-.history-round-toggle { background: #C0392B; }
 
 /* World Cup pages' own Level 3 variants — each has unique layout beyond the
    shared shape (checkboxes, a note, a bracket-round picker), so unlike
    Level 1/2 they aren't reusable as-is and keep their own CSS here. All
    still share the generic "last fused level" treatment: same min-height as
    Levels 1-2, red background, and only the top corners squared off (the
-   bottom stays rounded, since Level 3 is always the last level). */
-.bracket-round-toggle, .match-view-toggle, .groups-view-toggle, .rankings-view-toggle { min-height: 2.5rem; flex-wrap: wrap; border-top-left-radius: 0; border-top-right-radius: 0; border-top: 1px solid rgba(0,0,0,0.15); }
+   bottom stays rounded, since Level 3 is always the last level). No divider
+   line against Level 2 above — the fills alone tell levels apart. */
+.bracket-round-toggle, .match-view-toggle, .groups-view-toggle, .rankings-view-toggle { min-height: 2.5rem; flex-wrap: wrap; border-top-left-radius: 0; border-top-right-radius: 0; }
 .bracket-round-toggle button, .match-view-toggle button, .groups-view-toggle button, .groups-view-toggle span { flex: 1 1 auto; white-space: nowrap; }
 .bracket-round-toggle.view-toggle, .match-view-toggle.view-toggle, .groups-view-toggle.view-toggle { background: #C0392B; }
 
@@ -161,6 +264,8 @@ tbody tr:hover { background: #EDE8DC; }
    edges, aligning with Levels 1-3 above instead of sitting inset. */
 .rankings-header {
   display: grid;
+  align-items: center;
+  min-height: 2.5rem;
   /* grid-template-columns set dynamically by renderRankings() */
   position: sticky;
   top: 0;
@@ -280,19 +385,15 @@ tbody tr:hover { background: #EDE8DC; }
    toggleBracketRound), but growing can jump straight to any hidden round in
    one click, revealing everything between it and the current edge — so the
    visible set can never have a gap in the middle. */
-/* Two colors only: full red (blends into the bar) = shown, pale red = not
-   shown. White is deliberately avoided here — it already means "currently
-   selected page" on the primary-tabs row above, and reusing it for "shown
-   round" reads as the same signal doing two different jobs. */
-.bracket-round-toggle.view-toggle button.active { background: transparent; color: #fff; font-weight: bold; }
-.bracket-round-toggle.view-toggle button:not(.active) { background: rgba(255,255,255,0.3); color: rgba(255,255,255,0.95); }
-.bracket-round-toggle.view-toggle button:not(.active):hover { background: rgba(255,255,255,0.45); }
+/* Shown/hidden rounds use the base .view-toggle fills as-is (white =
+   shown, lighter-red = hidden) — see requirements/public.md -> Navigation.
+   No bespoke color rules needed here. */
 .bracket { display: flex; align-items: stretch; gap: 2.5rem; overflow-x: auto; padding: 0.5rem 0 1.5rem; }
 .bracket-round { display: flex; flex-direction: column; min-width: 190px; }
 /* This round's Level 4 (see requirements/public.md → Navigation) — a small
    red bar with white text, matching every other view's Level 4 coloring,
    rather than plain red text on the page background. */
-.bracket-round-label { font-family: 'Permanent Marker', cursive; font-size: 0.9rem; background: #C0392B; color: #fff; text-align: center; padding: 0.3rem 0.5rem; border-radius: 4px; margin-bottom: 0.6rem; }
+.bracket-round-label { display: flex; align-items: center; justify-content: center; min-height: 2.5rem; font-family: 'Permanent Marker', cursive; font-size: 0.9rem; background: #C0392B; color: #fff; text-align: center; padding: 0.3rem 0.5rem; border-radius: 4px; margin-bottom: 0.6rem; }
 .bracket-round-games { flex: 1; display: flex; flex-direction: column; justify-content: space-around; }
 /* Connector lines imply a 1-to-1 feed from the previous round. That's true
    for every round except the last, which bundles the Final and Third-Place
@@ -321,7 +422,7 @@ tbody tr:hover { background: #EDE8DC; }
 </head>
 <body>
 <div class="page-nav">
-<nav class="utility-bar view-toggle"><a href="../../index.html">Home</a><a href="history.html">History</a><strong class="active">WC 98</strong><a href="2002.html">WC 02</a><a href="2006.html">WC 06</a><a href="2010.html">WC 10</a><a href="2014.html">WC 14</a><a href="2018.html">WC 18</a><a href="2022.html">WC 22</a><a href="2026.html">WC 26</a><span class="disabled">WC 30</span></nav>
+<nav class="utility-bar view-toggle"><a href="../../index.html">Home</a><strong class="active">WC 98</strong><a href="2002.html">WC 02</a><a href="2006.html">WC 06</a><a href="2010.html">WC 10</a><a href="2014.html">WC 14</a><a href="2018.html">WC 18</a><a href="2022.html">WC 22</a><a href="2026.html">WC 26</a><span class="disabled">WC 30</span></nav>
   <div class="page-toggle primary-tabs view-toggle">
     <button id="tab-matches" class="active" onclick="setPageView('matches')">Match List</button>
     <button id="tab-groups" onclick="setPageView('groups')">Groups</button>
@@ -358,7 +459,6 @@ tbody tr:hover { background: #EDE8DC; }
 <div id="rankings-view">
   <div class="rankings-panel">
     <div id="rankings-outer">
-      <div id="rank-info"></div>
       <div class="rankings-cols" id="rankings-cols">
         <div class="rankings-header" id="rankings-header"></div>
         <div class="rankings-body" id="rankings-body"></div>
@@ -366,6 +466,12 @@ tbody tr:hover { background: #EDE8DC; }
     </div>
   </div>
 </div>
+<!-- position:fixed, so a sibling of the views rather than nested inside
+     #rankings-view — a transform on #rankings-view (see the fly transition
+     in shared.js's setPageView) would otherwise create a new containing
+     block and permanently re-anchor this to that box instead of the
+     viewport once the view had flown in once. -->
+<div id="rank-info"></div>
 
 <div id="groups-view"></div>
 
@@ -1227,6 +1333,60 @@ for (const t of teams) confByTeam[t.name] = t.confederation;
 const flagByTeam = {};
 for (const t of teams) flagByTeam[t.name] = t.flag;
 
+// Universal fly in/out pacing — see requirements/public.md -> Navigation ->
+// Transitions and ../nav.css's --fly-ms (the single source of truth; read
+// here at runtime instead of a second hardcoded number that could drift
+// out of sync with it). Every swap in this file is sequential (old content
+// flies out, *then* new content is rendered and flies in) rather than the
+// homepage's simultaneous dual-panel version, since these views hold
+// heavier, dynamically-rendered content — so this constant is the out-leg's
+// wait before swapping content, not a full round-trip.
+const FLY_MS = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fly-ms'));
+
+// Shared fly-out/fly-in primitives — setPageView, setMatchView, and
+// toggleBracketRound each swap different content (a whole view, a set of
+// scattered table cells, one or more bracket columns), so this is a pair of
+// small building blocks rather than one rigid "swap panel A for panel B"
+// function. Callers own DOM mutation (removing/rendering content) and any
+// scroll-lock lifecycle (see ../nav.css's .fly-scroll-lock) between the two.
+
+// Flies `els` off-screen (see ../nav.css's .fly-panel) and resolves once the
+// transition finishes. Leaves them in the flown-out state — hiding/removing
+// them from the DOM afterward is the caller's job.
+function flyOut(els) {
+  return new Promise(function(resolve) {
+    els.forEach(function(el) { el.classList.remove('fly-in-active'); el.classList.add('fly-panel', 'fly-out'); });
+    window.setTimeout(resolve, FLY_MS);
+  });
+}
+
+// Flies `els` in from off-screen, with an optional per-element stagger (ms)
+// for a rapid-fire reveal of several at once (see Knockout's round toggle).
+// Once settled, clears the fly classes back to no-transform rather than
+// leaving `transform: translateX(0)` in place — see ../nav.css's .fly-panel
+// comment for why a lingering identity transform is its own latent bug
+// (breaks any position:fixed descendant, e.g. Rankings' #rank-info).
+function flyIn(els, options) {
+  const stagger = (options && options.stagger) || 0;
+  const onSettled = options && options.onSettled;
+  if (!els.length) { if (onSettled) onSettled(); return; }
+  els.forEach(function(el, i) {
+    el.classList.add('fly-panel', 'fly-in-start');
+    if (stagger) el.style.transitionDelay = (i * stagger) + 'ms';
+  });
+  void els[0].offsetWidth;
+  requestAnimationFrame(function() {
+    els.forEach(function(el) { el.classList.remove('fly-in-start'); el.classList.add('fly-in-active'); });
+    window.setTimeout(function() {
+      els.forEach(function(el) {
+        el.classList.remove('fly-panel', 'fly-in-active');
+        if (stagger) el.style.transitionDelay = '';
+      });
+      if (onSettled) onSettled();
+    }, FLY_MS);
+  });
+}
+
 // Returns a deterministic slight rotation (±1deg) for a team's flag,
 // derived from the team name so each team is consistent across all appearances.
 function flagRotation(teamName) {
@@ -1306,8 +1466,24 @@ function renderMatchViewToggle() {
 }
 
 function setMatchView(view) {
-  matchState.view = view;
-  render();
+  if (view === matchState.view) return;
+  // Only the confederation columns fly — every cell in both thead/tbody
+  // shares the "conf" class (see confHeaderRow/renderElo/renderWld/
+  // renderStats), so a class-driven fly transition applies identically and
+  // simultaneously to all of them without touching the fixed game columns
+  // to their left, matching requirements/public.md -> Match List ->
+  // Confederation panel. render() always rebuilds the whole row (game
+  // cells + conf cells together), so the fly-in step re-selects ".conf"
+  // fresh after re-rendering rather than reusing the old (now removed) nodes.
+  const scrollEl = document.querySelector('#matches-view .table-wrap');
+  if (scrollEl) scrollEl.classList.add('fly-scroll-lock');
+  flyOut(Array.from(document.querySelectorAll('#matches-view .conf'))).then(function() {
+    matchState.view = view;
+    render();
+    flyIn(Array.from(document.querySelectorAll('#matches-view .conf')), {
+      onSettled: function() { if (scrollEl) scrollEl.classList.remove('fly-scroll-lock'); }
+    });
+  });
 }
 
 // A knockout-bracket game may not have a concrete team yet — it defers to
@@ -2121,8 +2297,34 @@ function bracketRange() {
   return { lo: bracketState.lo, hi: bracketState.hi === null ? lastRound : bracketState.hi };
 }
 
+function bracketColumnEl(roundIdx) {
+  return document.querySelector(`.bracket-round[data-round-idx="${roundIdx}"]`);
+}
+
+// Flies newly-added columns in, staggered rapid-fire per
+// requirements/public.md -> Knockout Bracket -> Round toggles.
+function bracketScrollEl() {
+  return document.querySelector('#knockout-outer .bracket');
+}
+
+// Flies newly-revealed round columns in, staggered rapid-fire per
+// requirements/public.md -> Knockout Bracket -> Round toggles. Re-locks the
+// (possibly freshly-rendered) .bracket for the duration, since flying even
+// a single column fully off-screen can inflate its scroll width otherwise.
+function revealBracketColumns(added) {
+  if (!added.length) return;
+  const scrollEl = bracketScrollEl();
+  if (scrollEl) scrollEl.classList.add('fly-scroll-lock');
+  const cols = added.slice().sort((a, b) => a - b).map(bracketColumnEl).filter(Boolean);
+  flyIn(cols, {
+    stagger: 90,
+    onSettled: function() { if (scrollEl) scrollEl.classList.remove('fly-scroll-lock'); }
+  });
+}
+
 function toggleBracketRound(roundIdx) {
-  const { lo, hi } = bracketRange();
+  const before = bracketRange();
+  const { lo, hi } = before;
   if (roundIdx >= lo && roundIdx <= hi) {
     // Hiding a visible round: only the two edges can shrink, one round at a
     // time, and never past a single remaining round — an all-hidden tree
@@ -2138,7 +2340,31 @@ function toggleBracketRound(roundIdx) {
   } else if (roundIdx > hi) {
     bracketState.hi = roundIdx;
   }
-  renderKnockout();
+  const after = bracketRange();
+  const removed = [];
+  for (let i = before.lo; i <= before.hi; i++) if (i < after.lo || i > after.hi) removed.push(i);
+  const added = [];
+  for (let i = after.lo; i <= after.hi; i++) if (i < before.lo || i > before.hi) added.push(i);
+
+  if (removed.length === 0) {
+    // Pure growth — nothing to wait on flying out, render immediately and
+    // fly the newly-revealed columns in.
+    renderKnockout();
+    revealBracketColumns(added);
+    return;
+  }
+  // Shrinking always removes exactly one edge column (see the guard above) —
+  // fly it out, then rebuild once it's clear and fly any newly-revealed
+  // columns in (a shrink never also reveals a column, but kept generic).
+  // renderKnockout() below replaces .bracket entirely, so this lock only
+  // needs to cover the brief fly-out; revealBracketColumns re-locks the
+  // fresh .bracket itself if there's anything to fly in afterward.
+  const scrollEl = bracketScrollEl();
+  if (scrollEl) scrollEl.classList.add('fly-scroll-lock');
+  flyOut(removed.map(bracketColumnEl).filter(Boolean)).then(function() {
+    renderKnockout();
+    revealBracketColumns(added);
+  });
 }
 
 function renderKnockout() {
@@ -2181,7 +2407,7 @@ function renderKnockout() {
         bracketTeamRowHtml(game, 'away', decided) +
         `</div></div>`;
     }).join('');
-    return `<div class="bracket-round"><div class="bracket-round-label">${esc(label)}</div><div class="bracket-round-games">${gamesHtml}</div></div>`;
+    return `<div class="bracket-round" data-round-idx="${roundIdx}"><div class="bracket-round-label">${esc(label)}</div><div class="bracket-round-games">${gamesHtml}</div></div>`;
   }).join('');
 
   container.innerHTML = `<div class="bracket">${html}</div>`;
@@ -2194,18 +2420,43 @@ const PAGE_VIEWS = ['matches', 'rankings', 'groups', 'knockout'];
 const VIEW_TOGGLE_ID = { matches: 'match-view-toggle', rankings: 'rankings-view-toggle', groups: 'groups-view-toggle', knockout: 'bracket-round-toggle' };
 let currentPageView = null;
 
-function setPageView(view) {
-  if (!PAGE_VIEWS.includes(view)) view = 'matches';
-  if (view === currentPageView) return;
-  currentPageView = view;
-  for (const v of PAGE_VIEWS) {
-    document.getElementById(v + '-view').style.display = v === view ? 'block' : 'none';
-    document.getElementById('tab-' + v).classList.toggle('active', v === view);
-    document.getElementById(VIEW_TOGGLE_ID[v]).style.display = v === view ? 'flex' : 'none';
-  }
+function renderPageView(view) {
   if (view === 'matches') render();
   if (view === 'rankings') renderRankings();
   if (view === 'knockout') renderKnockout();
+}
+
+function setPageView(view) {
+  if (!PAGE_VIEWS.includes(view)) view = 'matches';
+  if (view === currentPageView) return;
+  const outgoing = currentPageView;
+  currentPageView = view;
+  for (const v of PAGE_VIEWS) {
+    document.getElementById('tab-' + v).classList.toggle('active', v === view);
+    document.getElementById(VIEW_TOGGLE_ID[v]).style.display = v === view ? 'flex' : 'none';
+  }
+  const incoming = document.getElementById(view + '-view');
+  if (!outgoing) {
+    // First load (page just opened, possibly via a #hash) — show the target
+    // view directly, no fly; there's nothing on screen yet to fly out of.
+    for (const v of PAGE_VIEWS) document.getElementById(v + '-view').style.display = v === view ? 'block' : 'none';
+    renderPageView(view);
+    if (location.hash.slice(1) !== view) history.replaceState(null, '', '#' + view);
+    return;
+  }
+  const outEl = document.getElementById(outgoing + '-view');
+  // Flying a whole view fully off-screen (see .fly-panel in ../nav.css)
+  // would otherwise briefly inflate body's own scrollable width — lock it
+  // for exactly the transition, not permanently (a view's inner table/
+  // bracket may legitimately need its own horizontal scroll at rest).
+  document.body.classList.add('fly-scroll-lock');
+  flyOut([outEl]).then(function() {
+    outEl.style.display = 'none';
+    outEl.classList.remove('fly-out', 'fly-panel');
+    incoming.style.display = 'block';
+    renderPageView(view);
+    flyIn([incoming], { onSettled: function() { document.body.classList.remove('fly-scroll-lock'); } });
+  });
   if (location.hash.slice(1) !== view) history.replaceState(null, '', '#' + view);
 }
 

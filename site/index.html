@@ -31,73 +31,277 @@
   window.__setFavicon();
 })();
 </script>
+<script>
+var __currentHomeView = 'sports';
+function setHomeView(view) {
+  if (view === __currentHomeView) return;
+  document.getElementById('tab-sports').classList.toggle('active', view === 'sports');
+  document.getElementById('tab-football').classList.toggle('active', view === 'football');
+
+  var outgoing = document.getElementById(__currentHomeView + '-group');
+  var incoming = document.getElementById(view + '-group');
+
+  outgoing.classList.remove('fly-in-active');
+  outgoing.classList.add('fly-out');
+
+  incoming.classList.remove('fly-out');
+  incoming.classList.add('fly-in-start');
+  void incoming.offsetWidth;
+  requestAnimationFrame(function() {
+    incoming.classList.remove('fly-in-start');
+    incoming.classList.add('fly-in-active');
+  });
+
+  document.getElementById('home-groups-wrap').style.height = incoming.scrollHeight + 'px';
+  __currentHomeView = view;
+}
+window.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('home-groups-wrap').style.height = document.getElementById('sports-group').scrollHeight + 'px';
+});
+</script>
 <style>
-/* Shared fused nav component — Level 1-3's generic visual system, used by
-   every page on the public site: the homepage (build_home.py) and every
-   World Cup page (build.py). This is the single source of truth for it —
-   see requirements/public.md -> Navigation for the spec this file
-   implements. Page-specific Level 3 variants with their own unique layout
-   (Rankings' checkboxes, the Knockout round toggle, etc.) keep their own
-   CSS in shared.css instead; only what's identical everywhere lives here. */
+/* Shared "cardboard cutout" nav component — Level 1-3's chip visual system,
+   used by every page on the public site: the homepage (build_home.py) and
+   every World Cup page (build.py). Single source of truth — see
+   requirements/public.md -> Navigation for the spec this file implements.
+   Page-specific Level 3 variants with their own unique layout (Rankings'
+   checkboxes, the Knockout round toggle, etc.) keep their own CSS in
+   shared.css instead; only what's identical everywhere lives here. Level 4
+   (table/grid column headers) is not a chip row and isn't styled here —
+   see shared.css / build.py for its own torn-strip treatment.
 
-.view-toggle { display: inline-flex; align-items: center; border: 1px solid rgba(255,255,255,0.6); border-radius: 4px; overflow: hidden; }
-.view-toggle button, .view-toggle a, .view-toggle strong, .view-toggle span { border: none; border-right: 1px solid rgba(255,255,255,0.4); background: transparent; padding: 0.2rem 0.7rem; cursor: pointer; font-family: 'Permanent Marker', cursive; font-size: 0.75rem; color: rgba(255,255,255,0.85); text-decoration: none; text-align: center; }
-.view-toggle button:last-child, .view-toggle a:last-child, .view-toggle strong:last-child, .view-toggle span:last-child { border-right: none; }
-.view-toggle button.active, .view-toggle a.active, .view-toggle strong.active { background: rgba(255,255,255,0.95); color: #C0392B; }
-.view-toggle button:hover:not(.active):not(:disabled), .view-toggle a:hover:not(.active) { background: rgba(255,255,255,0.18); color: #fff; }
-.view-toggle button:disabled { cursor: default; }
+   This was originally piloted as a homepage-only experiment (irregular cut
+   edges, tape on every chip, no color-flip on selection, black-marker-only
+   text, varied paper color) before being promoted here to apply everywhere —
+   see way-of-working.md history / requirements/public.md for that call.
+
+   Also home to the site's universal fly in/out transition primitives
+   (--fly-ms, .fly-panel, .fly-scroll-lock, below) — not chip styling, but
+   this is the one CSS file loaded on every public page (homepage included;
+   shared.css isn't), which is what these need to actually be universal. */
+
+.page-nav { display: flex; flex-direction: column; width: 100%; gap: 10px; }
+
+.view-toggle { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+
+/* Each item is its own paper cutout, not a segment of a shared background:
+   an irregular hand-cut outline (cycling through 4 distinct polygons by
+   position, mod 4 — no two neighboring chips share the same cut), a hard
+   offset shadow suggesting real thickness (poster board, not a thin sheet),
+   and a small deterministic rotation (alternating by position, not random
+   per page load). */
+.view-toggle button, .view-toggle a, .view-toggle strong, .view-toggle span {
+  --rot: 0deg;
+  --chip-bg: #EFE6DA;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: none; cursor: pointer; text-decoration: none; text-align: center; white-space: nowrap;
+  font-family: 'Permanent Marker', cursive; font-size: 0.75rem; padding: 0.2rem 0.7rem;
+  border-radius: 0;
+  background: var(--chip-bg); color: #1A1A1A;
+  box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.22);
+  transform: rotate(var(--rot));
+  position: relative;
+}
 .view-toggle strong, .view-toggle span.disabled { cursor: default; }
-/* Disabled state — an item with no destination yet ("WC 30", a not-yet-live
-   sport on the homepage): muted, not a link, not a broken/dead link either. */
-.view-toggle span.disabled { opacity: 0.5; }
 
-/* Level 1 — a single flat row of equally-spaced segmented items. On pages
-   with a fused nav below it (.page-nav .utility-bar) it squares off its
-   bottom corners; standalone (history.html) it keeps all four rounded and
-   its own bottom margin. */
-.utility-bar { display: flex; align-items: center; flex-wrap: wrap; margin: 0 0 1rem; background: #C0392B; border-radius: 4px; min-height: 2.5rem; }
-.utility-bar.view-toggle { display: flex; } /* override .view-toggle's inline-flex so this row is full-width even standalone */
-.utility-bar a, .utility-bar strong, .utility-bar span { flex: 1 1 auto; white-space: nowrap; }
+.view-toggle > :nth-child(odd) { --rot: -1.6deg; }
+.view-toggle > :nth-child(even) { --rot: 1.4deg; }
+.view-toggle > :nth-child(3n) { --rot: -0.8deg; }
 
-/* The fused wrapper: display:flex + column + width:100% spans the same max
-   content width as the rest of the page, and align-items:stretch makes
-   every level (regardless of its own display type) exactly that width. */
-.page-nav { display: flex; flex-direction: column; align-items: stretch; width: 100%; margin-bottom: 0; }
-.page-nav .utility-bar { margin-bottom: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+/* Irregular hand-cut outline, cycling mod 4 — decoupled from the mod-5
+   color cycle below so shape and color don't repeat in lockstep. */
+.view-toggle > :nth-child(4n+1) { clip-path: polygon(2% 6%, 97% 0%, 100% 90%, 92% 100%, 5% 96%, 0% 16%); }
+.view-toggle > :nth-child(4n+2) { clip-path: polygon(0% 3%, 93% 0%, 100% 94%, 7% 100%, 2% 88%, 0% 28%); }
+.view-toggle > :nth-child(4n+3) { clip-path: polygon(4% 0%, 100% 5%, 96% 100%, 3% 95%, 0% 55%); }
+.view-toggle > :nth-child(4n+4) { clip-path: polygon(0% 9%, 90% 0%, 100% 82%, 95% 100%, 6% 91%); }
+
+/* Paper color variety — each position pulls a different sheet from the
+   stack instead of one repeated color. Disabled chips are the exception
+   (see below): they stay muted gray-tan regardless of position, so "not
+   available yet" is never mistaken for a color choice. */
+.view-toggle > :nth-child(5n+1):not(.disabled) { --chip-bg: #C0392B; }
+.view-toggle > :nth-child(5n+2):not(.disabled) { --chip-bg: #1A5276; }
+.view-toggle > :nth-child(5n+3):not(.disabled) { --chip-bg: #F4D03F; }
+.view-toggle > :nth-child(5n+4):not(.disabled) { --chip-bg: #1E8449; }
+.view-toggle > :nth-child(5n+5):not(.disabled) { --chip-bg: #E67E22; }
+
+/* Tape on every chip — a physical scrap of board needs holding down
+   whether or not it's the current selection; selection is differentiated
+   below instead (lift/scale/shadow + a bigger piece of tape). Alternating
+   angle/position per item for the same reason colors/cuts vary — nothing
+   hand-assembled repeats identically. */
+.view-toggle > *::before {
+  content: "";
+  position: absolute; top: -8px; left: 50%;
+  width: 26px; height: 11px; margin-left: -13px;
+  background: rgba(230, 225, 208, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transform: rotate(-5deg);
+}
+.view-toggle > :nth-child(odd)::before { left: 42%; transform: rotate(4deg); }
+
+/* Hover — a clickable, not-yet-selected chip lifts slightly. Disabled
+   items are excluded by element type (span isn't in this selector list). */
+.view-toggle button:hover:not(.active):not(:disabled),
+.view-toggle a:hover:not(.active) {
+  transform: translateY(-2px) rotate(var(--rot));
+  box-shadow: 4px 6px 0 rgba(0, 0, 0, 0.28);
+}
+
+/* Selected — no recolor (background stays whatever this chip already drew
+   from the palette above); lifts with a stronger shadow and a slight
+   scale-up (visibly picked up and pressed down), plus a larger, more
+   deliberate piece of tape than every other chip's. Text stays the same
+   near-black — marker only comes in black, so a colored background never
+   flips to white text. Covers both single-choice "current selection" and
+   multi-select "shown" (a currently-visible Knockout round) — both mean
+   "this is on." */
+.view-toggle button.active, .view-toggle a.active, .view-toggle strong.active {
+  box-shadow: 4px 6px 0 rgba(0, 0, 0, 0.3);
+  transform: scale(1.08) rotate(var(--rot));
+  z-index: 2;
+}
+.view-toggle button.active::before, .view-toggle a.active::before, .view-toggle strong.active::before {
+  width: 36px; height: 14px; margin-left: -18px;
+}
+
+/* Disabled — muted, flatter than a live chip, no hover, dimmed near-black
+   text (never nav.css's old washed-out white — marker-only-black applies
+   here too). Used for an item with no destination yet (the homepage's
+   `Hockey`/`Swimming`, `WC 30` on tournament pages) and the Groups
+   placeholder note. */
+.view-toggle span.disabled {
+  --chip-bg: #B9AF9E;
+  color: rgba(26, 26, 26, 0.55);
+  box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.12);
+}
 
 /* Level 2 — the single most visually dominant level, wherever it appears
-   (the homepage's "World Cup" segment, World Cup pages' primary tabs):
-   bigger font/padding than every other level. Sits between Level 1 and
-   Level 3 — square off both top and bottom, with a divider line against
-   Level 1 above (each Level 3 variant divides itself the same way below). */
-.page-toggle { min-height: 2.5rem; border-radius: 0; border-top: 1px solid rgba(0,0,0,0.15); }
-.page-toggle button, .page-toggle a, .page-toggle strong { flex: 1 1 auto; white-space: nowrap; }
-.primary-tabs.view-toggle { background: #C0392B; }
-.primary-tabs.view-toggle button, .primary-tabs.view-toggle a, .primary-tabs.view-toggle strong { font-size: 0.95rem; padding: 0.45rem 1.1rem; }
+   (the homepage's Football competition row, World Cup pages' primary
+   tabs): bigger font/padding than every other level, applied to every item
+   type alike (including disabled spans) so nothing in this row renders at
+   a different size than its siblings. Dominance comes from size alone now
+   — it shares the same varied paper color / black text system as every
+   other level rather than a special always-red default. */
+.primary-tabs.view-toggle > * { font-size: 0.95rem; padding: 0.45rem 1.1rem; }
 
-/* Level 3 (plain variant) — for a page whose detail row is just equal-width
-   links/buttons with no bespoke layout of its own (currently: the
-   homepage's History/Tournaments row). Only zeroes the top corners — this
-   is the last level, so the bottom stays rounded, same shape every
-   page-specific Level 3 variant in shared.css already follows. */
-.detail-bar { min-height: 2.5rem; flex-wrap: wrap; border-top-left-radius: 0; border-top-right-radius: 0; border-top: 1px solid rgba(0,0,0,0.15); }
-.detail-bar.view-toggle { background: #C0392B; }
-.detail-bar a, .detail-bar strong, .detail-bar span { flex: 1 1 auto; white-space: nowrap; }
+/* Universal transition duration — the single source of truth for pacing,
+   see requirements/public.md -> Navigation -> Transitions. A unitless
+   number (not "850ms") so JS can read it back with a plain parseFloat on
+   the computed style with no unit-string parsing — see FLY_MS in
+   shared.js and build.py's history script, both of which derive their
+   setTimeout delay from this instead of hardcoding a matching number.
+   Change the pace in exactly this one place. */
+:root { --fly-ms: 850; }
+
+/* Shared "fly panel" swap mechanism — the universal transition speed *and*
+   distance, see requirements/public.md -> Navigation -> Transitions. Any
+   page applies these classes to whatever it's swapping (a whole view, a
+   table's tbody, a bracket column, the homepage's Sports!/Football groups)
+   so both only ever need to change in one place. Always flies fully
+   off-screen (105vw) — production feedback said a modest nearby shift
+   didn't read as "flying in," it read as barely moving. Pair this with
+   `.fly-scroll-lock` (below) on whatever scrollable ancestor the panel
+   lives inside (a `.table-wrap`, `.bracket`, or `body` itself) for the
+   transition's duration — an off-screen translateX briefly inflates that
+   ancestor's scrollable area otherwise, since scrollable overflow is
+   computed from an element's transformed position. JS should also clear
+   these classes back to no-transform once a panel settles (see each call
+   site in shared.js) rather than leaving `transform: translateX(0)`
+   sitting on it forever — an identity transform still establishes a new
+   containing block, which would silently break any `position: fixed`
+   descendant (see #rank-info in build.py) from that point on. */
+.fly-panel { transition: transform calc(var(--fly-ms) * 1ms) linear, opacity calc(var(--fly-ms) * 1ms) linear; }
+.fly-panel.fly-out { transform: translateX(105vw) rotate(8deg); opacity: 0; }
+.fly-panel.fly-in-start { transform: translateX(-105vw) rotate(-8deg); opacity: 0; transition: none !important; }
+.fly-panel.fly-in-active { transform: translateX(0) rotate(0deg); opacity: 1; transition: transform calc(var(--fly-ms) * 1ms) cubic-bezier(.1,.6,.2,1), opacity calc(var(--fly-ms) * 1ms) linear; }
+
+/* Applied to a scrollable ancestor (never the flying panel itself) for
+   exactly the transition's duration — see the comment above. */
+.fly-scroll-lock { overflow-x: hidden !important; }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Fredoka One', cursive; font-size: 1rem; line-height: 1.5; background: #F5F0E8; color: #1a1a1a; }
-.page { max-width: 800px; margin: 0 auto; padding: 2.5rem 1.5rem 5rem; }
-.site-header h1 { font-family: 'Permanent Marker', cursive; font-size: 3rem; color: #1a1a1a; line-height: 1.1; text-align: center; }
-.site-header .tagline { margin-top: 0.5rem; font-size: 1.1rem; color: #555; text-align: center; }
+html { overflow: hidden; }
+/* max-width + margin:0 auto matches shared.css's body rule (used by every
+   World Cup page) — see requirements/public.md -> Navigation: the nav
+   "spans the page's full content width (the same max width the rest of
+   the page uses ... not shrink-to-fit)". Without this, the row is full
+   raw-viewport width, so on a wide monitor the centered signature (which
+   centers within that row) ends up centered relative to the whole screen
+   instead of a reasonable content column, drifting far from the
+   left-aligned Level 1 chips above it. */
+body { font-family: 'Fredoka One', cursive; font-size: 1rem; line-height: 1.5; background: #F5F0E8; color: #1a1a1a; overflow: hidden; max-width: 1100px; margin: 0 auto; }
+/* The parked (not-currently-shown) group rests at translateX(+/-105vw) —
+   fully off-screen, but position:absolute content still counts toward the
+   page's scrollable area, which would otherwise stretch the document far
+   past the viewport width. This page never needs to scroll on either axis
+   (see requirements/public.md -> Homepage -> Layout — the nav *is* the
+   page), so overflow:hidden on both html and body clips it outright,
+   rather than just overflow-x — hiding only one axis makes the other
+   axis's overflow compute to `auto` per spec, which let a few stray
+   pixels of vertical overflow (from a chip's shadow/tape poking past the
+   last row) trigger a real vertical scrollbar that silently ate into the
+   content width and threw off centering. */
+/* The "Sports!" signature (On the Internet. / By David / the tagline) is
+   the site's byline, not a choice — see requirements/public.md -> Navigation
+   -> "The homepage signature is exempt". No chip styling at all: no fill,
+   no shadow, no tape, no rotation, just handwritten/printed text directly
+   on the page, sized down in weight level by level. */
+/* Every row is left-aligned everywhere else on the site (see
+   requirements/public.md -> Navigation -> General nav chip characteristics)
+   because those pages are functional multi-page toolbars. The homepage
+   isn't — it's one splash/title composition ("the nav *is* the page"), so
+   every row centers here instead: Level 1 above, and both states' Level 2/3
+   below it (Football's World Cup/Euros/etc and History/Tournaments, not
+   just the Sports! signature). Left-aligning some rows and centering others
+   within the same wide content column left them individually correct but
+   visually disconnected from each other — centering everything is what
+   makes the whole block read as one thing, in either state. Deliberate
+   homepage-only exception, not a change to the general rule. */
+#page-nav .view-toggle { justify-content: center; }
+#sports-level2 strong.active { background: none; box-shadow: none; transform: none; color: #C0392B; font-size: 1.4rem; padding: 0; }
+#sports-level2 strong.active::before { display: none; }
+#sports-level3 strong.active { background: none; box-shadow: none; transform: none; color: #5a4a3a; font-size: 1.1rem; padding: 0; }
+#sports-level3 strong.active::before { display: none; }
+/* A little breathing room on all sides so a chip's shadow/tape isn't
+   clipped by the viewport edge (or, since overflow:hidden above means
+   clipping is literal, cut off outright) — not a "top margin above the
+   nav" in the sense requirements/public.md rules out, just enough for the
+   paper material's own shadow/rotation/scale to render. Left/right matter
+   most for a *selected* chip flush against the row's edge: its
+   scale(1.06) pushes the transformed edge a few px past the unscaled
+   edge, which needs somewhere to go now that overflow is clipped rather
+   than just unreachable by scroll. */
+#page-nav { padding: 10px 8px; }
+
+/* Both groups are stacked in the same box (position:absolute, same
+   top/left) instead of being normal-flow siblings — otherwise, for the
+   moment both are visible mid-crossfade, whichever is second in the DOM
+   gets pushed down by the other's height, then pops into its real position
+   once the other is hidden. #home-groups-wrap reserves height explicitly
+   (see setHomeView) since neither absolutely positioned child contributes
+   to it automatically. */
+#home-groups-wrap { position: relative; transition: height 0.6s ease; }
+.home-group { position: absolute; top: 0; left: 0; width: 100%; display: flex; flex-direction: column; gap: 10px; }
+/* Speed is an experimental homepage-only override — see
+   requirements/public.md -> Navigation -> Transitions -> "Homepage
+   exception": production feedback called the original ~100-150ms pacing
+   too fast to read as physical paper sliding. Every other use of this
+   transition elsewhere on the site keeps the fast/under-200ms pacing until
+   this is validated. */
+.home-group > * { transition: transform 0.85s linear, opacity 0.85s linear; }
+.home-group > *:nth-child(2) { transition-delay: 0.2s; }
+/* Exit off one side (right — taken off), enter from the other (left — put
+   on): a one-way conveyor, not things retracing the same path. */
+.home-group.fly-out { pointer-events: none; }
+.home-group.fly-out > * { transform: translateX(105vw) rotate(8deg); opacity: 0; }
+.home-group.fly-in-start { pointer-events: none; }
+.home-group.fly-in-start > * { transform: translateX(-105vw) rotate(-8deg); opacity: 0; transition: none !important; }
+.home-group.fly-in-active > * { transform: translateX(0) rotate(0deg); opacity: 1; transition: transform 0.85s cubic-bezier(.1,.6,.2,1), opacity 0.85s linear; }
+.home-group.fly-in-active > *:nth-child(2) { transition-delay: 0.2s; }
 </style>
 </head>
 <body>
-<div class="page-nav"><nav class="utility-bar view-toggle"><strong class="active">Football</strong><span class="disabled">Hockey</span><span class="disabled">Swimming</span></nav><nav class="page-toggle primary-tabs view-toggle"><strong class="active">World Cup</strong></nav><nav class="detail-bar view-toggle"><a href="football/worldcup/history.html">History</a><a href="football/worldcup/2026.html">Tournaments</a></nav></div>
-<div class="page">
-  <header class="site-header">
-    <h1>Sports! On the Internet. By David</h1>
-    <p class="tagline">Sports data and visualizations. On the internet.</p>
-  </header>
-</div>
+<div class="page-nav" id="page-nav"><nav class="utility-bar view-toggle"><button id="tab-sports" class="active" onclick="setHomeView('sports')">Sports!</button><button id="tab-football" onclick="setHomeView('football')">Football</button><span class="disabled">Hockey</span><span class="disabled">Swimming</span></nav><div id="home-groups-wrap"><div id="sports-group" class="home-group fly-in-active"><nav id="sports-level2" class="page-toggle primary-tabs view-toggle"><strong class="active">On the Internet.</strong></nav><nav id="sports-level3" class="detail-bar view-toggle"><strong class="active">By David</strong></nav></div><div id="football-group" class="home-group fly-out"><nav id="football-level2" class="page-toggle primary-tabs view-toggle"><strong class="active">World Cup</strong><span class="disabled">Euros</span><span class="disabled">Copa América</span><span class="disabled">Gold Cup</span></nav><nav id="football-level3" class="detail-bar view-toggle"><a href="football/worldcup/history.html">History</a><a href="football/worldcup/2026.html">Tournaments</a></nav></div></div></div>
 </body>
 </html>

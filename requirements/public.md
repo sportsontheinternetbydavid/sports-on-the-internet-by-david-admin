@@ -11,22 +11,21 @@ See `../00-index.md` for how this doc relates to `admin.md` and the rest of the 
 The homepage is the entry point into the whole site and the top of its navigation hierarchy — Level 1 of the shared nav (see *Navigation* below) starts here, not on a per-feature page. It reflects the brand: kids art room, construction paper and markers, handmade and enthusiastic.
 
 ### Layout
-- Full-width page. The fused Level 1–3 nav (see *Navigation* below) sits flush against the very top of the viewport — no top border, no top margin — same as every other page on the site.
-- Below the nav: the site's signature (name + tagline), centered in a content column (max ~800px).
+- Full-width page. The nav (see *Navigation* below — up to **four** levels here, one more than any other page) sits flush against the very top of the viewport — no top border, no top margin — same as every other page on the site.
 - Background cream `#F5F0E8`, carrying through below the nav.
 - No cards, no "Coming Soon" badges. Every sport/competition/section choice is made through the nav itself — a disabled nav item (see *Navigation*) is what a "coming soon" sport looks like now.
+- No separate content area below the nav. The site's signature (name + tagline) used to live in its own header block here; it's now folded into the nav itself (see *Navigation* → `Sports!` below) — the nav *is* the page.
 
 ### Navigation
-Uses the same fused `.page-nav` component and general characteristics described in *Navigation* below — this page doesn't get its own visual variant, only its own content per level:
+Uses the same `.page-nav` component and general characteristics described in *Navigation* below — this page doesn't get its own visual variant, only its own content per level. Like every other page, it has no Level 4 (see the general Level table in *Navigation* below) — just Levels 1 through 3.
 
-- **Level 1 — Sport**: one segment per sport category. `Football` is the only active (linkable) item today; every other sport (e.g. `Hockey`, `Swimming`) renders as a disabled item — muted, no hover, not a link, the same treatment `WC 30` gets on tournament pages (see *World Cup pages* below). There is no Basketball item.
-- **Level 2 — Competition**: one segment per competition type within the selected sport. Football has exactly one today, `World Cup`, so this level renders as a single full-width active segment. A future second competition under Football (or a newly-live sport) would add segments here.
-- **Level 3 — Section**: two equal segments, `History` and `Tournaments`. `History` links directly to `history.html`. `Tournaments` links to the current/latest tournament page (`2026.html` today) — from there, that page's own Level 1 (see *World Cup pages* below) is how you reach any other year.
-
-This page has no Level 4 — there's no tabular data here for a column-header row to belong to.
-
-### Header
-- Below the fused nav: site name "Sports! On the Internet. By David" as an `<h1>` in Permanent Marker font — looks like it was written with a thick marker. Tagline "Sports data and visualizations. On the internet." in body font below.
+- **Level 1 — Sport**: four chips — `Sports!`, `Football`, `Hockey`, `Swimming`. `Sports!` and `Football` are both real, selectable items: a single-choice, client-side toggle (no page reload) that controls what Levels 2 and 3 show below, using the fly in/out transition described in *Navigation* → *Transitions*. `Hockey` and `Swimming` render as disabled items — muted, no hover, not a link, the same treatment `WC 30` gets on tournament pages (see *World Cup pages* below). There is no Basketball item.
+- **`Sports!` (default/landing state)** — Levels 2 and 3 become the site's signature, one line per level, replacing the old separate header block entirely. This is the one place on the site where the *Navigation* → *The homepage signature is exempt* rule applies — no chip styling, just handwritten/printed text directly on the page:
+  - **Level 2**: `On the Internet.` — the largest line, in the brand red.
+  - **Level 3**: `By David` — smaller, one level down in visual weight.
+- **`Football`** — Levels 2 and 3 switch to the tournament content below:
+  - **Level 2 — Competition**: one segment per major football tournament — `World Cup`, `Euros`, `Copa América`, `Gold Cup`. `World Cup` is the only active (linkable) item; the other three render as disabled, same treatment as `Hockey`/`Swimming` above — they're the next posters waiting to be made, not a second live competition yet.
+  - **Level 3 — Section**: two equal segments, `History` and `Tournaments`. `History` links directly to `history.html`. `Tournaments` links to the current/latest tournament page (`2026.html` today) — from there, that page's own Level 1 (see *World Cup pages* below) is how you reach any other year.
 
 ### Typography
 - Headlines and labels: Permanent Marker (Google Fonts) — marker-written feel.
@@ -42,7 +41,9 @@ This page has no Level 4 — there's no tabular data here for a column-header ro
 
 ## Navigation
 
-A single fused nav component is reused everywhere a red bar appears on the public site — the homepage, every World Cup page, and (with fewer levels) `history.html`. This section is the shared vocabulary and shared visual rulebook; each page's own section (*Homepage* above, *World Cup pages* below) says what specifically populates each level there.
+**Style: "sticky notes."** Reused everywhere nav appears on the public site — the homepage, every World Cup page, and (with fewer levels) `history.html`. This section is the shared vocabulary and shared visual rulebook; each page's own section (*Homepage* above, *World Cup pages* below) says what specifically populates each level there.
+
+This replaced an earlier "fused bar" style — one continuous red background block with every level squared flush against the next. That style read as too clean/corporate for the brand (see `../brand-guidelines.md`) and has been fully replaced, not layered on top of. There is no longer a shared continuous background of any kind behind Levels 1–3.
 
 The nav is organized into up to four stacked **levels** — the standard vocabulary for the rest of this doc, used consistently rather than switching between "row," "tier," "bar," etc.:
 
@@ -53,30 +54,48 @@ The nav is organized into up to four stacked **levels** — the standard vocabul
 | **Level 3** | Detail controls for the current Level 1/2 selection |
 | **Level 4** | Column headers for the data below — only present on pages with a table/grid (World Cup pages); the homepage has none |
 
-Levels 1–3 are a single fused component (`<div class="page-nav">`) — every level shares the same red `#C0392B` background and spans the page's full content width (the same max width the rest of the page uses, `body`'s `max-width: 1100px` minus padding — not shrink-to-fit). Levels sit flush against each other with no gap, only a thin `1px solid rgba(0,0,0,0.15)` divider line, so the whole thing reads as one three-level control with rounded corners only on its outer top and bottom edges. No page has a top border or top margin above it — the nav sits flush against the very top of the viewport everywhere it appears, including the homepage.
+Levels 1–3 sit inside one wrapper (`<div class="page-nav">`) that spans the page's full content width (the same max width the rest of the page uses, `body`'s `max-width: 1100px` minus padding — not shrink-to-fit), but the wrapper itself is invisible — no background, no border, no shared corner radius. Each level is its own loosely-wrapping row of independent items with a small gap between rows (~10px). No page has a top border or top margin above the nav — it sits flush against the very top of the viewport everywhere it appears, including the homepage.
 
-Level 4, where it exists, is **not** part of `.page-nav` — it belongs to each view's own table/grid, since its exact markup necessarily differs per view (an HTML `<thead>` for Match List, a CSS grid header for Rankings, per-column round labels for Knockout). But it follows the nav's visual language regardless: same red background, white text, Permanent Marker font, fused flush against Level 3 with no gap, and **never wider than the nav above it** — if a view's columns would naturally need more width (e.g. Match List with many confederation columns), the table/grid caps at the nav's width and scrolls horizontally within that bound, rather than the page growing wider than the nav. This keeps Levels 1 through 4 sharing one consistent left/right edge on every view, all the way down to the data. See *World Cup pages* below for where Level 4 actually appears.
+Level 4, where it exists, is **not** part of `.page-nav` — it belongs to each view's own table/grid, since its exact markup necessarily differs per view (an HTML `<thead>` for Match List, a CSS grid header for Rankings, per-column round labels for Knockout). It picks up the same paper material language as Levels 1–3 — a soft drop shadow lifting it off the page, and a rough/torn top edge instead of a crisp rectangular corner — but adapted for what it structurally is: one continuous, column-aligned row, not a set of independent chips. No per-item rotation and no gaps between columns — either would misalign it with the data below, which is the one hard constraint chips don't have to respect. It stays red `#C0392B` with white Permanent Marker text, sitting just below Level 3 with a small gap (not fused flush — Level 3 no longer has a continuous edge to fuse against), and **never wider than the nav above it** — if a view's columns would naturally need more width (e.g. Match List with many confederation columns), the table/grid caps at the nav's width and scrolls horizontally within that bound, rather than the page growing wider than the nav. See *World Cup pages* below for where Level 4 actually appears.
 
-### General nav-bar characteristics (Levels 1–3)
+### General nav chip characteristics (Levels 1–3)
 
-These rules are the shared design system for every red nav level on the site — Level 1, Level 2, every Level 3 variant, and the History page's standalone F4/F8/F16 toggle. Any red nav control should follow all of them unless a specific section says otherwise; they exist precisely so a new nav level can be built by following this list rather than eyeballing an existing one. (Level 4 shares the color/font rules below but not the button-row layout — see above.)
+These rules are the shared design system for every nav level on the site — Level 1, Level 2 (including History's Final 4/8/16), and every Level 3 variant. Any nav control should follow all of them unless a specific section says otherwise.
 
-- **Background & width**: red `#C0392B`, spanning the page's full content width (never shrink-to-fit).
-- **Layout**: items are laid out in a horizontal row (`flex`) and stretch to evenly fill that full width, using `flex: 1 1 auto` — `auto` (not `0`) so a button's flex-basis is its own label's natural width, meaning growth only distributes *leftover* space and a long label (e.g. "Match List") never wraps to two lines.
+- **Shape, not a bar**: each item is its own small paper cutout, not a segment of a shared background (see *Material* below for the cutout's actual shape/shadow), plus a small independent rotation (roughly ±1–2°). Rotation is deterministic per item (alternating by position), not random per page load — same principle as the flag rotation in *World Cup pages* → *Flags* below.
+- **Layout**: items size to their own label's natural width (no stretch-to-fill) and wrap onto additional lines as needed, with a small gap (~8–10px) between items in both directions. A row is left-aligned; it does not spread items to fill the full content width.
 - **Font**: Permanent Marker, on every item in every level — buttons and plain links alike. It's all navigation; it should read as one family regardless of the underlying HTML element.
 - **Size — two tiers, not one**:
-  - Level 2, on any page (the homepage's `World Cup` segment, World Cup pages' primary tabs): `0.95rem` font, `0.45rem 1.1rem` padding — the single most visually dominant level, wherever it appears.
+  - Level 2, on any page (the homepage's `World Cup` segment, World Cup pages' primary tabs): `0.95rem` font, `0.45rem 1.1rem` padding — the single most visually dominant level, wherever it appears. Dominance comes from size alone — it shares the same color system as every other level (below) rather than a special always-red default.
   - Every other level (Level 1, and every Level 3 variant, on any page): `0.75rem` font, `0.2rem 0.7rem` padding. Smaller and lighter, signaling "secondary to Level 2."
-- **Height**: Levels 1–3 share one fixed `min-height` (`2.5rem`), always — regardless of which page/view is active, and regardless of what kind of content a Level 3 variant holds (plain buttons vs. checkboxes, which are natively a different size than text). Content is vertically centered (`align-items: center`) within that height rather than the level growing or shrinking to fit its content. This means Level 2's bigger font (see *Size* above) creates visual dominance without that level being taller — the height is identical everywhere, only the type looks bigger. The one exception is narrow viewports where a level's items wrap to a second line (`flex-wrap: wrap`): `min-height` (not a hard `height`) lets the level grow rather than clip the wrapped line, so this only matters at widths wide enough that nothing wraps.
-- **Color — four states, used consistently everywhere red nav appears**:
-  1. **Default** (nothing selected/hidden about this item): dimmed white text (`rgba(255,255,255,0.85)`) directly on the red background, brightening to solid white `#fff` on hover.
-  2. **Active / current selection** (single-choice controls — which sport, which competition, which page, which view, which sub-view): a near-white pill (`rgba(255,255,255,0.95)` background) with red text. Means "you are here" — used by the homepage's Level 1/2, the World Cup pages' primary tabs, Level 1's current-page item, the Match-view toggle, and the Rank/Scale toggle.
-  3. **Shown** (multi-select range controls only — currently just the Knockout round toggle): bold solid white text blended directly into the bar, no pill.
-  4. **Hidden** (multi-select range controls only): a pale-red translucent chip (`rgba(255,255,255,0.3)` background over the red bar).
-  5. **Disabled** (an item with no destination yet — e.g. the homepage's `Hockey`/`Swimming`, or `WC 30` on tournament pages): dimmed white text (`rgba(255,255,255,0.4)`), no hover brightening, not a link.
+- **Material — irregular cut + visible thickness**: each chip's outline is an irregular hand-cut polygon (cycling through 4 distinct shapes by position — no two neighboring chips share the same corner cuts), not a uniform rounded rectangle. The shadow is a hard, unblurred offset, reading as a thick physical edge (poster board) rather than a thin sheet floating above the page.
+- **Color — paper color variety, always black text**: chips are not uniformly one color — each one draws from the construction paper palette (`../brand-guidelines.md`: red, blue, yellow, green, orange, plus a cream default), assigned deterministically by position (cycling independently from the shape cycle above, so color and cut don't repeat in lockstep), so a row reads as several different sheets pulled from the stack rather than one repeated color. Text is always dark/near-black regardless of the chip's paper color — real marker only comes in black, so a colored background never gets white/light text. Disabled chips are the one exception to the color variety (see below) — they stay a fixed muted gray-tan regardless of position, so "not available yet" is never mistaken for a color choice.
+- **Tape on every chip**: every chip — default, selected, and disabled alike — has a piece of masking tape holding it down, since a real piece of board needs it regardless of whether it's the current selection.
+- **Selected**: no color change — a chip's paper color stays whatever it already was. Selection is shown instead by a stronger shadow, a slight scale-up (visibly picked up and pressed down), and a larger, more prominent piece of tape than every other chip's. This is the one look for what used to be two separate states — single-choice "current selection" and multi-select "shown" (a currently-visible Knockout round) both get it, since both mean "this is on."
+- **Disabled**: a muted gray-tan paper chip (fixed, not part of the color cycle), dimmed near-black text, minimal/flatter shadow than a live chip, no hover response, not a link. Still gets the same cut and tape treatment as every other chip. Used for an item with no destination yet (the homepage's `Hockey`/`Swimming`, `WC 30` on tournament pages) and the Groups placeholder note.
+- **Hover**: a clickable, not-yet-selected chip lifts slightly (a small upward shift plus a stronger shadow) on hover. Disabled chips never respond to hover.
+- **No dividers, no shared corners**: nothing ties adjacent chips together visually except the gap between them — no border, no divider line, no shared cut/corner scheme. Each chip is shaped independently regardless of what's next to it or which level it's in.
 
-  States 2 and 3 must never both mean "this is turned on" within the same control family — a single-select level (state 2) and a multi-select range level (state 3/4) are visually distinct on purpose, because state 2's white pill already means "current page" one level up; reusing it for "round is shown" would make the same color mean two different things depending which level you're looking at. See *Round toggles* for why the range toggle needs its own states 3/4 instead of reusing 1/2.
-- **Dividers & corners**: stacked levels within one fused nav are separated by a `1px solid rgba(0,0,0,0.15)` line; corners are rounded `4px` only on the very top of the first level and the very bottom of the last level — everywhere else is square. A standalone level (not stacked with others) gets all four corners rounded.
+### The homepage signature is exempt
+
+The homepage's `Sports!` state (`On the Internet.` / `By David` / the tagline — see *Homepage* → *Navigation* above) is the site's byline, not a choice, so it does **not** get the chip treatment at all: no fill, no shadow, no tape, no rotation. It's plain handwritten/printed text sitting directly on the page background, sized down in visual weight level by level (large marker headline → smaller marker line → small italic printed caption). Only the real choices — Level 1's sport picker, and `Football`'s Level 2/3 — use chips.
+
+### Transitions (fly in/out)
+
+Whenever a nav interaction swaps one whole panel of content for another — the homepage's `Sports!` ↔ `Football` switch, a World Cup page's Match List/Groups/Knockout/Rankings view switch, the confederation panel, Knockout's round toggle, or History's Final 4/8/16 switch — the outgoing panel flies **fully off-screen** to the right while fading and rotating slightly, and the incoming panel flies in the same distance from the **left**, rotating back to flat as it settles. This is a one-way conveyor, not the incoming panel retracing the outgoing one's path. An earlier version used a modest nearby shift instead for panels living inside a horizontally-scrollable width-bound area (Match List's confederation columns, History's table rows) — production feedback said that read as barely moving, not "flying in." Every instance now goes fully off-screen instead, paired with a scroll lock on whatever scrollable ancestor the panel lives inside (a `.table-wrap`, a bracket's own scroll area, or the page itself) for exactly the transition's duration — long enough to keep an off-screen fly from briefly corrupting that ancestor's scrollable width, short enough that scrolling works normally again the moment the panel settles.
+
+- **Pace — ~0.85s**, with multi-row panels staggered ~0.2s per row. This was piloted on the homepage first (production feedback called an earlier, much faster pacing too quick to read as physical paper sliding) and has since been promoted as the universal pace everywhere this transition appears.
+- **Simultaneous vs. sequential**: the homepage keeps both panels (`Sports!`/`Football`) permanently in the DOM, stacked and swapping in parallel — cheap since it's just a few nav rows. Everywhere else (World Cup view switch, confederation panel, Knockout round toggle, History), the content is heavier and rendered on demand, so the swap is sequential instead: the outgoing content flies out, *then* the incoming content is rendered and flies in. Wall-clock total for a sequential swap is therefore roughly double a single leg's ~0.85s, not simultaneous with it.
+- **Settling clears the transform**: once a panel finishes flying in, its fly classes are removed entirely rather than left at a resting `translateX(0)` — an identity transform still creates a new containing block, which would silently break any `position: fixed` descendant (Rankings' flag info panel is why this matters — see *Flag info panel*). A scroll lock is released at the same moment.
+- **Knockout's multi-column reveal** is the one case where more than two "panels" can be mid-transition at once — see *Knockout Bracket* → *Round toggles* for the rapid-fire stagger when several columns appear in one click.
+- **Scope**: this is the site's default for any control that **replaces** content with different content — not just the biggest whole-panel swaps. It applies to:
+  - The homepage `Sports!` ↔ `Football` switch, and a World Cup page's Level 2 tab switch (Match List/Groups/Knockout/Rankings) — whole panels.
+  - Match List's confederation panel toggle (ELO Shift / W-D-L / Stats) — see *Confederation panel* below.
+  - Knockout's round toggle, for whichever round(s) are being shown or hidden — see *Round toggles* below.
+  - History's F4/F8/F16 tier toggle — see *History page*.
+
+  It does **not** apply to Rankings' **Show eliminated**, **True rank**, or **Rank**/**Scale** toggles. Those don't replace one panel with another — they reposition individual flags in place within a layout that must not otherwise shift (see *Rankings shared layout* and each toggle's own section) — a different, not-yet-designed animation question, so for now they stay an instant in-place update.
+- **Implementation note (simultaneous case only)**: where both panels are kept in the DOM at once (the homepage's `Sports!`/`Football` groups — see *Simultaneous vs. sequential* above), they must be taken out of normal document flow and stacked in the same position (both `position: absolute` inside a `position: relative` wrapper, sized explicitly to whichever panel is currently active) rather than left as normal-flow siblings. Two normal-flow siblings both present during the crossfade push each other's vertical position around — whichever is later in the DOM visibly pops into place once the other is removed. Stacking them removes that dependency so only the intended horizontal fly happens. This doesn't apply to the sequential case (everywhere else) — only one panel's content ever exists in the DOM at a time there, so there's nothing to stack.
 
 ---
 
@@ -101,13 +120,13 @@ Styling is defined in `worldcup/shared.css` and inlined at build time. All eight
 
 #### Navigation
 
-Uses the shared fused `.page-nav` component and general characteristics described in *Navigation* above. On tournament pages (`1998.html`–`2026.html`), Levels 1–3 always render, in this order, top to bottom:
+Uses the shared `.page-nav` component and general characteristics described in *Navigation* above. On tournament pages (`1998.html`–`2026.html`), Levels 1–3 always render, in this order, top to bottom:
 
-1. **Level 1 — Utility bar** (`<nav class="utility-bar view-toggle">`) — a single flat row of equally-spaced segmented items, styled and behaving exactly like the primary tabs (it carries the `.view-toggle` class for that reason), in this order: `Home`, `History`, then one item per World Cup using a short `WC YY` label — `WC 98`, `WC 02`, `WC 06`, `WC 10`, `WC 14`, `WC 18`, `WC 22`, `WC 26`, `WC 30` — last two digits of the year, zero-padded. `Home` links back to the homepage. `WC 30` is a placeholder for the next tournament: there's no `2030.json` data and no `2030.html` page yet, so it renders as the disabled-item state (see *Navigation* above) rather than a dead link. The current page is shown the same way the current tab is shown one level down: a white `<strong class="active">` pill, non-linking. There is no Data Entry toggle, no mode switch, and no admin affordance of any kind on this site — see `admin.md` for where data entry actually happens.
-2. **Level 2 — Primary tabs** (`.primary-tabs.view-toggle`) — the segmented Match List / Groups / Knockout / Rankings toggle, in that left-to-right order. This is the single most visually dominant level (larger font/padding than the others), because switching between these views is the main thing a user does.
+1. **Level 1 — Utility bar** (`<nav class="utility-bar view-toggle">`) — a loosely-wrapping row of chip items, in this order: `Home`, then one item per World Cup using a short `WC YY` label — `WC 98`, `WC 02`, `WC 06`, `WC 10`, `WC 14`, `WC 18`, `WC 22`, `WC 26`, `WC 30` — last two digits of the year, zero-padded. `Home` links back to the homepage. `WC 30` is a placeholder for the next tournament: there's no `2030.json` data and no `2030.html` page yet, so it renders as the disabled-item state (see *Navigation* above) rather than a dead link. The current page is shown the same way the current tab is shown one level down: the selected-chip treatment described in *Navigation* → *General nav chip characteristics*, non-linking. There is no Data Entry toggle, no mode switch, and no admin affordance of any kind on this site — see `admin.md` for where data entry actually happens. There is no `History` item here — see *History page* below for why, and how it's reached instead.
+2. **Level 2 — Primary tabs** (`.primary-tabs.view-toggle`) — the segmented Match List / Groups / Knockout / Rankings toggle, in that left-to-right order. This is the single most visually dominant level (larger font/padding than the others — see *Navigation* → *General nav chip characteristics* → *Size*), because switching between these views is the main thing a user does. Switching tabs uses the fly in/out transition described in *Navigation* → *Transitions* — the view content below flies out and the new view flies in.
 3. **Level 3 — View detail** — detail controls for whichever of the four views is currently active. Every view has one, even Groups (which just holds a "coming soon" note — see *Group Stage*), so the nav is always the same three-level shape no matter which tab you're on; only one view's Level 3 content is populated/visible at a time, swapped by JS when you switch tabs. See each view's own section for what its Level 3 contains: *Confederation panel* (Match List), *Round toggles* (Knockout Bracket), *Show eliminated* / *True rank* toggles (Tournament ELO Rankings).
 
-Pages without the primary tabs (`history.html`) show only Level 1, styled identically but standalone: all four corners rounded and its own bottom margin, instead of squaring off into a level below. Level 4 still applies there (the F4/F8/F16 table's header row).
+Pages without the primary tabs (`history.html`) show only Level 1, styled identically — chips look the same whether or not there's a level below them, since nothing about the chip treatment depends on stacking position. Level 4 still applies there (the F4/F8/F16 table's header row).
 
 #### Table
 - Page background `#F5F0E8` carries through — tables sit on the cream background.
@@ -154,7 +173,7 @@ The table has two groups of columns: **Game columns** and **Confederation column
 
 ##### Confederation panel (right side, toggleable)
 
-The right side of the table is a panel of confederation columns that can be toggled between three views: **ELO Shift**, **W / D / L**, and **Stats**. The toggle itself is *not* in the table — it's the Match List view's Level 3 in the fused nav (see *Navigation* under *World Cup pages*), styled like every other Level 3 control: the active view is a near-white pill with red text, the other two are plain white-ish text on the red bar. A left border (`2px solid rgba(255,255,255,0.3)`) on the first confederation header cell is the only visual seam separating the confederation columns from the game columns in the table itself. Switching views must not cause the game columns on the left to shift or resize — the game section width is fixed regardless of which view is active. The transition between views is a simple instant swap (no animation required).
+The right side of the table is a panel of confederation columns that can be toggled between three views: **ELO Shift**, **W / D / L**, and **Stats**. The toggle itself is *not* in the table — it's the Match List view's Level 3 in the nav (see *Navigation* under *World Cup pages*), styled like every other Level 3 control: the selected view uses the selected-chip treatment, the other two sit at the default chip look. A left border (`2px solid rgba(255,255,255,0.3)`) on the first confederation header cell is the only visual seam separating the confederation columns from the game columns in the table itself. Switching views must not cause the game columns on the left to shift or resize — the game section width is fixed regardless of which view is active. The transition between views uses the fly in/out treatment described in *Navigation* → *Transitions*: the outgoing view's confederation columns fly out to the right and fade, the incoming view's fly in from the left — only the confederation panel itself moves, never the fixed game columns to its left.
 
 Only confederations with at least one team participating in the selected World Cup get a column in any view (e.g. if Oceania has no teams in the tournament, it has no column in any view). All confederation columns within a view have equal width.
 
@@ -227,14 +246,14 @@ This placeholder behavior also applies to any knockout game appearing in the Mat
 
 #### Round toggles
 
-The Knockout view's Level 3 in the fused nav (see *Navigation* under *World Cup pages*) has one button per round in the tournament's configured sequence (e.g. Round of 32 / Round of 16 / Quarterfinals / Semifinals / Final), labelled with that round's name. All rounds are shown by default.
+The Knockout view's Level 3 in the nav (see *Navigation* under *World Cup pages*) has one button per round in the tournament's configured sequence (e.g. Round of 32 / Round of 16 / Quarterfinals / Semifinals / Final), labelled with that round's name. All rounds are shown by default.
 
 Unlike the primary tabs, this isn't a single either/or choice, but it isn't fully independent either — the set of shown rounds is always a **contiguous range**, so a round can never be hidden in isolation while its neighbors on both sides stay visible (no gaps in the middle of the tree):
 
-- **Shrinking** removes one round at a time, and only from an end of the current range: clicking the leftmost or rightmost *shown* round hides it and closes that column, so later rounds slide over — there's no blank column left behind.
-- **Growing** can jump straight to any *hidden* round in one click: clicking a hidden round reveals it and every round between it and the current range in a single step (e.g. from a range of just "Semifinals", clicking "Round of 32" reveals Round of 32, Round of 16, and Quarterfinals all at once).
+- **Shrinking** removes one round at a time, and only from an end of the current range: clicking the leftmost or rightmost *shown* round hides it and closes that column, so later rounds slide over — there's no blank column left behind. The hidden column uses the fly in/out treatment from *Navigation* → *Transitions*: it flies off to the right and fades as it's removed.
+- **Growing** can jump straight to any *hidden* round in one click: clicking a hidden round reveals it and every round between it and the current range in a single step (e.g. from a range of just "Semifinals", clicking "Round of 32" reveals Round of 32, Round of 16, and Quarterfinals all at once). Each newly-revealed column flies in from the left per *Navigation* → *Transitions*; when multiple columns appear at once, they use the same rapid-fire stagger described there, so a big jump reads as several columns snapping into place in quick succession rather than all appearing at once.
 - At least one round is always kept visible; clicking the only remaining shown round's button does nothing, since an all-hidden tree would just look broken rather than intentionally empty.
-- A shown round that isn't at an edge of the range (so clicking it wouldn't do anything useful) is not clickable, but stays visually identical to the shown rounds that are clickable — see the color convention in *Navigation*, which deliberately keeps "shown" always the same bold/full-red look regardless of clickability, so it's never ambiguous whether a round is currently part of the bracket.
+- A shown round that isn't at an edge of the range (so clicking it wouldn't do anything useful) is not clickable, but stays visually identical to the shown rounds that are clickable — see the color convention in *Navigation*, which deliberately keeps "shown" always the same selected-chip look regardless of clickability, so it's never ambiguous whether a round is currently part of the bracket.
 
 This state isn't persisted anywhere (URL, storage) — it's a browsing convenience that resets on reload, same as the Rankings view's toggles.
 
@@ -244,7 +263,7 @@ This state isn't persisted anywhere (URL, storage) — it's a browsing convenien
 
 A standalone view — only one page view is visible at a time. The World Cup page has a segmented toggle that switches between **Match List**, **Groups**, **Knockout**, and **Rankings**; they never appear simultaneously. Level 1 (links to other years) stays fixed regardless of which view is active. All eight World Cup pages (1998–2026) have the Rankings view, since all have `teamElos` data.
 
-All of this view's own controls — **Show eliminated**, **True rank**, the debug checkbox, and the **Rank**/**Scale** toggle — live together in Level 3 of the fused nav (see *Navigation* under *World Cup pages*), left-aligned in that order, rather than inside the rankings panel itself. The panel below them starts clean.
+All of this view's own controls — **Show eliminated**, **True rank**, the debug checkbox, and the **Rank**/**Scale** toggle — live together in Level 3 of the nav (see *Navigation* under *World Cup pages*), left-aligned in that order, rather than inside the rankings panel itself. The panel below them starts clean.
 
 Each view has its own URL via the hash fragment: `2026.html#matches`, `#rankings`, `#groups`, `#knockout`. Switching views updates the hash; loading the page with a hash pre-selects that view. The default (no hash) is Match List.
 
@@ -283,7 +302,7 @@ All 8 gameset columns are always shown for 1998–2022.
 | 7 | 4 | Semifinals | 2 | 102 |
 | 8 | Final | Third-place game + Final | 2 | 104 |
 
-All 9 gameset columns are always shown for 2026. The Rankings view has a segmented toggle that switches between **Rank** and **Scale** views of the same gameset data — part of the Level 3 controls described above. Switching between Rank and Scale must not shift the gameset column positions — the horizontal layout is identical in both views.
+All 9 gameset columns are always shown for 2026. The Rankings view has a segmented toggle that switches between **Rank** and **Scale** views of the same gameset data — part of the Level 3 controls described above. Switching between Rank and Scale must not shift the gameset column positions — the horizontal layout is identical in both views. This toggle is explicitly excluded from the fly in/out treatment (see *Navigation* → *Transitions* → *Scope*) — it repositions flags in place rather than replacing a panel, so it stays an instant update.
 
 #### Ranking and ties
 
@@ -316,6 +335,7 @@ A toggle labelled **"Show eliminated"** is available in both the Rank view and t
 - **Group stage columns** (gamesets covering MD1–MD3): all teams are always shown regardless of this toggle, since every team participates in the group stage.
 - **Knockout round columns** (gamesets from Round of 32 onward): when the toggle is off (default), eliminated teams' flags are hidden in any column where they are not participating. A team is considered eliminated for a given column if they have no game in that gameset and no game in any later gameset.
 - **Layout is unchanged**: the column structure, ELO axis, column widths, and spacing are identical regardless of the toggle state. Only the flag elements are hidden — no reflow, no gaps closing.
+- Like Rank/Scale above, this toggle is excluded from the fly in/out treatment (see *Navigation* → *Transitions* → *Scope*) — an instant update, not a panel replace.
 
 #### True rank toggle (Rank view only)
 
@@ -324,7 +344,7 @@ A toggle labelled **"True rank"** is available in the Rank view only. It is not 
 - **Off (default)**: surviving teams are re-numbered starting from 1 in ELO order, and their flags are packed to fill the gaps.
 - **On**: surviving teams keep their original rank numbers. A surviving team ranked #5 still appears at rank slot #5; slots for hidden eliminated teams appear empty.
 
-Checking **"Show eliminated"** automatically checks "True rank" as well, since showing all teams in their packed positions would be misleading — the true rank slots are needed to make the eliminated flags readable. The user can uncheck "True rank" independently after.
+Checking **"Show eliminated"** automatically checks "True rank" as well, since showing all teams in their packed positions would be misleading — the true rank slots are needed to make the eliminated flags readable. The user can uncheck "True rank" independently after. Also excluded from the fly in/out treatment, same reasoning as above.
 
 #### Rankings shared layout
 
@@ -332,7 +352,7 @@ Both Rank and Scale views share the same canvas structure: one vertical column p
 
 - *Flag dimensions*: each flag icon has a fixed pixel width and height, consistent across both views.
 - *Column width*: every gameset column has a fixed minimum width of `3 × flag_width + 2 × gap` (where *gap* is a fixed small spacing between side-by-side flags, defined in the Scale view). This applies uniformly across both views. Column separator lines are always fully visible; no flag extends past its column boundary. (The `3 ×` derives from the Scale view cluster constraint — see `scale-algorithm.md`.)
-- *Header row*: the row of gameset labels (Initial / MD1 / MD2 / … or Initial / Game 1 / … for 2026) is this view's Level 4 (see *Navigation* under *World Cup pages*) — red `#C0392B` background, white text, matching every other view's Level 4, fused flush against Level 3 above it with no gap.
+- *Header row*: the row of gameset labels (Initial / MD1 / MD2 / … or Initial / Game 1 / … for 2026) is this view's Level 4 (see *Navigation* under *World Cup pages*) — red `#C0392B` background, white text, matching every other view's Level 4, sitting just below Level 3 above it.
 
 ---
 
@@ -424,36 +444,33 @@ No ELO number is shown alongside the flag. Hovering a flag shows the info panel 
 
 ### History page (`history.html`)
 
-A year-over-year comparison of the knockout-round field across all tournaments (1998–2026). Generated by `build.py` alongside the per-year pages. Linked from the nav on every World Cup page and from the homepage.
+A year-over-year comparison of the knockout-round field across all tournaments (1998–2026). Generated by `build.py` alongside the per-year pages.
+
+**Standalone, not part of the World Cup pages' shared nav.** This page isn't one of the tournament pages' Level 1 destinations — it doesn't appear in their `Home` / `WC YY` utility bar at all (see *Navigation* under *World Cup pages*). It's reached exactly one way: the homepage's `Football` → Level 3 `History` item (see *Homepage* → *Navigation*). This is deliberate — History compares *across* tournaments, so it doesn't belong nested inside the per-year pages' own switcher, which is about moving between individual tournaments.
 
 #### Layout
 
 - Same visual treatment as the per-year pages: cream background, Permanent Marker headings, red construction-paper table header.
-- The same Level 1 described in *Navigation* under *World Cup pages*, with `History` shown as the current-page item. This page has no Level 2 or Level 3, so Level 1 is standalone (all four corners rounded) rather than fused into a taller nav.
-- Below that, three toggle buttons (F4 / F8 / F16) let the user show or hide each row tier. All three are on by default. Each button uses the existing `.view-toggle` style; active = highlighted, inactive = dim. This toggle is *not* part of the fused nav — it's this page's own standalone control, the same way it's always been.
-- A single wide table below the toggles. The year column is on the left; 16 data columns fill the rest.
+- **Level 1 is a single `Home` chip** — not the multi-item WC-years utility bar every other page gets. Same chip styling as everywhere else (see *Navigation* → *General nav chip characteristics*), just one item, and it's how you navigate back: it links to the homepage, the same destination `Home` links to everywhere else on the site.
+- **Level 2 — Round**: a real part of `.page-nav` now (not a standalone control with its own one-off CSS, which is what caused the fused-red-bar bug this replaces — see *Table structure* below) — a `primary-tabs` segmented choice, same dominant styling as the World Cup pages' Match List/Groups/Knockout/Rankings tabs: **Final 4**, **Final 8**, **Final 16**. Single-choice, not multi-select like the old three-checkbox version — exactly one is selected at a time. **Final 16 is the default** on load. Switching rounds uses the fly in/out transition from *Navigation* → *Transitions*: every tournament's row for the outgoing round flies out to the right while the incoming round's rows fly in from the left — the same whole-panel swap used by the World Cup pages' own Level 2, not a per-row show/hide. This page has no Level 3.
+- A single wide table below the nav. The year column is on the left; 16 data columns fill the rest, regardless of which round is selected (Final 4 only populates 4 of them) — so switching rounds never shifts the table's width.
+- A short caption above the table states plainly what the numbers are: the teams' ELO ranking on entering the selected round, highest to lowest, left to right — not a final standings/result table. Avoids the old bare "F4/F8/F16" labels reading as final placements.
 
 #### Table structure
 
-For each tournament, three rows are rendered as a visual group separated by red borders:
+**One row per tournament** (not three) — whichever round is currently selected in Level 2 determines what that tournament's row shows:
 
-| Row | Teams shown | ELO snapshot |
-|-----|-------------|--------------|
-| F4 | 4 semi-finalists | ELO entering the semi-finals |
-| F8 | All 8 QF entrants (includes F4 teams) | ELO entering the quarter-finals |
-| F16 | All 16 R16 entrants (includes F8 teams) | ELO entering the round of 16 |
+| Selected round | Teams shown | ELO snapshot |
+|----------------|-------------|--------------|
+| Final 4 | 4 semi-finalists | ELO entering the semi-finals |
+| Final 8 | All 8 QF entrants (includes the eventual F4 teams) | ELO entering the quarter-finals |
+| Final 16 | All 16 R16 entrants (includes the eventual F8 teams) | ELO entering the round of 16 |
 
-- Within each row, teams are sorted highest ELO → lowest, left to right.
-- All three rows start at column 1 (no staggered offsets).
-- 2026 shows "Not yet played" for rounds not yet reached.
-
-#### Year label
-
-- The year label appears in the leftmost cell of the topmost *visible* row for each tournament group. This is handled entirely in CSS:
-  - Default: year shown in F4 row, hidden in F8 and F16 rows.
-  - If F4 is hidden: year shown in F8 row.
-  - If F4 and F8 are hidden: year shown in F16 row.
-- This means the year is never missing regardless of which row tiers are toggled off.
+- Within the row, teams are sorted highest ELO → lowest, left to right.
+- Every row starts at column 1 (no staggered offsets).
+- A red border separates each tournament's row from the next (a group of one now, not three).
+- 2026 shows "Not yet played" in place of the row's cells if the selected round hasn't been reached yet.
+- The year label is simply the leftmost cell of each tournament's one row — no conditional CSS needed for "topmost visible row" anymore, since there's only ever one.
 
 #### Cells
 
@@ -473,7 +490,7 @@ Loser detection uses set subtraction (teams in round N who do not appear in roun
 
 ### Debug
 
-Debug features are toggled via UI controls that are always visible but clearly labelled as debug. They are off by default and have no effect on normal rendering. In the nav, a debug control's label uses a dedicated warning pink (`#ffb3b3`) instead of any of the four color states described in *Navigation* — it isn't "shown/hidden" or "selected," it's a distinct "developer control, be careful" signal, so it deliberately doesn't borrow meaning from the other states.
+Debug features are toggled via UI controls that are always visible but clearly labelled as debug. They are off by default and have no effect on normal rendering. In the nav, a debug control's label uses a dedicated warning pink (`#ffb3b3`) instead of any of the three color states described in *Navigation* — it isn't "shown/hidden" or "selected," it's a distinct "developer control, be careful" signal, so it deliberately doesn't borrow meaning from the other states.
 
 **Show binding clusters** (Scale view only) — a checkbox labelled "debug: show binding clusters". When checked, a red outline is drawn around each depth-4 window that would appear if the axis were 1 pixel shorter — i.e. each set of flags whose vertical intervals would all overlap a common point at `scaleH − 1`. These are the flags forcing the axis to be as tall as it is: at the computed minimum height their depth is ≤ 3, but one pixel shorter it would reach 4 and overflow the column. Off by default.
 

@@ -17,7 +17,7 @@ def esc(s):
     return str(s).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
 
 
-def render_row(items, extra_classes):
+def render_row(items, extra_classes, elem_id=None):
     """Render one flat, equal-width nav row.
 
     items: list of (label, href, state) tuples.
@@ -28,6 +28,10 @@ def render_row(items, extra_classes):
     extra_classes: the row's own wrapper class(es) alongside "view-toggle",
     e.g. "utility-bar" (Level 1), "page-toggle primary-tabs" (Level 2),
     "detail-bar" (a plain Level 3).
+
+    elem_id: optional id attribute on the <nav> itself, for a row a page
+    needs to target directly (e.g. to show/hide it via CSS/JS) rather than
+    relying on class selectors alone.
     """
     parts = []
     for label, href, state in items:
@@ -37,7 +41,8 @@ def render_row(items, extra_classes):
             parts.append(f'<span class="disabled">{esc(label)}</span>')
         else:
             parts.append(f'<a href="{href}">{esc(label)}</a>')
-    return f'<nav class="{extra_classes} view-toggle">{"".join(parts)}</nav>'
+    id_attr = f' id="{elem_id}"' if elem_id else ''
+    return f'<nav{id_attr} class="{extra_classes} view-toggle">{"".join(parts)}</nav>'
 
 
 def render_page_nav(*rows):

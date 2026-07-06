@@ -338,20 +338,44 @@ def validate(data, year, team_names):
 
 
 def build_nav(current_year):
-    """Utility bar: Home, History, then a WC-YY item per tournament year plus
-    a disabled WC 30 placeholder for the next one — Level 1 of the shared
-    fused nav (see nav.py and ../nav.css), same component the homepage uses
-    (build_home.py). On tournament pages this is the first tier of the
-    fused 3-row nav (see page_html); standalone elsewhere (e.g.
-    history.html)."""
+    """Utility bar: Home, then a WC-YY item per tournament year plus a
+    disabled WC 30 placeholder for the next one — Level 1 of the shared
+    nav (see nav.py and ../nav.css), same component the homepage uses
+    (build_home.py). This is the first tier of the 3-row nav on tournament
+    pages (see page_html) — history.html does not use this; see
+    build_history_nav below for why it's standalone instead."""
     items = [('Home', '../../index.html', None)]
-    items.append(('History', 'history.html', 'active' if current_year == 'history' else None))
     for y in YEARS:
         label = f'WC {str(y)[-2:]}'
         items.append((label, f'{y}.html', 'active' if y == current_year else None))
     items.append(('WC 30', None, 'disabled'))  # placeholder — no 2030 data/page yet
 
     return nav.render_row(items, 'utility-bar')
+
+
+def build_history_nav():
+    """history.html's Level 1: a single Home chip, not the WC-years utility
+    bar — see requirements/public.md -> History page. History compares
+    across tournaments rather than switching between them, so it isn't one
+    of the tournament pages' Level 1 destinations; it's reached only via
+    the homepage's Football -> History link, and this single chip is how
+    you navigate back."""
+    return nav.render_row([('Home', '../../index.html', None)], 'utility-bar')
+
+
+def build_history_round_toggle(default='f16'):
+    """history.html's Level 2: single-choice Final 4/8/16 round switch — a
+    real part of .page-nav now (see requirements/public.md -> History page ->
+    Layout), styled like every other page's Level 2 primary tabs rather than
+    the old standalone three-checkbox control with its own one-off
+    background hack (the fused-red-bar bug that replaced)."""
+    rounds = [('f4', 'Final 4'), ('f8', 'Final 8'), ('f16', 'Final 16')]
+    buttons = ''.join(
+        f'<button id="tab-{key}" class="{"active" if key == default else ""}" '
+        f'onclick="setHistRound(\'{key}\')">{label}</button>'
+        for key, label in rounds
+    )
+    return f'<nav class="page-toggle primary-tabs view-toggle">{buttons}</nav>'
 
 
 def flag_rotation(team_name):
@@ -365,12 +389,17 @@ def flag_rotation(team_name):
 def build_history_page(shared_css):
     """Generate the year-over-year knockout round comparison page.
 
-    For each year, three rows are rendered:
+    One row per tournament; which round it shows is a client-side choice
+    (Level 2's Final 4/8/16 tabs — see build_history_round_toggle), not three
+    stacked rows per tournament like the old version. Each round's ranking:
       F4  — 4 semi-finalists, ELO entering SFs, ranked by ELO
       F8  — all 8 QF entrants, ELO entering QFs, ranked by ELO
       F16 — all 16 R16 entrants, ELO entering R16, ranked by ELO
 
-    Teams appear in multiple rows (once per round they played).
+    All three rounds' row HTML is precomputed here and embedded as a JS
+    object (HIST_ROWS), so switching rounds client-side is a tbody.innerHTML
+    swap with no server round-trip — see the fly transition in the returned
+    <script> block.
     """
     # (r16_range, qf_range, sf_range) — inclusive game-number ranges per year
     ROUND_RANGES = {
@@ -444,7 +473,7 @@ def build_history_page(shared_css):
             'f16': f16 if has_r16 else None,
         })
 
-    nav = build_nav('history')
+    page_nav = nav.render_page_nav(build_history_nav(), build_history_round_toggle())
 
     def flag_cell(team):
         flag = team['flag']
@@ -465,45 +494,27 @@ def build_history_page(shared_css):
     def pending_cell(colspan, msg='Not yet played'):
         return f'<td colspan="{colspan}" class="hist-pending">{msg}</td>'
 
-    # All rows left-align: F4=4 cols, F8=8 cols, F16=16 cols, all starting at col 1.
-    # The table has 16 data columns total; shorter rows leave trailing empties.
-    # Year cell is duplicated in all three rows; CSS controls which one is visible
-    # so the year always appears next to the topmost visible row in each group.
+    # All rounds render against the same 16 data columns (F4=4 populated,
+    # F8=8, F16=16, rest left as trailing empties) so switching rounds never
+    # changes the table's width. One row per tournament per round — the
+    # year is simply that row's leftmost cell, no conditional visibility
+    # logic needed since only one round's row exists in the DOM at a time.
     MAX_COLS = 16
-    body_rows = ''
-    for yd in year_data:
-        year = yd['year']
-        f4, f8, f16 = yd['f4'], yd['f8'], yd['f16']
 
-        # F4 row
-        body_rows += f'<tr class="hist-group-top row-f4"><th class="year-cell year-f4">{year}</th>'
-        body_rows += '<td class="round-label">F4</td>'
-        if f4:
-            body_rows += ''.join(flag_cell(t) for t in f4)
-            body_rows += empty_cells(MAX_COLS - len(f4))
-        else:
-            body_rows += pending_cell(MAX_COLS)
-        body_rows += '</tr>\n'
+    def round_tbody_html(round_key):
+        rows = []
+        for yd in year_data:
+            participants = yd[round_key]
+            rows.append(f'<tr><th class="year-cell">{yd["year"]}</th>')
+            if participants:
+                rows.append(''.join(flag_cell(t) for t in participants))
+                rows.append(empty_cells(MAX_COLS - len(participants)))
+            else:
+                rows.append(pending_cell(MAX_COLS))
+            rows.append('</tr>\n')
+        return ''.join(rows)
 
-        # F8 row
-        body_rows += f'<tr class="row-f8"><th class="year-cell year-f8">{year}</th>'
-        body_rows += '<td class="round-label">F8</td>'
-        if f8:
-            body_rows += ''.join(flag_cell(t) for t in f8)
-            body_rows += empty_cells(MAX_COLS - len(f8))
-        else:
-            body_rows += pending_cell(MAX_COLS)
-        body_rows += '</tr>\n'
-
-        # F16 row
-        body_rows += f'<tr class="hist-group-bottom row-f16"><th class="year-cell year-f16">{year}</th>'
-        body_rows += '<td class="round-label">F16</td>'
-        if f16:
-            body_rows += ''.join(flag_cell(t) for t in f16)
-            body_rows += empty_cells(MAX_COLS - len(f16))
-        else:
-            body_rows += pending_cell(MAX_COLS)
-        body_rows += '</tr>\n'
+    round_html = {r: round_tbody_html(r) for r in ('f4', 'f8', 'f16')}
 
     # 16 uniform data columns
     col_headers = ''.join('<th class="col-data"></th>' for _ in range(MAX_COLS))
@@ -526,21 +537,19 @@ def build_history_page(shared_css):
   padding: 0.4rem 1rem 0.4rem 0.4rem;
   vertical-align: middle;
   white-space: nowrap;
-  border-bottom: none;
+  border-bottom: 2px solid #C0392B;
 }}
-.round-label {{
-  font-family: 'Permanent Marker', cursive;
-  font-size: 0.8rem;
-  color: #888;
-  padding: 0.2rem 0.5rem;
-  white-space: nowrap;
-  border-bottom: none;
-  vertical-align: middle;
+.hist-caption {{
+  color: #5a4a3a;
+  font-style: italic;
+  font-family: 'Fredoka One', cursive;
+  font-size: 0.85rem;
+  margin: 0.6rem 0 1rem;
 }}
 .hist-cell {{
   text-align: center;
   padding: 0.25rem 0.3rem;
-  border-bottom: none;
+  border-bottom: 2px solid #C0392B;
   vertical-align: middle;
   min-width: 2.6rem;
 }}
@@ -572,60 +581,49 @@ def build_history_page(shared_css):
   vertical-align: middle;
   border-bottom: none;
 }}
-.hist-group-top td, .hist-group-top th {{ border-top: 2px solid #C0392B; }}
-.hist-group-bottom td, .hist-group-bottom th {{ border-bottom: 2px solid #C0392B; }}
 .col-data {{ background: #C0392B; min-width: 2.6rem; }}
 thead th {{ border-bottom: none; }}
-/* Row visibility toggles */
-table.hide-f4  tr.row-f4  {{ display: none; }}
-table.hide-f8  tr.row-f8  {{ display: none; }}
-table.hide-f16 tr.row-f16 {{ display: none; }}
-/* Year cell: show only in the topmost visible row of each group.
-   Default: F4 shows, F8 and F16 hide. */
-.year-f8, .year-f16 {{ display: none; }}
-/* F4 hidden → F8 shows year */
-table.hide-f4 .year-f8 {{ display: table-cell; }}
-/* F4+F8 hidden → F16 shows year; F4 hidden alone keeps F8 visible */
-table.hide-f4.hide-f8 .year-f8  {{ display: none; }}
-table.hide-f4.hide-f8 .year-f16 {{ display: table-cell; }}
 /* Hover: dim all cells except the hovered team */
 table.dimming .hist-cell[data-team] {{ opacity: 0.15; transition: opacity 0.1s; }}
 table.dimming .hist-cell.team-highlight {{ opacity: 1; }}
+/* Round switch (Level 2 Final 4/8/16) — see requirements/public.md ->
+   History page -> Layout. Only one <tbody> instance ever exists (its
+   innerHTML is swapped, not stacked copies), because this table is also
+   the thing .table-wrap scrolls horizontally when 16 columns don't fit —
+   stacking three full-width copies the way build_home.py's homepage
+   panels do would fight that scroll area. That also means the swap is
+   sequential (old rows fly out, *then* new rows fly in) rather than
+   simultaneous — reuses ../nav.css's shared .fly-panel (same universal
+   pace and full off-screen distance, see *Navigation* -> *Transitions*),
+   paired with .fly-scroll-lock on .table-wrap for the transition's
+   duration only (see setHistRound) so flying fully off-screen doesn't
+   corrupt the table's own horizontal scroll range at rest. Total
+   wall-clock is roughly double a single .fly-panel leg, since out and in
+   happen one after the other here instead of simultaneously. */
 </style>
 </head>
 <body>
-{nav}
-<p style="color:#555;margin-top:-0.5rem">Final 4 / 8 / 16 for each tournament, ranked by ELO entering that round.</p>
-
-<div class="view-toggle history-round-toggle" style="margin-bottom:1rem">
-  <button id="btn-f4"  class="active" onclick="toggleRound('f4')">F4</button>
-  <button id="btn-f8"  class="active" onclick="toggleRound('f8')">F8</button>
-  <button id="btn-f16" class="active" onclick="toggleRound('f16')">F16</button>
-</div>
+{page_nav}
+<p class="hist-caption">ELO ranking of the teams entering the selected round, highest to lowest, left to right — not a final-standings table.</p>
 
 <div class="table-wrap">
 <table id="hist-table">
   <thead>
     <tr>
       <th>Year</th>
-      <th></th>
       {col_headers}
     </tr>
   </thead>
-  <tbody>
-{body_rows}  </tbody>
+  <tbody id="hist-tbody">
+{round_html['f16']}  </tbody>
 </table>
 </div>
 
 <script>
-function toggleRound(round) {{
-  const table = document.getElementById('hist-table');
-  const btn = document.getElementById('btn-' + round);
-  const hidden = table.classList.toggle('hide-' + round);
-  btn.classList.toggle('active', !hidden);
-}}
+var HIST_ROWS = {json.dumps(round_html)};
+var __currentHistRound = 'f16';
 
-(function() {{
+function attachHistHoverHandlers() {{
   const table = document.getElementById('hist-table');
   const cells = Array.from(table.querySelectorAll('.hist-cell[data-team]'));
 
@@ -642,7 +640,45 @@ function toggleRound(round) {{
       cells.forEach(function(c) {{ c.classList.remove('team-highlight'); }});
     }});
   }});
-}})();
+}}
+
+// Read from ../nav.css's --fly-ms (the single source of truth) rather than
+// a second hardcoded number that could drift out of sync with it.
+const HIST_FLY_MS = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fly-ms'));
+
+function setHistRound(round) {{
+  if (round === __currentHistRound) return;
+  ['f4', 'f8', 'f16'].forEach(function(r) {{
+    document.getElementById('tab-' + r).classList.toggle('active', r === round);
+  }});
+  const tbody = document.getElementById('hist-tbody');
+  // Flying fully off-screen (see .fly-panel in ../nav.css) would otherwise
+  // briefly inflate .table-wrap's own scrollable width — lock it for
+  // exactly the transition, not permanently (16 data columns legitimately
+  // need their own horizontal scroll at rest).
+  const scrollEl = document.querySelector('.table-wrap');
+  if (scrollEl) scrollEl.classList.add('fly-scroll-lock');
+  tbody.classList.remove('fly-in-active');
+  tbody.classList.add('fly-panel', 'fly-out');
+  window.setTimeout(function() {{
+    tbody.innerHTML = HIST_ROWS[round];
+    attachHistHoverHandlers();
+    tbody.classList.remove('fly-out');
+    tbody.classList.add('fly-in-start');
+    void tbody.offsetWidth;
+    requestAnimationFrame(function() {{
+      tbody.classList.remove('fly-in-start');
+      tbody.classList.add('fly-in-active');
+      window.setTimeout(function() {{
+        tbody.classList.remove('fly-panel', 'fly-in-active');
+        if (scrollEl) scrollEl.classList.remove('fly-scroll-lock');
+      }}, HIST_FLY_MS);
+    }});
+  }}, HIST_FLY_MS);
+  __currentHistRound = round;
+}}
+
+attachHistHoverHandlers();
 </script>
 
 </body>
@@ -758,7 +794,6 @@ def page_html(year, script_block, shared_css, shared_js):
 <div id="rankings-view">
   <div class="rankings-panel">
     <div id="rankings-outer">
-      <div id="rank-info"></div>
       <div class="rankings-cols" id="rankings-cols">
         <div class="rankings-header" id="rankings-header"></div>
         <div class="rankings-body" id="rankings-body"></div>
@@ -766,6 +801,12 @@ def page_html(year, script_block, shared_css, shared_js):
     </div>
   </div>
 </div>
+<!-- position:fixed, so a sibling of the views rather than nested inside
+     #rankings-view — a transform on #rankings-view (see the fly transition
+     in shared.js's setPageView) would otherwise create a new containing
+     block and permanently re-anchor this to that box instead of the
+     viewport once the view had flown in once. -->
+<div id="rank-info"></div>
 
 <div id="groups-view"></div>
 

@@ -20,6 +20,60 @@ for (const t of teams) confByTeam[t.name] = t.confederation;
 const flagByTeam = {};
 for (const t of teams) flagByTeam[t.name] = t.flag;
 
+// Universal fly in/out pacing — see requirements/public.md -> Navigation ->
+// Transitions and ../nav.css's --fly-ms (the single source of truth; read
+// here at runtime instead of a second hardcoded number that could drift
+// out of sync with it). Every swap in this file is sequential (old content
+// flies out, *then* new content is rendered and flies in) rather than the
+// homepage's simultaneous dual-panel version, since these views hold
+// heavier, dynamically-rendered content — so this constant is the out-leg's
+// wait before swapping content, not a full round-trip.
+const FLY_MS = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fly-ms'));
+
+// Shared fly-out/fly-in primitives — setPageView, setMatchView, and
+// toggleBracketRound each swap different content (a whole view, a set of
+// scattered table cells, one or more bracket columns), so this is a pair of
+// small building blocks rather than one rigid "swap panel A for panel B"
+// function. Callers own DOM mutation (removing/rendering content) and any
+// scroll-lock lifecycle (see ../nav.css's .fly-scroll-lock) between the two.
+
+// Flies `els` off-screen (see ../nav.css's .fly-panel) and resolves once the
+// transition finishes. Leaves them in the flown-out state — hiding/removing
+// them from the DOM afterward is the caller's job.
+function flyOut(els) {
+  return new Promise(function(resolve) {
+    els.forEach(function(el) { el.classList.remove('fly-in-active'); el.classList.add('fly-panel', 'fly-out'); });
+    window.setTimeout(resolve, FLY_MS);
+  });
+}
+
+// Flies `els` in from off-screen, with an optional per-element stagger (ms)
+// for a rapid-fire reveal of several at once (see Knockout's round toggle).
+// Once settled, clears the fly classes back to no-transform rather than
+// leaving `transform: translateX(0)` in place — see ../nav.css's .fly-panel
+// comment for why a lingering identity transform is its own latent bug
+// (breaks any position:fixed descendant, e.g. Rankings' #rank-info).
+function flyIn(els, options) {
+  const stagger = (options && options.stagger) || 0;
+  const onSettled = options && options.onSettled;
+  if (!els.length) { if (onSettled) onSettled(); return; }
+  els.forEach(function(el, i) {
+    el.classList.add('fly-panel', 'fly-in-start');
+    if (stagger) el.style.transitionDelay = (i * stagger) + 'ms';
+  });
+  void els[0].offsetWidth;
+  requestAnimationFrame(function() {
+    els.forEach(function(el) { el.classList.remove('fly-in-start'); el.classList.add('fly-in-active'); });
+    window.setTimeout(function() {
+      els.forEach(function(el) {
+        el.classList.remove('fly-panel', 'fly-in-active');
+        if (stagger) el.style.transitionDelay = '';
+      });
+      if (onSettled) onSettled();
+    }, FLY_MS);
+  });
+}
+
 // Returns a deterministic slight rotation (±1deg) for a team's flag,
 // derived from the team name so each team is consistent across all appearances.
 function flagRotation(teamName) {
@@ -99,8 +153,24 @@ function renderMatchViewToggle() {
 }
 
 function setMatchView(view) {
-  matchState.view = view;
-  render();
+  if (view === matchState.view) return;
+  // Only the confederation columns fly — every cell in both thead/tbody
+  // shares the "conf" class (see confHeaderRow/renderElo/renderWld/
+  // renderStats), so a class-driven fly transition applies identically and
+  // simultaneously to all of them without touching the fixed game columns
+  // to their left, matching requirements/public.md -> Match List ->
+  // Confederation panel. render() always rebuilds the whole row (game
+  // cells + conf cells together), so the fly-in step re-selects ".conf"
+  // fresh after re-rendering rather than reusing the old (now removed) nodes.
+  const scrollEl = document.querySelector('#matches-view .table-wrap');
+  if (scrollEl) scrollEl.classList.add('fly-scroll-lock');
+  flyOut(Array.from(document.querySelectorAll('#matches-view .conf'))).then(function() {
+    matchState.view = view;
+    render();
+    flyIn(Array.from(document.querySelectorAll('#matches-view .conf')), {
+      onSettled: function() { if (scrollEl) scrollEl.classList.remove('fly-scroll-lock'); }
+    });
+  });
 }
 
 // A knockout-bracket game may not have a concrete team yet — it defers to
@@ -914,8 +984,34 @@ function bracketRange() {
   return { lo: bracketState.lo, hi: bracketState.hi === null ? lastRound : bracketState.hi };
 }
 
+function bracketColumnEl(roundIdx) {
+  return document.querySelector(`.bracket-round[data-round-idx="${roundIdx}"]`);
+}
+
+// Flies newly-added columns in, staggered rapid-fire per
+// requirements/public.md -> Knockout Bracket -> Round toggles.
+function bracketScrollEl() {
+  return document.querySelector('#knockout-outer .bracket');
+}
+
+// Flies newly-revealed round columns in, staggered rapid-fire per
+// requirements/public.md -> Knockout Bracket -> Round toggles. Re-locks the
+// (possibly freshly-rendered) .bracket for the duration, since flying even
+// a single column fully off-screen can inflate its scroll width otherwise.
+function revealBracketColumns(added) {
+  if (!added.length) return;
+  const scrollEl = bracketScrollEl();
+  if (scrollEl) scrollEl.classList.add('fly-scroll-lock');
+  const cols = added.slice().sort((a, b) => a - b).map(bracketColumnEl).filter(Boolean);
+  flyIn(cols, {
+    stagger: 90,
+    onSettled: function() { if (scrollEl) scrollEl.classList.remove('fly-scroll-lock'); }
+  });
+}
+
 function toggleBracketRound(roundIdx) {
-  const { lo, hi } = bracketRange();
+  const before = bracketRange();
+  const { lo, hi } = before;
   if (roundIdx >= lo && roundIdx <= hi) {
     // Hiding a visible round: only the two edges can shrink, one round at a
     // time, and never past a single remaining round — an all-hidden tree
@@ -931,7 +1027,31 @@ function toggleBracketRound(roundIdx) {
   } else if (roundIdx > hi) {
     bracketState.hi = roundIdx;
   }
-  renderKnockout();
+  const after = bracketRange();
+  const removed = [];
+  for (let i = before.lo; i <= before.hi; i++) if (i < after.lo || i > after.hi) removed.push(i);
+  const added = [];
+  for (let i = after.lo; i <= after.hi; i++) if (i < before.lo || i > before.hi) added.push(i);
+
+  if (removed.length === 0) {
+    // Pure growth — nothing to wait on flying out, render immediately and
+    // fly the newly-revealed columns in.
+    renderKnockout();
+    revealBracketColumns(added);
+    return;
+  }
+  // Shrinking always removes exactly one edge column (see the guard above) —
+  // fly it out, then rebuild once it's clear and fly any newly-revealed
+  // columns in (a shrink never also reveals a column, but kept generic).
+  // renderKnockout() below replaces .bracket entirely, so this lock only
+  // needs to cover the brief fly-out; revealBracketColumns re-locks the
+  // fresh .bracket itself if there's anything to fly in afterward.
+  const scrollEl = bracketScrollEl();
+  if (scrollEl) scrollEl.classList.add('fly-scroll-lock');
+  flyOut(removed.map(bracketColumnEl).filter(Boolean)).then(function() {
+    renderKnockout();
+    revealBracketColumns(added);
+  });
 }
 
 function renderKnockout() {
@@ -974,7 +1094,7 @@ function renderKnockout() {
         bracketTeamRowHtml(game, 'away', decided) +
         `</div></div>`;
     }).join('');
-    return `<div class="bracket-round"><div class="bracket-round-label">${esc(label)}</div><div class="bracket-round-games">${gamesHtml}</div></div>`;
+    return `<div class="bracket-round" data-round-idx="${roundIdx}"><div class="bracket-round-label">${esc(label)}</div><div class="bracket-round-games">${gamesHtml}</div></div>`;
   }).join('');
 
   container.innerHTML = `<div class="bracket">${html}</div>`;
@@ -987,18 +1107,43 @@ const PAGE_VIEWS = ['matches', 'rankings', 'groups', 'knockout'];
 const VIEW_TOGGLE_ID = { matches: 'match-view-toggle', rankings: 'rankings-view-toggle', groups: 'groups-view-toggle', knockout: 'bracket-round-toggle' };
 let currentPageView = null;
 
-function setPageView(view) {
-  if (!PAGE_VIEWS.includes(view)) view = 'matches';
-  if (view === currentPageView) return;
-  currentPageView = view;
-  for (const v of PAGE_VIEWS) {
-    document.getElementById(v + '-view').style.display = v === view ? 'block' : 'none';
-    document.getElementById('tab-' + v).classList.toggle('active', v === view);
-    document.getElementById(VIEW_TOGGLE_ID[v]).style.display = v === view ? 'flex' : 'none';
-  }
+function renderPageView(view) {
   if (view === 'matches') render();
   if (view === 'rankings') renderRankings();
   if (view === 'knockout') renderKnockout();
+}
+
+function setPageView(view) {
+  if (!PAGE_VIEWS.includes(view)) view = 'matches';
+  if (view === currentPageView) return;
+  const outgoing = currentPageView;
+  currentPageView = view;
+  for (const v of PAGE_VIEWS) {
+    document.getElementById('tab-' + v).classList.toggle('active', v === view);
+    document.getElementById(VIEW_TOGGLE_ID[v]).style.display = v === view ? 'flex' : 'none';
+  }
+  const incoming = document.getElementById(view + '-view');
+  if (!outgoing) {
+    // First load (page just opened, possibly via a #hash) — show the target
+    // view directly, no fly; there's nothing on screen yet to fly out of.
+    for (const v of PAGE_VIEWS) document.getElementById(v + '-view').style.display = v === view ? 'block' : 'none';
+    renderPageView(view);
+    if (location.hash.slice(1) !== view) history.replaceState(null, '', '#' + view);
+    return;
+  }
+  const outEl = document.getElementById(outgoing + '-view');
+  // Flying a whole view fully off-screen (see .fly-panel in ../nav.css)
+  // would otherwise briefly inflate body's own scrollable width — lock it
+  // for exactly the transition, not permanently (a view's inner table/
+  // bracket may legitimately need its own horizontal scroll at rest).
+  document.body.classList.add('fly-scroll-lock');
+  flyOut([outEl]).then(function() {
+    outEl.style.display = 'none';
+    outEl.classList.remove('fly-out', 'fly-panel');
+    incoming.style.display = 'block';
+    renderPageView(view);
+    flyIn([incoming], { onSettled: function() { document.body.classList.remove('fly-scroll-lock'); } });
+  });
   if (location.hash.slice(1) !== view) history.replaceState(null, '', '#' + view);
 }
 
