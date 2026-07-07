@@ -86,3 +86,52 @@ function flyInItems(items) {
     });
   });
 }
+
+// Sticky-note name label on flag hover — see requirements/public.md ->
+// World Cup pages -> Flags -> "Name on hover". Every flag on the site
+// (Match List, Knockout, History) marks itself with data-team="<name>"
+// instead of a native `title` attribute — a browser tooltip is unstyled
+// system chrome with no brand material, and it contradicts
+// brand-guidelines.md -> Flags, Not Names's own framing of the hover-name
+// as "a label under a fingertip" (something designed, not raw OS UI).
+// Delegated on document rather than per-flag listeners, so it works
+// across every page/re-render without each view having to wire it up.
+(function() {
+  let noteEl = null;
+
+  function hideNote() {
+    if (noteEl) { noteEl.remove(); noteEl = null; }
+  }
+
+  function showNote(el) {
+    hideNote();
+    const name = el.getAttribute('data-team');
+    if (!name) return;
+    const rect = el.getBoundingClientRect();
+    noteEl = document.createElement('div');
+    noteEl.className = 'flag-name-note';
+    noteEl.textContent = name;
+    // Same #FAD7A0 sticky material and random tilt as the W/D/L diff
+    // highlight (see shared.js's renderWld) — one sticky-note look reused,
+    // not a second one invented for this.
+    noteEl.style.transform = `rotate(${(Math.random() * 10 - 5).toFixed(1)}deg)`;
+    document.body.appendChild(noteEl);
+    const noteRect = noteEl.getBoundingClientRect();
+    noteEl.style.left = (rect.left + rect.width / 2 - noteRect.width / 2) + 'px';
+    noteEl.style.top = (rect.top - noteRect.height - 4) + 'px';
+  }
+
+  document.addEventListener('mouseover', function(e) {
+    const el = e.target.closest('[data-team]');
+    if (el) showNote(el);
+  });
+  document.addEventListener('mouseout', function(e) {
+    const el = e.target.closest('[data-team]');
+    if (el && !el.contains(e.relatedTarget)) hideNote();
+  });
+  // A wheel/trackpad scroll moves content under a stationary cursor without
+  // firing mouseout — hide on any scroll (capture phase, so this also
+  // catches .table-wrap's own nested scroll) rather than leaving a
+  // position:fixed note stranded over unrelated content.
+  window.addEventListener('scroll', hideNote, true);
+})();

@@ -154,22 +154,25 @@ function renderMatchViewToggle() {
 
 function setMatchView(view) {
   if (view === matchState.view) return;
-  // Only the confederation columns fly — every cell in both thead/tbody
-  // shares the "conf" class (see confHeaderRow/renderElo/renderWld/
-  // renderStats), so a class-driven fly transition applies identically and
-  // simultaneously to all of them without touching the fixed game columns
-  // to their left, matching requirements/public.md -> Match List ->
-  // Confederation panel. render() always rebuilds the whole row (game
-  // cells + conf cells together), so the fly-in step re-selects ".conf"
-  // fresh after re-rendering rather than reusing the old (now removed) nodes.
+  // The confederation column headers (thead's .conf cells — the names, or
+  // Stats' fixed labels) are the board here (see requirements/public.md ->
+  // Match List -> Confederation panel): render() below rebuilds them along
+  // with everything else, so they update in place without flying, same as
+  // any other board content. Only each row's own confederation-cell
+  // *value* (tbody's .conf cells) is the item — each one flies
+  // individually, independently staggered, at item pace (see
+  // fly.js's flyOutItems/flyInItems) — not the whole column moving as one
+  // synchronized block, which the board-level flyOut/flyIn used to do here
+  // by mistake (every .conf cell, header row included, flying as a single
+  // 850ms batch with no stagger).
   const scrollEl = document.querySelector('#matches-view .table-wrap');
   if (scrollEl) scrollEl.classList.add('fly-scroll-lock');
-  flyOut(Array.from(document.querySelectorAll('#matches-view .conf'))).then(function() {
+  flyOutItems(Array.from(document.querySelectorAll('#matches-view tbody .conf'))).then(function() {
     matchState.view = view;
     render();
-    flyIn(Array.from(document.querySelectorAll('#matches-view .conf')), {
-      onSettled: function() { if (scrollEl) scrollEl.classList.remove('fly-scroll-lock'); }
-    });
+    return flyInItems(Array.from(document.querySelectorAll('#matches-view tbody .conf')));
+  }).then(function() {
+    if (scrollEl) scrollEl.classList.remove('fly-scroll-lock');
   });
 }
 
@@ -184,7 +187,7 @@ function feedLabel(from) {
 function flagCellHtml(game, side) {
   const team = game[side + 'Team'];
   if (team) {
-    return `<td class="flag"><span class="icon" style="background-image:url('flags/${flagByTeam[team]}.svg');transform:rotate(${flagRotation(team)}deg)" title="${esc(team)}"></span></td>`;
+    return `<td class="flag"><span class="icon" style="background-image:url('flags/${flagByTeam[team]}.svg');transform:rotate(${flagRotation(team)}deg)" data-team="${esc(team)}"></span></td>`;
   }
   return `<td class="flag tbd-slot">${esc(feedLabel(game[side + 'From']))}</td>`;
 }
@@ -970,7 +973,7 @@ function bracketTeamRowHtml(game, side, decided) {
   const otherScore = game[side === 'home' ? 'awayScore' : 'homeScore'];
   let cls = 'bracket-team';
   if (decided && score !== otherScore) cls += score > otherScore ? ' winner' : ' loser';
-  const flag = `<span class="icon" style="background-image:url('flags/${flagByTeam[team]}.svg');transform:rotate(${flagRotation(team)}deg)" title="${esc(team)}"></span>`;
+  const flag = `<span class="icon" style="background-image:url('flags/${flagByTeam[team]}.svg');transform:rotate(${flagRotation(team)}deg)" data-team="${esc(team)}"></span>`;
   const scoreHtml = score != null ? `<span class="bracket-score">${score}</span>` : '';
   return `<div class="${cls}">${flag}${scoreHtml}</div>`;
 }
@@ -1025,34 +1028,66 @@ function alignBracketColumnsToToggles(lo, hi) {
 
 // Real movement, never an opacity fade (see brand-guidelines.md -> Motion:
 // physical paper doesn't dissolve, it's picked up or put down). Round
-// columns never move sideways (see alignBracketColumnsToToggles), so
-// showing/hiding uses a vertical lift instead of the sitewide horizontal
-// fly: a newly-added column drops down into its fixed slot from just above,
-// fully opaque throughout — .bracket's overflow-y:hidden (see shared.css)
-// clips it cleanly until it settles.
+// columns never move sideways (see alignBracketColumnsToToggles) and are
+// never themselves the thing that flies (requirements/public.md -> Knockout
+// Bracket -> Round toggles: "board — nothing... item — each game card
+// within the round"): each card lifts/drops individually, staggered, at
+// item pace — a whole column moving as one synchronized block is exactly
+// the "component dropped in" anti-pattern this fixes.
 const BRACKET_LIFT_PX = 36;
 
+// Every game card within the given round indices, flattened across rounds —
+// the unit slideInBracketColumns/slideOutBracketColumns actually fly, not
+// the column itself.
+function bracketCardsForRounds(roundIndices) {
+  const cards = [];
+  roundIndices.forEach(function(roundIdx) {
+    const col = bracketColumnEl(roundIdx);
+    if (col) cards.push.apply(cards, col.querySelectorAll('.bracket-game-wrap'));
+  });
+  return cards;
+}
+
 function slideInBracketColumns(added) {
-  if (!added.length) return;
-  const cols = added.map(bracketColumnEl).filter(Boolean);
-  cols.forEach(function(el) { el.style.transition = 'none'; el.style.transform = `translateY(-${BRACKET_LIFT_PX}px) rotate(-3deg)`; });
-  void (cols[0] && cols[0].offsetWidth);
+  const cards = bracketCardsForRounds(added);
+  if (!cards.length) return;
+  cards.forEach(function(el) { el.style.transition = 'none'; el.style.transform = `translateY(-${BRACKET_LIFT_PX}px) rotate(-3deg)`; });
+  void (cards[0] && cards[0].offsetWidth);
   requestAnimationFrame(function() {
-    cols.forEach(function(el) { el.style.transition = `transform ${FLY_MS}ms cubic-bezier(.1,.6,.2,1)`; el.style.transform = ''; });
+    let maxDelay = 0;
+    cards.forEach(function(el) {
+      const delay = Math.random() * FLY_ITEM_JITTER_MS;
+      if (delay > maxDelay) maxDelay = delay;
+      el.style.transition = `transform ${FLY_ITEM_MS}ms cubic-bezier(.1,.6,.2,1)`;
+      el.style.transitionDelay = delay + 'ms';
+      el.style.transform = '';
+    });
     window.setTimeout(function() {
-      cols.forEach(function(el) { el.style.transition = ''; });
-    }, FLY_MS);
+      cards.forEach(function(el) { el.style.transition = ''; el.style.transitionDelay = ''; });
+    }, FLY_ITEM_MS + maxDelay);
   });
 }
 
-// Lifts `els` up and off, out of .bracket's clipped frame, and resolves
-// once the transition finishes — the Knockout-specific counterpart to the
-// sitewide flyOut() above, used because round columns never move sideways
-// (see slideInBracketColumns).
-function slideOutBracketColumns(els) {
+// Lifts every card in the given (about-to-be-removed) round indices up and
+// off, out of .bracket's clipped frame, individually staggered, and
+// resolves once the slowest one has finished — the Knockout-specific
+// vertical counterpart to fly.js's flyOutItems, used because round columns
+// never move sideways (see slideInBracketColumns above). Reads FLY_ITEM_MS/
+// FLY_ITEM_JITTER_MS from fly.js (loaded before this script) rather than a
+// fourth independent pacing/jitter pair.
+function slideOutBracketColumns(removed) {
   return new Promise(function(resolve) {
-    els.forEach(function(el) { el.style.transition = `transform ${FLY_MS}ms linear`; el.style.transform = `translateY(-${BRACKET_LIFT_PX}px) rotate(-3deg)`; });
-    window.setTimeout(resolve, FLY_MS);
+    const cards = bracketCardsForRounds(removed);
+    if (!cards.length) { resolve(); return; }
+    let maxDelay = 0;
+    cards.forEach(function(el) {
+      const delay = Math.random() * FLY_ITEM_JITTER_MS;
+      if (delay > maxDelay) maxDelay = delay;
+      el.style.transition = `transform ${FLY_ITEM_MS}ms linear`;
+      el.style.transitionDelay = delay + 'ms';
+      el.style.transform = `translateY(-${BRACKET_LIFT_PX}px) rotate(-3deg)`;
+    });
+    window.setTimeout(resolve, FLY_ITEM_MS + maxDelay);
   });
 }
 
@@ -1108,7 +1143,7 @@ function toggleBracketRound(roundIdx) {
   // lift it up and off, then rebuild once it's clear and drop in whatever
   // was newly revealed (a shrink never also reveals a column, but kept
   // generic). Nothing else on screen shifts horizontally at any point here.
-  slideOutBracketColumns(removed.map(bracketColumnEl).filter(Boolean)).then(function() {
+  slideOutBracketColumns(removed).then(function() {
     renderKnockout();
     slideInBracketColumns(added);
   });

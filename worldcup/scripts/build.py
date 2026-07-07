@@ -483,7 +483,7 @@ def build_history_page(shared_css):
         elo_str = str(elo) if elo is not None else '—'
         safe_name = name.replace('"', '&quot;')
         icon = (f'<span class="icon" style="background-image:url(\'flags/{flag}.svg\');'
-                f'transform:rotate({rot}deg)" title="{safe_name}"></span>') if flag else name
+                f'transform:rotate({rot}deg)" data-team="{safe_name}"></span>') if flag else name
         return (f'<td class="hist-cell" data-team="{safe_name}">'
                 f'<div class="hist-inner">{icon}'
                 f'<span class="hist-elo">{elo_str}</span></div></td>')
@@ -535,6 +535,13 @@ def build_history_page(shared_css):
 {FAVICON_SCRIPT}
 <style>
 {shared_css}
+/* Overrides shared.css's generic `th {{ background: #C0392B; color: #FFFFFF }}`
+   (written for the actual Level 4 header row) — .year-cell is a <th> for
+   markup reasons (it's a row header, semantically), not a repeated copy of
+   the header itself. Without this it inherits white marker on red, which
+   isn't a real material this brand uses (see brand-guidelines.md ->
+   Typography: marker is black) — and reading down the column, every row's
+   year looked like a stack of headers instead of a handwritten label. */
 .year-cell {{
   font-family: 'Permanent Marker', cursive;
   font-size: 1.1rem;
@@ -542,6 +549,8 @@ def build_history_page(shared_css):
   vertical-align: middle;
   white-space: nowrap;
   border-bottom: 2px solid #C0392B;
+  background: transparent;
+  color: #1a1a1a;
 }}
 .hist-caption {{
   color: #5a4a3a;
@@ -612,6 +621,7 @@ table.dimming .hist-cell.team-highlight {{ opacity: 1; }}
    table's own horizontal scroll range otherwise, same reason .fly-panel
    always needed one. */
 </style>
+<script src="fly.js"></script>
 </head>
 <body>
 {page_nav}
@@ -653,15 +663,6 @@ function attachHistHoverHandlers() {{
   }});
 }}
 
-// Read from ../nav.css's --fly-item-ms (the single source of truth) rather
-// than a second hardcoded number that could drift out of sync with it.
-const HIST_ITEM_MS = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fly-item-ms'));
-// The random-jitter window each row's jump is offset within — see
-// requirements/public.md -> Navigation -> Transitions -> "Stagger". Not a
-// CSS custom property like --fly-item-ms, since it's consumed here as a
-// JS number (Math.random() * this), not applied directly as a style value.
-const HIST_JITTER_MS = 250;
-
 // Every flag+ELO cell (or, for a not-yet-played row, its message) is its
 // own item — see requirements/public.md -> Navigation -> Transitions ->
 // "The unit that moves, by action". The row itself, and the year
@@ -671,52 +672,74 @@ function histItems(tbody) {{
   return Array.from(tbody.querySelectorAll('.hist-inner'));
 }}
 
-// Flies each of `items` out to the right individually — a small random
-// delay per item (see HIST_JITTER_MS above) rather than one synchronized
-// move — and resolves once the slowest one has finished. See
-// brand-guidelines.md -> Motion -> The invisible hands: a hundred items get
-// a hundred small staggered movements, never one big one. Same distance/
-// direction as the sitewide .fly-panel (out right, in left — see
-// requirements/public.md -> Navigation -> Transitions), just per item.
-function flyOutItems(items) {{
-  return new Promise(function(resolve) {{
-    if (!items.length) {{ resolve(); return; }}
-    let maxDelay = 0;
-    items.forEach(function(item) {{
-      const delay = Math.random() * HIST_JITTER_MS;
-      if (delay > maxDelay) maxDelay = delay;
-      item.style.transitionDelay = delay + 'ms';
-      item.classList.add('fly-item', 'fly-item-out');
-    }});
-    window.setTimeout(resolve, HIST_ITEM_MS + maxDelay);
-  }});
+// Cross-page navigation (Home <-> History) — see requirements/public.md ->
+// Navigation -> Cross-page navigation and brand-guidelines.md -> Motion ->
+// "Walking to a different poster". No native View Transition (its only
+// primitive is one whole-page snapshot, which is exactly the "component
+// dropped in" effect that section rules out) — instead every in-frame nav
+// chip and cell flies out individually before leaving, and every in-frame
+// one on the arriving page flies in the same way, reusing flyOutItems()/
+// flyInItems()/inFrame()/NAV_FLY_KEY from ../fly.js (loaded before this
+// script — see page_html()/build_history_page()'s <script src="fly.js">).
+
+// Every nav chip at every level, plus the active round's own cells — reuses
+// histItems as-is, since History already flies at cell granularity for its
+// own round toggle (see setHistRound below); only Match List needs a finer
+// grain than its usual row-level item for this feature (see
+// requirements/public.md -> Cross-page navigation).
+function historyFlyItems() {{
+  const chips = [document.querySelector('.utility-bar a')]
+    .concat(Array.from(document.querySelectorAll('.primary-tabs button')));
+  const cells = histItems(document.getElementById('hist-tbody'));
+  return chips.concat(cells).filter(Boolean).filter(inFrame);
 }}
 
-// Flies each of `items` in from the left individually, same jitter idea as
-// flyOutItems above — see requirements/public.md -> Navigation ->
-// Transitions -> "Stagger". Resolves once the slowest one has settled, so
-// the caller can release the scroll lock (see setHistRound).
-function flyInItems(items) {{
-  return new Promise(function(resolve) {{
-    if (!items.length) {{ resolve(); return; }}
-    items.forEach(function(item) {{ item.classList.add('fly-item', 'fly-item-in-start'); }});
-    void (items[0] && items[0].offsetWidth);
-    requestAnimationFrame(function() {{
-      let maxDelay = 0;
-      items.forEach(function(item) {{
-        const delay = Math.random() * HIST_JITTER_MS;
-        if (delay > maxDelay) maxDelay = delay;
-        item.style.transitionDelay = delay + 'ms';
-        item.classList.remove('fly-item-in-start');
-        item.classList.add('fly-item-in-active');
-      }});
-      window.setTimeout(function() {{
-        items.forEach(function(item) {{
-          item.classList.remove('fly-item', 'fly-item-in-active');
-          item.style.transitionDelay = '';
-        }});
-        resolve();
-      }}, HIST_ITEM_MS + maxDelay);
+document.querySelector('.utility-bar a').addEventListener('click', function(e) {{
+  e.preventDefault();
+  const href = e.currentTarget.getAttribute('href');
+  const scrollEl = document.querySelector('.table-wrap');
+  // Nav chips (the Home chip, the round tabs) live outside .table-wrap, in
+  // <body> — which has its own overflow-x: auto for the table's legitimate
+  // horizontal scroll (see shared.css). An off-screen translateX inflates
+  // whichever ancestor's scrollable width the same way .table-wrap's own
+  // cells already needed locking against (see the comment on setHistRound
+  // below) — body needs the same lock while chips are in flight, or the
+  // whole page can visibly lurch instead of reading as individual pieces.
+  if (scrollEl) scrollEl.classList.add('fly-scroll-lock');
+  document.body.classList.add('fly-scroll-lock');
+  flyOutItems(historyFlyItems()).then(function() {{
+    sessionStorage.setItem(NAV_FLY_KEY, '1');
+    window.location.href = href;
+  }});
+}});
+
+// Only a same-site click sets NAV_FLY_KEY (see build_home.py) — a direct
+// load/refresh never does, so this never fires on those, matching the
+// sitewide "nothing flies on load" default (see requirements/public.md ->
+// Navigation -> Initial display) with its one sanctioned exception.
+if (sessionStorage.getItem(NAV_FLY_KEY) === '1') {{
+  sessionStorage.removeItem(NAV_FLY_KEY);
+  const arrivalItems = historyFlyItems();
+  // Pinned off-screen the instant they exist — before any paint, same as
+  // always — but the actual flight waits on document.fonts.ready. The
+  // Google Fonts <link> in <head> is render-blocking; if this script's
+  // synchronous class mutations above happened to win the race against
+  // that fetch, the flight would run correctly, but there's no guarantee
+  // it does. Starting the animated part before the page can actually paint
+  // it risks the whole staggered sequence executing before the browser
+  // ever shows a frame of it — the arrival reads as one clump landing
+  // instantly instead of individually staggered pieces landing over real
+  // time, because the reader never saw the individual motion happen. See
+  // requirements/public.md -> Cross-page navigation -> "The board must
+  // already be standing before the first item moves — never a race."
+  arrivalItems.forEach(function(item) {{ item.classList.add('fly-item', 'fly-item-in-start'); }});
+  document.fonts.ready.then(function() {{
+    const scrollEl = document.querySelector('.table-wrap');
+    if (scrollEl) scrollEl.classList.add('fly-scroll-lock');
+    document.body.classList.add('fly-scroll-lock');
+    flyInItems(arrivalItems).then(function() {{
+      if (scrollEl) scrollEl.classList.remove('fly-scroll-lock');
+      document.body.classList.remove('fly-scroll-lock');
     }});
   }});
 }}
@@ -824,6 +847,7 @@ def page_html(year, script_block, shared_css, shared_js):
 <style>
 {shared_css}
 </style>
+<script src="fly.js"></script>
 </head>
 <body>
 <div class="page-nav">
@@ -904,6 +928,20 @@ def main():
     # stylesheet, even though the two are separate files for editing.
     shared_css = (ROOT / "nav.css").read_text() + "\n" + (ROOT / "shared.css").read_text()
     shared_js = (ROOT / "shared.js").read_text()
+
+    # fly.js (the shared item-level fly primitive — see requirements/public.md
+    # -> Navigation -> Transitions) is written out as a real file rather than
+    # inlined like shared_css/shared_js above, since it's loaded via
+    # <script src="fly.js"> on every page, including index.html and
+    # history.html, which don't share shared_js's data-dependent globals.
+    # build_home.py writes its own copy alongside index.html independently
+    # (same source file, same reason it re-reads nav.css independently),
+    # so this and that copy can never textually disagree.
+    fly_js = (ROOT / "fly.js").read_text()
+    fly_js_path = PROJECT_ROOT / "site" / "football" / "worldcup" / "fly.js"
+    fly_js_path.parent.mkdir(parents=True, exist_ok=True)
+    fly_js_path.write_text(fly_js)
+    print("Updated site/football/worldcup/fly.js")
 
     teams = load("teams.json")
     team_names = {t["name"] for t in teams}

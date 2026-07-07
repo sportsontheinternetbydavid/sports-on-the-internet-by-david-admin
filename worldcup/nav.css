@@ -211,3 +211,14 @@
 /* Applied to a scrollable ancestor (never the flying panel itself) for
    exactly the transition's duration — see the comment above. */
 .fly-scroll-lock { overflow-x: hidden !important; }
+
+/* Cross-page navigation (Home <-> History) is NOT done via the browser's
+   native cross-document View Transitions API — that was tried first and
+   rejected: its only real primitive is a single whole-page snapshot, which
+   arrives pre-assembled as one image, exactly the "component dropped in"
+   effect requirements/public.md -> Cross-page navigation and
+   brand-guidelines.md -> Motion -> "Walking to a different poster" rule
+   out. It's replaced by a hand-rolled click-intercept + sessionStorage +
+   per-item fly (see fly.js, and build.py/build_home.py's own click
+   handlers) so every nav chip and content piece flies individually instead
+   of the page arriving as one image. */

@@ -202,6 +202,68 @@ function setHomeView(view) {
 window.addEventListener('DOMContentLoaded', function() {
   document.getElementById('home-groups-wrap').style.height = document.getElementById('sports-group').scrollHeight + 'px';
 });
+
+// Cross-page navigation (Home <-> History) — see requirements/public.md ->
+// Navigation -> Cross-page navigation and brand-guidelines.md -> Motion ->
+// "Walking to a different poster". No native View Transition (its only
+// primitive is one whole-page snapshot, which is exactly the "component
+// dropped in" effect that section rules out) — instead every in-frame nav
+// chip flies out individually before leaving, and every in-frame one on
+// the arriving page flies in the same way, reusing flyOutItems()/
+// flyInItems()/inFrame()/NAV_FLY_KEY from fly.js (loaded before this
+// script — see build_home_html()'s <script src="fly.js">).
+
+// Every Level 1 chip, plus whichever of Sports!/Football's own Level 2-3
+// chips is currently showing (only Football's ever has a cross-page link —
+// History — but this stays general rather than assuming). Sports!'s own
+// Level 2-3 is the one typographic composition exempt from chip treatment
+// (see brand-guidelines.md -> "The homepage signature is exempt"), so it
+// flies as the single #sports-group item, not as separate chips.
+function homeDepartureItems() {
+  var level1 = Array.from(document.querySelector('.utility-bar').children);
+  var activeGroup = document.getElementById(__currentHomeView + '-group');
+  var level23 = __currentHomeView === 'sports'
+    ? [activeGroup]
+    : Array.from(activeGroup.querySelectorAll('.view-toggle > *'));
+  return level1.concat(level23).filter(Boolean).filter(inFrame);
+}
+
+document.addEventListener('click', function(e) {
+  var link = e.target.closest('a[href*="history.html"]');
+  if (!link) return;
+  e.preventDefault();
+  var href = link.getAttribute('href');
+  flyOutItems(homeDepartureItems()).then(function() {
+    sessionStorage.setItem(NAV_FLY_KEY, '1');
+    window.location.href = href;
+  });
+});
+
+// Only a same-site click sets NAV_FLY_KEY (see build.py's build_history_page);
+// a direct load/refresh never does, so this never fires on those — matching
+// the sitewide "nothing flies on load" default (see requirements/public.md
+// -> Navigation -> Initial display) with its one sanctioned exception. On
+// arrival the homepage is always in its default Sports! state (Football's
+// state isn't carried across a navigation), so #sports-group is the only
+// Level 2-3 piece to fly in, alongside every Level 1 chip.
+if (sessionStorage.getItem(NAV_FLY_KEY) === '1') {
+  sessionStorage.removeItem(NAV_FLY_KEY);
+  var level1 = Array.from(document.querySelector('.utility-bar').children);
+  var arrivalItems = level1.concat([document.getElementById('sports-group')]).filter(inFrame);
+  // Pinned off-screen the instant they exist — before any paint, same as
+  // always — but the actual flight waits on document.fonts.ready. The
+  // Google Fonts <link> in <head> is render-blocking; starting the animated
+  // part before the page can actually paint it risks the whole staggered
+  // sequence executing before the browser ever shows a frame of it — the
+  // arrival reads as one clump landing instantly instead of individually
+  // staggered pieces landing over real time. See requirements/public.md ->
+  // Cross-page navigation -> "The board must already be standing before
+  // the first item moves — never a race."
+  arrivalItems.forEach(function(item) { item.classList.add('fly-item', 'fly-item-in-start'); });
+  document.fonts.ready.then(function() {
+    flyInItems(arrivalItems);
+  });
+}
 </script>"""
 
 
@@ -240,7 +302,6 @@ def build_home_html(nav_css):
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Fredoka+One&display=swap" rel="stylesheet">
 {FAVICON_SCRIPT}
-{HOME_SCRIPT}
 <style>
 {nav_css}
 {HOME_CSS}
@@ -248,6 +309,8 @@ def build_home_html(nav_css):
 </head>
 <body>
 {page_nav}
+<script src="fly.js"></script>
+{HOME_SCRIPT}
 </body>
 </html>
 """
@@ -263,6 +326,15 @@ def main():
     path = PROJECT_ROOT / "site" / "index.html"
     path.write_text(html)
     print("Updated site/index.html")
+
+    # fly.js (the shared item-level fly primitive) is read and written here
+    # independently of build.py's own copy of this same write, so this script
+    # stays runnable standalone (see this file's own docstring) — same reason
+    # nav_css above is read independently rather than passed in from build.py.
+    fly_js = (ROOT / "fly.js").read_text()
+    fly_js_path = PROJECT_ROOT / "site" / "fly.js"
+    fly_js_path.write_text(fly_js)
+    print("Updated site/fly.js")
 
 
 if __name__ == "__main__":

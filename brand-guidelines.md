@@ -298,6 +298,8 @@ The board doesn't move when the things pinned to it change. Swap the confederati
 
 The board only comes off the wall when the board itself is what's changing — swapping a table of scores for a bracket, say. Then the old board comes down as one piece (it's a single fixture, not a collection of loose items), the new one goes up, and its contents get pinned on one at a time same as always.
 
+A board is a single physical surface — the frame lines of a table, an axis, the trellis of connecting lines in a bracket, a backing sheet. It is never a row of separately cut-out pieces. A nav bar is not a board just because its chips happen to sit in a line: every chip in it is already its own small paper cutout, with its own shape, its own tape, its own tilt (see *Visual Identity* → *Layout*), so a nav bar — however many chips it has — is always a collection of items, never a board. The same goes for anything else made of individually cut pieces: game cards, sticky notes, flags. However many of them appear together, and however new they are to the screen, each one is still placed by hand, one at a time. A row of chips sliding in together, still perfectly lined up edge to edge, doesn't read as several things being placed — it reads as one component being dropped in, and a pair of hands can only ever hold one piece of paper at once.
+
 ### Nothing appears from nothing
 
 A poster doesn't flicker into existence the moment someone looks at it. It was already taped to the wall, finished, before anyone walked by.
@@ -307,6 +309,14 @@ Opening a page is walking into the room. It is not watching the room get built.
 Whatever's on screen the instant a page loads was already there — already assembled, already pinned up. It was never constructed in front of the reader, and it never animates into being.
 
 This is why nothing flies in when a page first loads. The invisible hands have already done their work by the time anyone arrives. A page has no "before" for them to be reacting to — so there is nothing for them to do yet. They pinned everything up already. The reader just walked in.
+
+### Walking to a different poster
+
+Everything above describes the invisible hands rearranging *one* poster. Clicking through to a different page isn't that. It isn't the hands swapping pieces on the board someone's already looking at — it's that reader walking down the wall to the next poster over.
+
+But it's still the same hands doing the same work, just on two posters instead of one. There is no shared board between two separate pages — see *The board stays on the wall* above for what actually qualifies as a board, and a nav bar or a table full of rows never does — so there's nothing here for a single rigid piece to move as, no matter how big. Every chip, every row, every card on the poster someone's leaving comes down individually, the way it always does; every chip, every row, every card on the poster they're arriving at goes up individually once they get there, the same way. What moves is never "the page" as one flat image — a poster sliding in fully assembled, nav bar and all, still lined up edge to edge exactly as it'll stay, doesn't read as arriving. It reads as a photograph of a finished poster being slid into frame. It should read instead as a flurry of individual pieces landing fast, the hands' usual pace just scaled up to a whole page's worth of pieces, not one big slow move standing in for all of them. Structural chrome common to every page — the cream background, a table's frame lines and axis, the red header strip — never moves either; it's simply there on both posters, the same way it's there on every poster on the wall.
+
+This only applies to navigating *away* from a page a reader is already looking at. Landing on a page directly — typing the URL, a bookmark, a refresh — has no "before" to slide away from, so it follows *Nothing appears from nothing* above instead: the page is simply already there, every piece already pinned up, nothing flies.
 
 ---
 

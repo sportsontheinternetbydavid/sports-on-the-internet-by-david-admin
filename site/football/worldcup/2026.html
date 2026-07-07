@@ -283,6 +283,26 @@ th { font-family: 'Permanent Marker', cursive; background: #C0392B; color: #FFFF
 .conf { text-align: center; min-width: 5em; }
 .conf-first { border-left: 2px solid rgba(255,255,255,0.3); }
 
+/* Sticky-note name label shown on flag hover (see ../fly.js) — replaces the
+   browser's native title tooltip everywhere a flag appears (Match List,
+   Knockout, History), see requirements/public.md -> World Cup pages ->
+   Flags -> "Name on hover". Same #FAD7A0 material as the W/D/L diff
+   highlight's sticky (see shared.js's renderWld) — one sticky-note look
+   reused rather than a second one invented for this. position:fixed since
+   fly.js positions it from getBoundingClientRect(), which is
+   viewport-relative. */
+.flag-name-note {
+  position: fixed;
+  z-index: 1000;
+  background: #FAD7A0;
+  color: #1a1a1a;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.45rem;
+  white-space: nowrap;
+  box-shadow: 1px 2px 3px rgba(0,0,0,0.25);
+  pointer-events: none;
+}
+
 /* Level 1 (utility bar — Home, History, WC-YY items), the .page-nav fused
    wrapper, the base .view-toggle look, and Level 2 (.page-toggle
    .primary-tabs) are all defined once in ../nav.css, shared with the
@@ -2118,7 +2138,7 @@ function feedLabel(from) {
 function flagCellHtml(game, side) {
   const team = game[side + 'Team'];
   if (team) {
-    return `<td class="flag"><span class="icon" style="background-image:url('flags/${flagByTeam[team]}.svg');transform:rotate(${flagRotation(team)}deg)" title="${esc(team)}"></span></td>`;
+    return `<td class="flag"><span class="icon" style="background-image:url('flags/${flagByTeam[team]}.svg');transform:rotate(${flagRotation(team)}deg)" data-team="${esc(team)}"></span></td>`;
   }
   return `<td class="flag tbd-slot">${esc(feedLabel(game[side + 'From']))}</td>`;
 }
@@ -2904,7 +2924,7 @@ function bracketTeamRowHtml(game, side, decided) {
   const otherScore = game[side === 'home' ? 'awayScore' : 'homeScore'];
   let cls = 'bracket-team';
   if (decided && score !== otherScore) cls += score > otherScore ? ' winner' : ' loser';
-  const flag = `<span class="icon" style="background-image:url('flags/${flagByTeam[team]}.svg');transform:rotate(${flagRotation(team)}deg)" title="${esc(team)}"></span>`;
+  const flag = `<span class="icon" style="background-image:url('flags/${flagByTeam[team]}.svg');transform:rotate(${flagRotation(team)}deg)" data-team="${esc(team)}"></span>`;
   const scoreHtml = score != null ? `<span class="bracket-score">${score}</span>` : '';
   return `<div class="${cls}">${flag}${scoreHtml}</div>`;
 }
