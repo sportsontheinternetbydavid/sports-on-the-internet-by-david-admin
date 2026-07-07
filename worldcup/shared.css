@@ -34,32 +34,30 @@ th { font-family: 'Permanent Marker', cursive; background: #C0392B; color: #FFFF
 tbody tr:hover { background: #EDE8DC; }
 
 /* World Cup pages' own Level 3 variants — each has unique layout beyond the
-   shared shape (checkboxes, a note, a bracket-round picker), so unlike
-   Level 1/2 they aren't reusable as-is and keep their own CSS here. All
-   still share the generic "last fused level" treatment: same min-height as
-   Levels 1-2, red background, and only the top corners squared off (the
-   bottom stays rounded, since Level 3 is always the last level). No divider
-   line against Level 2 above — the fills alone tell levels apart. */
-.bracket-round-toggle, .match-view-toggle, .groups-view-toggle, .rankings-view-toggle { min-height: 2.5rem; flex-wrap: wrap; border-top-left-radius: 0; border-top-right-radius: 0; }
-.bracket-round-toggle button, .match-view-toggle button, .groups-view-toggle button, .groups-view-toggle span { flex: 1 1 auto; white-space: nowrap; }
-.bracket-round-toggle.view-toggle, .match-view-toggle.view-toggle, .groups-view-toggle.view-toggle { background: #C0392B; }
+   shared chip shape (a bracket-round picker, Rankings' toggles, a Groups
+   placeholder note), so unlike Level 1/2 they aren't reusable as-is and
+   keep their own CSS here. They're ordinary .view-toggle chip rows like
+   every other level — see nav.css for the shared chip visual system — with
+   no shared background or stretch-to-fill of their own; min-height alone
+   reserves this row's space before JS populates it, so nothing jumps on
+   first paint. */
+.bracket-round-toggle, .match-view-toggle, .groups-view-toggle, .rankings-view-toggle { min-height: 2.5rem; }
 
 /* Rankings */
 #rankings-view { display: none; }
 #rankings-view-toggle { display: none; }
 /* Second tier for Rankings — moved out of the rankings panel itself (same
-   move as Match List's old inline header toggle) so the table/panel starts
-   clean and this row matches the other views' fused nav row. Checkboxes
-   cluster on the left (.rankings-checks); Rank/Scale is pushed to the right
-   edge via justify-content, so the row uses its full width the same way the
-   utility bar does, instead of leaving blank red space after the checkboxes. */
-.rankings-view-toggle { display: flex; align-items: center; justify-content: space-between; gap: 1rem; font-family: 'Permanent Marker', cursive; font-size: 0.75rem; padding: 0 0.7rem; background: #C0392B; color: #fff; }
-.rankings-checks { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
-.rankings-view-toggle label { display: flex; align-items: center; gap: 0.3rem; cursor: pointer; user-select: none; }
-/* Deliberately not one of the four nav color states (see Navigation) — a
-   dedicated warning pink flags this as a developer-facing debug control. */
-.rankings-view-toggle .debug-label { color: #ffb3b3; }
-.rankings-toggle.view-toggle button { flex: 1 1 auto; }
+   move as Match List's old inline header toggle) so the panel starts clean.
+   Left-aligned like every other chip row (see nav.css -> Layout) — Rank/
+   Scale first, then the on/off toggles (.rankings-checks) after, not
+   spread apart to fill the row's width. */
+.rankings-view-toggle { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+/* Deliberately not one of the four chip palette colors (see nav.css ->
+   Color) — a dedicated warning pink flags this as a developer-facing debug
+   control regardless of its position in the color cycle. Scoped by id, not
+   just class, so it reliably wins over the positional --chip-bg rules in
+   nav.css regardless of source order (equal specificity otherwise). */
+#rankings-view-toggle .debug-label { --chip-bg: #ffb3b3; }
 /* No top padding/radius — Level 4 below (.rankings-header) fuses flush
    against Level 3 above with no gap, same as Match List's table. */
 .rankings-panel { border: 1px solid rgba(0,0,0,0.08); border-radius: 0 0 6px 6px; background: rgba(255,255,255,0.35); padding: 0 0.8rem 0.3rem; }
@@ -191,35 +189,54 @@ tbody tr:hover { background: #EDE8DC; }
    toggleBracketRound), but growing can jump straight to any hidden round in
    one click, revealing everything between it and the current edge — so the
    visible set can never have a gap in the middle. */
-/* Shown/hidden rounds use the base .view-toggle fills as-is (white =
-   shown, lighter-red = hidden) — see requirements/public.md -> Navigation.
-   No bespoke color rules needed here. */
-.bracket { display: flex; align-items: stretch; gap: 2.5rem; overflow-x: auto; padding: 0.5rem 0 1.5rem; }
-.bracket-round { display: flex; flex-direction: column; min-width: 190px; }
-/* This round's Level 4 (see requirements/public.md → Navigation) — a small
-   red bar with white text, matching every other view's Level 4 coloring,
-   rather than plain red text on the page background. */
-.bracket-round-label { display: flex; align-items: center; justify-content: center; min-height: 2.5rem; font-family: 'Permanent Marker', cursive; font-size: 0.9rem; background: #C0392B; color: #fff; text-align: center; padding: 0.3rem 0.5rem; border-radius: 4px; margin-bottom: 0.6rem; }
+/* Each round's left/width is set inline by shared.js's
+   alignBracketColumnsToToggles, matched exactly to its own toggle button's
+   position/width above — not a fixed column size — rather than flowing
+   left-to-right among whichever rounds are currently rendered. That's what
+   keeps a round in the same horizontal spot regardless of which other
+   rounds are shown/hidden (showing or hiding one never moves any other
+   round sideways), and what keeps a column no wider than its own round
+   needs (a narrow "Final" column stays narrow, not stretched to match
+   "Round of 32"). .bracket needs its own height set by JS too
+   (layoutBracketColumns) since absolutely-positioned children don't
+   contribute to a parent's natural height the way flex/grid children do. */
+/* overflow-y is hidden (not just visible/auto) so a round lifting up and
+   off on hide (see shared.js's slideOutBracketColumns — real movement, per
+   brand-guidelines.md -> Motion, never an opacity fade) clips cleanly at
+   the top edge instead of floating up over the nav above. */
+.bracket { position: relative; overflow-x: auto; overflow-y: hidden; padding: 0.4rem 0 1rem; }
+.bracket-round { position: absolute; top: 0; display: flex; flex-direction: column; }
 .bracket-round-games { flex: 1; display: flex; flex-direction: column; justify-content: space-around; }
 /* Connector lines imply a 1-to-1 feed from the previous round. That's true
    for every round except the last, which bundles the Final and Third-Place
    Match — a line into each would wrongly suggest each semifinal feeds both
-   games, so skip it there. */
+   games, so skip it there. Length matches the tight gap between chips
+   above (nav.css's .view-toggle gap), not the old fixed column gap. */
 .bracket-round:not(:first-child):not(:last-child) .bracket-game-wrap { position: relative; }
-.bracket-round:not(:first-child):not(:last-child) .bracket-game-wrap::before { content: ''; position: absolute; left: -1.25rem; top: 50%; width: 1.25rem; height: 0; border-top: 2px solid #C0392B; opacity: 0.5; }
-.bracket-game-wrap { padding: 0.4rem 0; }
-.bracket-game { border: 1px solid #ddd; border-radius: 6px; background: #fff; font-size: 0.8rem; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-.bracket-game-sub { font-family: 'Permanent Marker', cursive; font-size: 0.68rem; color: #948f81; text-align: center; padding: 0.2rem 0.3rem 0; }
-.bracket-date { font-size: 0.68rem; color: #888; text-align: center; padding: 0.2rem 0.3rem; border-bottom: 1px solid #eee; }
-.bracket-team { display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.5rem; }
-.bracket-team + .bracket-team { border-top: 1px solid #eee; }
-.bracket-team .icon { display: inline-block; width: 1.6em; height: 1.1em; flex: none; background-size: cover; background-position: center; background-repeat: no-repeat; border: 1px solid #ccc; filter: saturate(0.8); }
-.bracket-team-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bracket-team.winner { font-weight: bold; }
-.bracket-team.loser { opacity: 0.5; }
-.bracket-score { font-weight: bold; }
-.bracket-team.loser .bracket-score { font-weight: normal; }
-.bracket-tbd { color: #999; font-style: italic; font-size: 0.72rem; }
+.bracket-round:not(:first-child):not(:last-child) .bracket-game-wrap::before { content: ''; position: absolute; left: -10px; top: 50%; width: 10px; height: 0; border-top: 2px solid #C0392B; opacity: 0.5; }
+.bracket-game-wrap { padding: 0.25rem 0; }
+/* A printed slip taped onto the poster, not a modern web card — hard offset
+   shadow instead of a soft blur (see brand-guidelines.md -> Materials), and
+   a tiny per-game rotation (--game-rot, set inline in shared.js the same
+   way flag rotation is: a deterministic hash of the game number, not
+   random-per-load) so a column of cards doesn't look machine-stamped. */
+.bracket-game { border: 1px solid rgba(0,0,0,0.1); border-radius: 2px; background: #fff; font-size: 0.72rem; overflow: hidden; box-shadow: 2px 3px 0 rgba(0,0,0,0.18); transform: rotate(var(--game-rot, 0deg)); }
+.bracket-game-sub { font-family: 'Permanent Marker', cursive; font-size: 0.62rem; color: #C0392B; text-align: center; padding: 0.15rem 0.3rem 0; }
+.bracket-date { font-family: 'Permanent Marker', cursive; font-size: 0.56rem; color: #948f81; text-align: center; padding: 0.2rem 0.3rem; border-bottom: 1px dashed rgba(0,0,0,0.15); }
+.bracket-team { display: flex; align-items: center; justify-content: space-between; gap: 0.3rem; padding: 0.25rem 0.4rem; }
+.bracket-team + .bracket-team { border-top: 1px dashed rgba(0,0,0,0.12); }
+.bracket-team .icon { display: inline-block; width: 1.5em; height: 1em; flex: none; background-size: cover; background-position: center; background-repeat: no-repeat; border: 1px solid #ccc; filter: saturate(0.8); }
+/* Winner/loser used to be shown by bolding/dimming the team name; now that
+   teams are flags only (see brand-guidelines.md -> Flags, Not Names), the
+   distinction has to live elsewhere: a green tint on the winning row, and
+   the same grayscale treatment Rankings already uses for an eliminated
+   team's flag on the losing one — not a new convention, reusing that one. */
+.bracket-team.winner { background: rgba(30, 132, 73, 0.1); }
+.bracket-team.winner .bracket-score { color: #1E8449; }
+.bracket-team.loser { opacity: 0.55; }
+.bracket-team.loser .icon { filter: saturate(0.8) grayscale(100%); }
+.bracket-score { font-family: 'Permanent Marker', cursive; font-size: 0.78rem; }
+.bracket-tbd { color: rgba(26, 26, 26, 0.5); font-style: italic; font-size: 0.64rem; }
 
 /* Match List: unresolved knockout slot (see homeFrom/awayFrom) */
 .tbd-slot { color: #948f81; font-style: italic; font-size: 0.72rem; }

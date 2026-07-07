@@ -492,7 +492,11 @@ def build_history_page(shared_css):
         return ''.join('<td class="hist-cell"></td>' for _ in range(n))
 
     def pending_cell(colspan, msg='Not yet played'):
-        return f'<td colspan="{colspan}" class="hist-pending">{msg}</td>'
+        # Wrapped in .hist-inner too (same as flag_cell) so setHistRound's
+        # per-item fly (see requirements/public.md -> Navigation ->
+        # Transitions) has something to animate here as well — the message
+        # itself is the one "item" this row holds when there's no flag data.
+        return f'<td colspan="{colspan}" class="hist-pending"><div class="hist-inner">{msg}</div></td>'
 
     # All rounds render against the same 16 data columns (F4=4 populated,
     # F8=8, F16=16, rest left as trailing empties) so switching rounds never
@@ -587,19 +591,26 @@ thead th {{ border-bottom: none; }}
 table.dimming .hist-cell[data-team] {{ opacity: 0.15; transition: opacity 0.1s; }}
 table.dimming .hist-cell.team-highlight {{ opacity: 1; }}
 /* Round switch (Level 2 Final 4/8/16) — see requirements/public.md ->
-   History page -> Layout. Only one <tbody> instance ever exists (its
-   innerHTML is swapped, not stacked copies), because this table is also
-   the thing .table-wrap scrolls horizontally when 16 columns don't fit —
-   stacking three full-width copies the way build_home.py's homepage
-   panels do would fight that scroll area. That also means the swap is
-   sequential (old rows fly out, *then* new rows fly in) rather than
-   simultaneous — reuses ../nav.css's shared .fly-panel (same universal
-   pace and full off-screen distance, see *Navigation* -> *Transitions*),
-   paired with .fly-scroll-lock on .table-wrap for the transition's
-   duration only (see setHistRound) so flying fully off-screen doesn't
-   corrupt the table's own horizontal scroll range at rest. Total
-   wall-clock is roughly double a single .fly-panel leg, since out and in
-   happen one after the other here instead of simultaneously. */
+   History page -> Layout and Navigation -> Transitions -> "The unit that
+   moves, by action". Only one <tbody> instance ever exists (its innerHTML
+   is swapped, not stacked copies), because this table is also the thing
+   .table-wrap scrolls horizontally when 16 columns don't fit — stacking
+   three full-width copies the way build_home.py's homepage panels do would
+   fight that scroll area. The table itself — thead, the year column, every
+   row's position, the 16-column width — is the board here (see
+   brand-guidelines.md -> Motion -> The board stays on the wall) and never
+   moves; a row's own position and year label are part of that board too.
+   Each cell's .hist-inner (its flag+ELO, or its pending message) is the
+   item instead — not the <tr> — using ../nav.css's .fly-item primitive:
+   the same fully-off-screen distance/direction as .fly-panel's board-level
+   move (out right, in left), just faster and individually jittered per
+   cell rather than the whole row or tbody moving as one block — see
+   histItems/setHistRound. Sequential (old flags fly out, *then* new rows
+   are rendered and their flags fly in), same as before, paired with a
+   scroll lock on .table-wrap for the whole swap's duration — an
+   off-screen translateX on even one flag still briefly inflates the
+   table's own horizontal scroll range otherwise, same reason .fly-panel
+   always needed one. */
 </style>
 </head>
 <body>
@@ -642,9 +653,73 @@ function attachHistHoverHandlers() {{
   }});
 }}
 
-// Read from ../nav.css's --fly-ms (the single source of truth) rather than
-// a second hardcoded number that could drift out of sync with it.
-const HIST_FLY_MS = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fly-ms'));
+// Read from ../nav.css's --fly-item-ms (the single source of truth) rather
+// than a second hardcoded number that could drift out of sync with it.
+const HIST_ITEM_MS = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fly-item-ms'));
+// The random-jitter window each row's jump is offset within — see
+// requirements/public.md -> Navigation -> Transitions -> "Stagger". Not a
+// CSS custom property like --fly-item-ms, since it's consumed here as a
+// JS number (Math.random() * this), not applied directly as a style value.
+const HIST_JITTER_MS = 250;
+
+// Every flag+ELO cell (or, for a not-yet-played row, its message) is its
+// own item — see requirements/public.md -> Navigation -> Transitions ->
+// "The unit that moves, by action". The row itself, and the year
+// identifying it, are the board and never appear in this list — only
+// what's placed into a row's cells does.
+function histItems(tbody) {{
+  return Array.from(tbody.querySelectorAll('.hist-inner'));
+}}
+
+// Flies each of `items` out to the right individually — a small random
+// delay per item (see HIST_JITTER_MS above) rather than one synchronized
+// move — and resolves once the slowest one has finished. See
+// brand-guidelines.md -> Motion -> The invisible hands: a hundred items get
+// a hundred small staggered movements, never one big one. Same distance/
+// direction as the sitewide .fly-panel (out right, in left — see
+// requirements/public.md -> Navigation -> Transitions), just per item.
+function flyOutItems(items) {{
+  return new Promise(function(resolve) {{
+    if (!items.length) {{ resolve(); return; }}
+    let maxDelay = 0;
+    items.forEach(function(item) {{
+      const delay = Math.random() * HIST_JITTER_MS;
+      if (delay > maxDelay) maxDelay = delay;
+      item.style.transitionDelay = delay + 'ms';
+      item.classList.add('fly-item', 'fly-item-out');
+    }});
+    window.setTimeout(resolve, HIST_ITEM_MS + maxDelay);
+  }});
+}}
+
+// Flies each of `items` in from the left individually, same jitter idea as
+// flyOutItems above — see requirements/public.md -> Navigation ->
+// Transitions -> "Stagger". Resolves once the slowest one has settled, so
+// the caller can release the scroll lock (see setHistRound).
+function flyInItems(items) {{
+  return new Promise(function(resolve) {{
+    if (!items.length) {{ resolve(); return; }}
+    items.forEach(function(item) {{ item.classList.add('fly-item', 'fly-item-in-start'); }});
+    void (items[0] && items[0].offsetWidth);
+    requestAnimationFrame(function() {{
+      let maxDelay = 0;
+      items.forEach(function(item) {{
+        const delay = Math.random() * HIST_JITTER_MS;
+        if (delay > maxDelay) maxDelay = delay;
+        item.style.transitionDelay = delay + 'ms';
+        item.classList.remove('fly-item-in-start');
+        item.classList.add('fly-item-in-active');
+      }});
+      window.setTimeout(function() {{
+        items.forEach(function(item) {{
+          item.classList.remove('fly-item', 'fly-item-in-active');
+          item.style.transitionDelay = '';
+        }});
+        resolve();
+      }}, HIST_ITEM_MS + maxDelay);
+    }});
+  }});
+}}
 
 function setHistRound(round) {{
   if (round === __currentHistRound) return;
@@ -652,29 +727,24 @@ function setHistRound(round) {{
     document.getElementById('tab-' + r).classList.toggle('active', r === round);
   }});
   const tbody = document.getElementById('hist-tbody');
-  // Flying fully off-screen (see .fly-panel in ../nav.css) would otherwise
-  // briefly inflate .table-wrap's own scrollable width — lock it for
-  // exactly the transition, not permanently (16 data columns legitimately
-  // need their own horizontal scroll at rest).
+  // The table itself — thead, the year column/labels, every row's
+  // position, the 16-column width — never moves (see
+  // requirements/public.md -> History page -> Layout); only each cell's
+  // own flag (or pending message) flies, individually, rather than the
+  // row — or the whole tbody — moving as one block. Flying fully
+  // off-screen (see .fly-item in ../nav.css) would otherwise briefly
+  // inflate .table-wrap's own scrollable width — lock it for exactly the
+  // transition, not permanently (16 data columns legitimately need their
+  // own horizontal scroll at rest).
   const scrollEl = document.querySelector('.table-wrap');
   if (scrollEl) scrollEl.classList.add('fly-scroll-lock');
-  tbody.classList.remove('fly-in-active');
-  tbody.classList.add('fly-panel', 'fly-out');
-  window.setTimeout(function() {{
+  flyOutItems(histItems(tbody)).then(function() {{
     tbody.innerHTML = HIST_ROWS[round];
     attachHistHoverHandlers();
-    tbody.classList.remove('fly-out');
-    tbody.classList.add('fly-in-start');
-    void tbody.offsetWidth;
-    requestAnimationFrame(function() {{
-      tbody.classList.remove('fly-in-start');
-      tbody.classList.add('fly-in-active');
-      window.setTimeout(function() {{
-        tbody.classList.remove('fly-panel', 'fly-in-active');
-        if (scrollEl) scrollEl.classList.remove('fly-scroll-lock');
-      }}, HIST_FLY_MS);
-    }});
-  }}, HIST_FLY_MS);
+    return flyInItems(histItems(tbody));
+  }}).then(function() {{
+    if (scrollEl) scrollEl.classList.remove('fly-scroll-lock');
+  }});
   __currentHistRound = round;
 }}
 
@@ -766,16 +836,14 @@ def page_html(year, script_block, shared_css, shared_js):
   </div>
   <div id="match-view-toggle" class="match-view-toggle view-toggle"></div>
   <div id="rankings-view-toggle" class="rankings-view-toggle">
-    <div class="rankings-checks">
-      <label><input type="checkbox" id="chk-show-elim" onchange="toggleShowEliminated()"> Show eliminated</label>
-      <label id="true-rank-label" style="opacity:1"><input type="checkbox" id="chk-true-rank" onchange="toggleTrueRank()"> True rank</label>
-      <label class="debug-label">
-        <input type="checkbox" id="debug-clusters" onchange="renderRankings()"> debug: show binding clusters
-      </label>
-    </div>
     <div class="rankings-toggle view-toggle">
       <button id="tab-rank" class="active" onclick="setRankView('rank')">Rank</button>
       <button id="tab-scale" onclick="setRankView('scale')">Scale</button>
+    </div>
+    <div class="rankings-checks view-toggle">
+      <button id="chk-show-elim" class="bool-toggle" onclick="toggleShowEliminated(this)">Show eliminated</button>
+      <button id="chk-true-rank" class="bool-toggle" onclick="toggleTrueRank(this)">True rank</button>
+      <button id="debug-clusters" class="bool-toggle debug-label" onclick="toggleDebugClusters(this)">debug: show binding clusters</button>
     </div>
   </div>
   <div id="groups-view-toggle" class="groups-view-toggle view-toggle"><span class="disabled">Group Stage view — coming soon.</span></div>

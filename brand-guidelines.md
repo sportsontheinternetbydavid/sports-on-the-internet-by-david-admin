@@ -268,6 +268,48 @@ Nothing feels machine-made.
 
 ---
 
+## Motion
+
+Nothing fades.
+
+A physical piece of paper doesn't dissolve into transparency — it gets picked up, slid, or flipped.
+
+When something needs to appear or disappear, it moves the way paper actually moves: sliding into frame, or lifting away out of it.
+
+Opacity transitions are the one digital effect with no in-universe explanation. They're the one thing this site never does.
+
+### The invisible hands
+
+Imagine someone standing at the poster board, taking pieces down and pinning new ones up.
+
+They're invisible, but every animation should look like their work.
+
+They don't pick up the whole board and swap it for another board. They pick up one item at a time — one flag, one row, one card — set it aside, and pin up its replacement.
+
+If there are a hundred items to swap, there are a hundred small movements, not one big one. A pair of hands works fast, but it still only ever holds one thing at a time.
+
+So: many small motions, slightly out of sync with each other. Never one large motion carrying everything at once.
+
+### The board stays on the wall
+
+Not everything is a loose item. Some things are the board itself — a table's headers, an axis, the frame something else is pinned to.
+
+The board doesn't move when the things pinned to it change. Swap the confederation stats in a table and the table stays exactly where it is; only the individual values come off and go back on.
+
+The board only comes off the wall when the board itself is what's changing — swapping a table of scores for a bracket, say. Then the old board comes down as one piece (it's a single fixture, not a collection of loose items), the new one goes up, and its contents get pinned on one at a time same as always.
+
+### Nothing appears from nothing
+
+A poster doesn't flicker into existence the moment someone looks at it. It was already taped to the wall, finished, before anyone walked by.
+
+Opening a page is walking into the room. It is not watching the room get built.
+
+Whatever's on screen the instant a page loads was already there — already assembled, already pinned up. It was never constructed in front of the reader, and it never animates into being.
+
+This is why nothing flies in when a page first loads. The invisible hands have already done their work by the time anyone arrives. A page has no "before" for them to be reacting to — so there is nothing for them to do yet. They pinned everything up already. The reader just walked in.
+
+---
+
 ## Illustration Style
 
 Illustrations should look hand-drawn.
@@ -281,6 +323,18 @@ Confident.
 The creator has spent years drawing scoreboards, tournament brackets, maps, sports logos, and player rankings in notebooks.
 
 The drawings reflect practice, not professional polish.
+
+---
+
+# Flags, Not Names
+
+Teams are shown as flags. Never as printed names.
+
+The creator assumes their audience already knows every flag.
+
+Spelling out "Argentina" under a sky-blue-and-white flag would insult the reader — like a real fan needs the caption.
+
+A name can still surface if someone goes looking for it — a label under a fingertip, never printed on the poster itself.
 
 ---
 

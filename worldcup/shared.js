@@ -539,28 +539,32 @@ function setRankView(v) {
   renderRankings();
 }
 
-function toggleShowEliminated() {
-  rankState.showElim = document.getElementById('chk-show-elim').checked;
+function toggleShowEliminated(btn) {
+  rankState.showElim = btn.classList.toggle('active');
   if (rankState.showElim) {
     rankState.trueRank = true;
-    const chk = document.getElementById('chk-true-rank');
-    if (chk) chk.checked = true;
+    const trueBtn = document.getElementById('chk-true-rank');
+    if (trueBtn) trueBtn.classList.add('active');
   }
   updateRankingControls();
   renderRankings();
 }
 
-function toggleTrueRank() {
-  rankState.trueRank = document.getElementById('chk-true-rank').checked;
+function toggleTrueRank(btn) {
+  rankState.trueRank = btn.classList.toggle('active');
+  renderRankings();
+}
+
+function toggleDebugClusters(btn) {
+  btn.classList.toggle('active');
   renderRankings();
 }
 
 function updateRankingControls() {
-  const trueRankLabel = document.getElementById('true-rank-label');
-  const trueRankChk = document.getElementById('chk-true-rank');
-  if (!trueRankLabel || !trueRankChk) return;
+  const trueRankBtn = document.getElementById('chk-true-rank');
+  if (!trueRankBtn) return;
   const isRank = rankState.view === 'rank';
-  trueRankLabel.style.display = isRank ? '' : 'none';
+  trueRankBtn.style.display = isRank ? '' : 'none';
 }
 
 // rankState.model is cached for the page lifetime — data is static (embedded at build time), so no invalidation needed.
@@ -837,7 +841,7 @@ function renderRankings() {
       }
 
       const debugCb = debugClustersCb;
-      if (isScale && debugCb && debugCb.checked && pinData.length) {
+      if (isScale && debugCb && debugCb.classList.contains('active') && pinData.length) {
         const atOneLess = pinData
           .map(p => ({ el: p.el, topPx: scaleTopPx(snap.eloByTeam[p.el.dataset.team], rawMin, rawMax, scaleH - 1) }))
           .sort((a, b) => a.topPx - b.topPx);
@@ -954,6 +958,9 @@ function knockoutRounds(size) {
   return rounds;
 }
 
+// Flags only, never a printed name — see brand-guidelines.md -> Flags, Not
+// Names. The name still surfaces as a native hover tooltip (title attr),
+// same as every other flag on the site (see flagCellHtml above).
 function bracketTeamRowHtml(game, side, decided) {
   const team = game[side + 'Team'];
   const score = game[side + 'Score'];
@@ -963,11 +970,17 @@ function bracketTeamRowHtml(game, side, decided) {
   const otherScore = game[side === 'home' ? 'awayScore' : 'homeScore'];
   let cls = 'bracket-team';
   if (decided && score !== otherScore) cls += score > otherScore ? ' winner' : ' loser';
-  const flag = flagByTeam[team]
-    ? `<span class="icon" style="background-image:url('flags/${flagByTeam[team]}.svg');transform:rotate(${flagRotation(team)}deg)"></span>`
-    : '';
+  const flag = `<span class="icon" style="background-image:url('flags/${flagByTeam[team]}.svg');transform:rotate(${flagRotation(team)}deg)" title="${esc(team)}"></span>`;
   const scoreHtml = score != null ? `<span class="bracket-score">${score}</span>` : '';
-  return `<div class="${cls}">${flag}<span class="bracket-team-name">${esc(team)}</span>${scoreHtml}</div>`;
+  return `<div class="${cls}">${flag}${scoreHtml}</div>`;
+}
+
+// Deterministic tiny rotation per game card (see .bracket-game's --game-rot
+// in shared.css) — same idea as flagRotation above, a stable hash instead of
+// random-per-load, keyed on game number instead of team name.
+function gameCardRotation(gameNumber) {
+  const h = Math.imul(gameNumber, 2654435761) >>> 0;
+  return (((h >>> 24) % 21) - 10) * 0.12; // -1.2 to +1.2 degrees
 }
 
 // Which contiguous range of rounds [lo, hi] (inclusive, by round index) is
@@ -988,25 +1001,76 @@ function bracketColumnEl(roundIdx) {
   return document.querySelector(`.bracket-round[data-round-idx="${roundIdx}"]`);
 }
 
-// Flies newly-added columns in, staggered rapid-fire per
-// requirements/public.md -> Knockout Bracket -> Round toggles.
-function bracketScrollEl() {
-  return document.querySelector('#knockout-outer .bracket');
+// Aligns each visible round's column to its own toggle button directly
+// above it — same left position, same width — instead of a fixed column
+// size/gap. That's what makes the bracket read as a direct continuation of
+// the toggle row rather than a separately-proportioned grid, and it's also
+// what keeps columns compact: a column is only ever as wide as its own
+// round's label needs to be, gapped the same tight amount the chips above
+// are (see nav.css's .view-toggle gap), not a fixed oversized slot.
+function alignBracketColumnsToToggles(lo, hi) {
+  const toggleContainer = document.getElementById('bracket-round-toggle');
+  const bracket = document.querySelector('#knockout-outer .bracket');
+  if (!bracket) return;
+  const bracketRect = bracket.getBoundingClientRect();
+  for (let roundIdx = lo; roundIdx <= hi; roundIdx++) {
+    const btn = toggleContainer.children[roundIdx];
+    const col = bracketColumnEl(roundIdx);
+    if (!btn || !col) continue;
+    const btnRect = btn.getBoundingClientRect();
+    col.style.left = (btnRect.left - bracketRect.left + bracket.scrollLeft) + 'px';
+    col.style.width = btnRect.width + 'px';
+  }
 }
 
-// Flies newly-revealed round columns in, staggered rapid-fire per
-// requirements/public.md -> Knockout Bracket -> Round toggles. Re-locks the
-// (possibly freshly-rendered) .bracket for the duration, since flying even
-// a single column fully off-screen can inflate its scroll width otherwise.
-function revealBracketColumns(added) {
+// Real movement, never an opacity fade (see brand-guidelines.md -> Motion:
+// physical paper doesn't dissolve, it's picked up or put down). Round
+// columns never move sideways (see alignBracketColumnsToToggles), so
+// showing/hiding uses a vertical lift instead of the sitewide horizontal
+// fly: a newly-added column drops down into its fixed slot from just above,
+// fully opaque throughout — .bracket's overflow-y:hidden (see shared.css)
+// clips it cleanly until it settles.
+const BRACKET_LIFT_PX = 36;
+
+function slideInBracketColumns(added) {
   if (!added.length) return;
-  const scrollEl = bracketScrollEl();
-  if (scrollEl) scrollEl.classList.add('fly-scroll-lock');
-  const cols = added.slice().sort((a, b) => a - b).map(bracketColumnEl).filter(Boolean);
-  flyIn(cols, {
-    stagger: 90,
-    onSettled: function() { if (scrollEl) scrollEl.classList.remove('fly-scroll-lock'); }
+  const cols = added.map(bracketColumnEl).filter(Boolean);
+  cols.forEach(function(el) { el.style.transition = 'none'; el.style.transform = `translateY(-${BRACKET_LIFT_PX}px) rotate(-3deg)`; });
+  void (cols[0] && cols[0].offsetWidth);
+  requestAnimationFrame(function() {
+    cols.forEach(function(el) { el.style.transition = `transform ${FLY_MS}ms cubic-bezier(.1,.6,.2,1)`; el.style.transform = ''; });
+    window.setTimeout(function() {
+      cols.forEach(function(el) { el.style.transition = ''; });
+    }, FLY_MS);
   });
+}
+
+// Lifts `els` up and off, out of .bracket's clipped frame, and resolves
+// once the transition finishes — the Knockout-specific counterpart to the
+// sitewide flyOut() above, used because round columns never move sideways
+// (see slideInBracketColumns).
+function slideOutBracketColumns(els) {
+  return new Promise(function(resolve) {
+    els.forEach(function(el) { el.style.transition = `transform ${FLY_MS}ms linear`; el.style.transform = `translateY(-${BRACKET_LIFT_PX}px) rotate(-3deg)`; });
+    window.setTimeout(resolve, FLY_MS);
+  });
+}
+
+// Every visible round is absolutely positioned (see renderKnockout), which
+// opts it out of the flex/grid stretch-to-tallest that used to give every
+// column the same height. Reproduce that by hand: measure each visible
+// column's natural height, then stretch all of them (and the .bracket
+// container, which needs an explicit height since absolutely-positioned
+// children don't contribute to a parent's natural size) to the tallest.
+function layoutBracketColumns() {
+  const bracket = document.querySelector('#knockout-outer .bracket');
+  if (!bracket) return;
+  const cols = Array.from(bracket.querySelectorAll('.bracket-round'));
+  if (!cols.length) { bracket.style.height = ''; return; }
+  cols.forEach(function(el) { el.style.height = 'auto'; });
+  const maxH = Math.max.apply(null, cols.map(function(el) { return el.scrollHeight; }));
+  cols.forEach(function(el) { el.style.height = maxH + 'px'; });
+  bracket.style.height = maxH + 'px';
 }
 
 function toggleBracketRound(roundIdx) {
@@ -1034,23 +1098,19 @@ function toggleBracketRound(roundIdx) {
   for (let i = after.lo; i <= after.hi; i++) if (i < before.lo || i > before.hi) added.push(i);
 
   if (removed.length === 0) {
-    // Pure growth — nothing to wait on flying out, render immediately and
-    // fly the newly-revealed columns in.
+    // Pure growth — nothing to wait on lifting out, render immediately and
+    // drop the newly-revealed columns in.
     renderKnockout();
-    revealBracketColumns(added);
+    slideInBracketColumns(added);
     return;
   }
   // Shrinking always removes exactly one edge column (see the guard above) —
-  // fly it out, then rebuild once it's clear and fly any newly-revealed
-  // columns in (a shrink never also reveals a column, but kept generic).
-  // renderKnockout() below replaces .bracket entirely, so this lock only
-  // needs to cover the brief fly-out; revealBracketColumns re-locks the
-  // fresh .bracket itself if there's anything to fly in afterward.
-  const scrollEl = bracketScrollEl();
-  if (scrollEl) scrollEl.classList.add('fly-scroll-lock');
-  flyOut(removed.map(bracketColumnEl).filter(Boolean)).then(function() {
+  // lift it up and off, then rebuild once it's clear and drop in whatever
+  // was newly revealed (a shrink never also reveals a column, but kept
+  // generic). Nothing else on screen shifts horizontally at any point here.
+  slideOutBracketColumns(removed.map(bracketColumnEl).filter(Boolean)).then(function() {
     renderKnockout();
-    revealBracketColumns(added);
+    slideInBracketColumns(added);
   });
 }
 
@@ -1072,9 +1132,15 @@ function renderKnockout() {
     // Hidden rounds are always clickable (jump straight to them). Visible
     // rounds are only clickable at the current edge, one step at a time.
     const clickable = visible ? lo !== hi && (roundIdx === lo || roundIdx === hi) : true;
-    return `<button class="${visible ? 'active' : ''}"${clickable ? '' : ' disabled'} onclick="toggleBracketRound(${roundIdx})">${esc(label)}</button>`;
+    return `<button class="bool-toggle${visible ? ' active' : ''}"${clickable ? '' : ' disabled'} onclick="toggleBracketRound(${roundIdx})">${esc(label)}</button>`;
   }).join('');
 
+  // Only currently-visible rounds are rendered at all. Position/width are
+  // filled in afterward by alignBracketColumnsToToggles, which pins each to
+  // its own toggle button above (not its position among the rounds that
+  // happen to be visible) — see requirements/public.md -> Knockout Bracket
+  // -> Round toggles. That's what keeps a round from shifting sideways when
+  // a different round is shown/hidden.
   const html = rounds.map(([label, count], roundIdx) => {
     if (roundIdx < lo || roundIdx > hi) return '';
     const games = GAMES.filter(g => g.round === roundIdx).sort((a, b) => a.gameNumber - b.gameNumber);
@@ -1087,17 +1153,27 @@ function renderKnockout() {
       const sub = roundIdx === lastRound
         ? `<div class="bracket-game-sub">${gameIdx === 0 ? 'Final' : 'Third-Place Match'}</div>`
         : '';
-      return `<div class="bracket-game-wrap"><div class="bracket-game">` +
+      return `<div class="bracket-game-wrap"><div class="bracket-game" style="--game-rot:${gameCardRotation(game.gameNumber)}deg">` +
         sub +
         `<div class="bracket-date">${game.date ? formatDate(game.date) : 'Date TBD'}</div>` +
         bracketTeamRowHtml(game, 'home', decided) +
         bracketTeamRowHtml(game, 'away', decided) +
         `</div></div>`;
     }).join('');
-    return `<div class="bracket-round" data-round-idx="${roundIdx}"><div class="bracket-round-label">${esc(label)}</div><div class="bracket-round-games">${gamesHtml}</div></div>`;
+    return `<div class="bracket-round" data-round-idx="${roundIdx}"><div class="bracket-round-games">${gamesHtml}</div></div>`;
   }).join('');
 
   container.innerHTML = `<div class="bracket">${html}</div>`;
+  alignBracketColumnsToToggles(lo, hi);
+  layoutBracketColumns();
+  // Rounds' own positions never move (see alignBracketColumnsToToggles), but
+  // the viewport onto them does: keep the leftmost visible round flush
+  // against the scroll container's left edge, so collapsing away early
+  // rounds doesn't leave a wall of blank scrolled-past space where they used
+  // to be.
+  const bracket = container.querySelector('.bracket');
+  const loCol = bracketColumnEl(lo);
+  if (bracket && loCol) bracket.scrollLeft = parseFloat(loCol.style.left) || 0;
 }
 
 // ── Page view (Match List / Rankings / Groups / Knockout) ────────────────

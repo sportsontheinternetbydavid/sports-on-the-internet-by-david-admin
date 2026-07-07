@@ -221,27 +221,54 @@ window.addEventListener('DOMContentLoaded', function() {
    Change the pace in exactly this one place. */
 :root { --fly-ms: 850; }
 
-/* Shared "fly panel" swap mechanism — the universal transition speed *and*
-   distance, see requirements/public.md -> Navigation -> Transitions. Any
-   page applies these classes to whatever it's swapping (a whole view, a
-   table's tbody, a bracket column, the homepage's Sports!/Football groups)
-   so both only ever need to change in one place. Always flies fully
-   off-screen (105vw) — production feedback said a modest nearby shift
-   didn't read as "flying in," it read as barely moving. Pair this with
-   `.fly-scroll-lock` (below) on whatever scrollable ancestor the panel
-   lives inside (a `.table-wrap`, `.bracket`, or `body` itself) for the
-   transition's duration — an off-screen translateX briefly inflates that
-   ancestor's scrollable area otherwise, since scrollable overflow is
-   computed from an element's transformed position. JS should also clear
-   these classes back to no-transform once a panel settles (see each call
-   site in shared.js) rather than leaving `transform: translateX(0)`
-   sitting on it forever — an identity transform still establishes a new
-   containing block, which would silently break any `position: fixed`
-   descendant (see #rank-info in build.py) from that point on. */
-.fly-panel { transition: transform calc(var(--fly-ms) * 1ms) linear, opacity calc(var(--fly-ms) * 1ms) linear; }
-.fly-panel.fly-out { transform: translateX(105vw) rotate(8deg); opacity: 0; }
-.fly-panel.fly-in-start { transform: translateX(-105vw) rotate(-8deg); opacity: 0; transition: none !important; }
-.fly-panel.fly-in-active { transform: translateX(0) rotate(0deg); opacity: 1; transition: transform calc(var(--fly-ms) * 1ms) cubic-bezier(.1,.6,.2,1), opacity calc(var(--fly-ms) * 1ms) linear; }
+/* Shared "fly panel" swap mechanism — the universal board-level transition
+   speed *and* distance, see requirements/public.md -> Navigation ->
+   Transitions -> "Chrome only moves when the chrome itself is changing".
+   Any page applies these classes to whatever board it's swapping (a whole
+   view, the homepage's Sports!/Football groups) so both only ever need to
+   change in one place. Always flies fully off-screen (105vw) — production
+   feedback said a modest nearby shift didn't read as "flying in," it read
+   as barely moving. Pair this with `.fly-scroll-lock` (below) on whatever
+   scrollable ancestor the panel lives inside (a `.table-wrap`, `.bracket`,
+   or `body` itself) for the transition's duration — an off-screen
+   translateX briefly inflates that ancestor's scrollable area otherwise,
+   since scrollable overflow is computed from an element's transformed
+   position. JS should also clear these classes back to no-transform once a
+   panel settles rather than leaving `transform: translateX(0)` sitting on
+   it forever — an identity transform still establishes a new containing
+   block, which would silently break any `position: fixed` descendant (see
+   #rank-info in build.py) from that point on. See .fly-item below for the
+   separate, much smaller per-item primitive used for everything that isn't
+   a board-level swap (a table's individual rows, a bracket's game cards,
+   a confederation panel's individual cells). */
+/* Transform only, never opacity — see brand-guidelines.md -> Motion:
+   physical paper doesn't dissolve, it slides. A panel stays fully opaque
+   throughout; leaving/entering the frame is what makes it disappear/appear. */
+.fly-panel { transition: transform calc(var(--fly-ms) * 1ms) linear; }
+.fly-panel.fly-out { transform: translateX(105vw) rotate(8deg); }
+.fly-panel.fly-in-start { transform: translateX(-105vw) rotate(-8deg); transition: none !important; }
+.fly-panel.fly-in-active { transform: translateX(0) rotate(0deg); transition: transform calc(var(--fly-ms) * 1ms) cubic-bezier(.1,.6,.2,1); }
+
+/* Item-level fly — "the invisible hands" (see brand-guidelines.md -> Motion)
+   picking up or placing one row/card/cell at a time, as opposed to
+   .fly-panel's board-level move above sliding the whole board as one
+   piece. Same distance/direction as .fly-panel though — fully off-screen,
+   out to the right and in from the left, same one-way conveyor — a small
+   nearby shift reads as barely moving rather than "flying," the exact
+   lesson .fly-panel's own distance was already tuned against (see
+   requirements/public.md -> Navigation -> Transitions). What's different
+   at item scale is speed, not distance: a small light item is quicker for
+   the invisible hand to move than a whole board, hence its own shorter
+   --fly-item-ms rather than reusing --fly-ms. Callers set their own
+   `transition-delay` inline per element for the random-jitter stagger (see
+   requirements/public.md -> Transitions -> "Stagger") — deliberately not
+   built into these classes, since the jitter is randomized per occurrence,
+   not a fixed site-wide constant the way --fly-item-ms is. */
+:root { --fly-item-ms: 420; }
+.fly-item { transition: transform calc(var(--fly-item-ms) * 1ms) linear; }
+.fly-item.fly-item-out { transform: translateX(105vw) rotate(8deg); }
+.fly-item.fly-item-in-start { transform: translateX(-105vw) rotate(-8deg); transition: none !important; }
+.fly-item.fly-item-in-active { transform: translateX(0) rotate(0deg); transition: transform calc(var(--fly-item-ms) * 1ms) cubic-bezier(.1,.6,.2,1); }
 
 /* Applied to a scrollable ancestor (never the flying panel itself) for
    exactly the transition's duration — see the comment above. */
@@ -316,15 +343,19 @@ body { font-family: 'Fredoka One', cursive; font-size: 1rem; line-height: 1.5; b
    too fast to read as physical paper sliding. Every other use of this
    transition elsewhere on the site keeps the fast/under-200ms pacing until
    this is validated. */
-.home-group > * { transition: transform 0.85s linear, opacity 0.85s linear; }
+/* Transform only, never opacity — see requirements/public.md's -> Motion
+   in brand-guidelines.md: physical paper doesn't dissolve, it slides. A
+   group stays fully opaque throughout; leaving/entering the frame is what
+   makes it disappear/appear. */
+.home-group > * { transition: transform 0.85s linear; }
 .home-group > *:nth-child(2) { transition-delay: 0.2s; }
 /* Exit off one side (right — taken off), enter from the other (left — put
    on): a one-way conveyor, not things retracing the same path. */
 .home-group.fly-out { pointer-events: none; }
-.home-group.fly-out > * { transform: translateX(105vw) rotate(8deg); opacity: 0; }
+.home-group.fly-out > * { transform: translateX(105vw) rotate(8deg); }
 .home-group.fly-in-start { pointer-events: none; }
-.home-group.fly-in-start > * { transform: translateX(-105vw) rotate(-8deg); opacity: 0; transition: none !important; }
-.home-group.fly-in-active > * { transform: translateX(0) rotate(0deg); opacity: 1; transition: transform 0.85s cubic-bezier(.1,.6,.2,1), opacity 0.85s linear; }
+.home-group.fly-in-start > * { transform: translateX(-105vw) rotate(-8deg); transition: none !important; }
+.home-group.fly-in-active > * { transform: translateX(0) rotate(0deg); transition: transform 0.85s cubic-bezier(.1,.6,.2,1); }
 .home-group.fly-in-active > *:nth-child(2) { transition-delay: 0.2s; }
 </style>
 </head>

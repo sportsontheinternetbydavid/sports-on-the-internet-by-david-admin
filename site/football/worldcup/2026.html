@@ -193,27 +193,54 @@
    Change the pace in exactly this one place. */
 :root { --fly-ms: 850; }
 
-/* Shared "fly panel" swap mechanism — the universal transition speed *and*
-   distance, see requirements/public.md -> Navigation -> Transitions. Any
-   page applies these classes to whatever it's swapping (a whole view, a
-   table's tbody, a bracket column, the homepage's Sports!/Football groups)
-   so both only ever need to change in one place. Always flies fully
-   off-screen (105vw) — production feedback said a modest nearby shift
-   didn't read as "flying in," it read as barely moving. Pair this with
-   `.fly-scroll-lock` (below) on whatever scrollable ancestor the panel
-   lives inside (a `.table-wrap`, `.bracket`, or `body` itself) for the
-   transition's duration — an off-screen translateX briefly inflates that
-   ancestor's scrollable area otherwise, since scrollable overflow is
-   computed from an element's transformed position. JS should also clear
-   these classes back to no-transform once a panel settles (see each call
-   site in shared.js) rather than leaving `transform: translateX(0)`
-   sitting on it forever — an identity transform still establishes a new
-   containing block, which would silently break any `position: fixed`
-   descendant (see #rank-info in build.py) from that point on. */
-.fly-panel { transition: transform calc(var(--fly-ms) * 1ms) linear, opacity calc(var(--fly-ms) * 1ms) linear; }
-.fly-panel.fly-out { transform: translateX(105vw) rotate(8deg); opacity: 0; }
-.fly-panel.fly-in-start { transform: translateX(-105vw) rotate(-8deg); opacity: 0; transition: none !important; }
-.fly-panel.fly-in-active { transform: translateX(0) rotate(0deg); opacity: 1; transition: transform calc(var(--fly-ms) * 1ms) cubic-bezier(.1,.6,.2,1), opacity calc(var(--fly-ms) * 1ms) linear; }
+/* Shared "fly panel" swap mechanism — the universal board-level transition
+   speed *and* distance, see requirements/public.md -> Navigation ->
+   Transitions -> "Chrome only moves when the chrome itself is changing".
+   Any page applies these classes to whatever board it's swapping (a whole
+   view, the homepage's Sports!/Football groups) so both only ever need to
+   change in one place. Always flies fully off-screen (105vw) — production
+   feedback said a modest nearby shift didn't read as "flying in," it read
+   as barely moving. Pair this with `.fly-scroll-lock` (below) on whatever
+   scrollable ancestor the panel lives inside (a `.table-wrap`, `.bracket`,
+   or `body` itself) for the transition's duration — an off-screen
+   translateX briefly inflates that ancestor's scrollable area otherwise,
+   since scrollable overflow is computed from an element's transformed
+   position. JS should also clear these classes back to no-transform once a
+   panel settles rather than leaving `transform: translateX(0)` sitting on
+   it forever — an identity transform still establishes a new containing
+   block, which would silently break any `position: fixed` descendant (see
+   #rank-info in build.py) from that point on. See .fly-item below for the
+   separate, much smaller per-item primitive used for everything that isn't
+   a board-level swap (a table's individual rows, a bracket's game cards,
+   a confederation panel's individual cells). */
+/* Transform only, never opacity — see brand-guidelines.md -> Motion:
+   physical paper doesn't dissolve, it slides. A panel stays fully opaque
+   throughout; leaving/entering the frame is what makes it disappear/appear. */
+.fly-panel { transition: transform calc(var(--fly-ms) * 1ms) linear; }
+.fly-panel.fly-out { transform: translateX(105vw) rotate(8deg); }
+.fly-panel.fly-in-start { transform: translateX(-105vw) rotate(-8deg); transition: none !important; }
+.fly-panel.fly-in-active { transform: translateX(0) rotate(0deg); transition: transform calc(var(--fly-ms) * 1ms) cubic-bezier(.1,.6,.2,1); }
+
+/* Item-level fly — "the invisible hands" (see brand-guidelines.md -> Motion)
+   picking up or placing one row/card/cell at a time, as opposed to
+   .fly-panel's board-level move above sliding the whole board as one
+   piece. Same distance/direction as .fly-panel though — fully off-screen,
+   out to the right and in from the left, same one-way conveyor — a small
+   nearby shift reads as barely moving rather than "flying," the exact
+   lesson .fly-panel's own distance was already tuned against (see
+   requirements/public.md -> Navigation -> Transitions). What's different
+   at item scale is speed, not distance: a small light item is quicker for
+   the invisible hand to move than a whole board, hence its own shorter
+   --fly-item-ms rather than reusing --fly-ms. Callers set their own
+   `transition-delay` inline per element for the random-jitter stagger (see
+   requirements/public.md -> Transitions -> "Stagger") — deliberately not
+   built into these classes, since the jitter is randomized per occurrence,
+   not a fixed site-wide constant the way --fly-item-ms is. */
+:root { --fly-item-ms: 420; }
+.fly-item { transition: transform calc(var(--fly-item-ms) * 1ms) linear; }
+.fly-item.fly-item-out { transform: translateX(105vw) rotate(8deg); }
+.fly-item.fly-item-in-start { transform: translateX(-105vw) rotate(-8deg); transition: none !important; }
+.fly-item.fly-item-in-active { transform: translateX(0) rotate(0deg); transition: transform calc(var(--fly-item-ms) * 1ms) cubic-bezier(.1,.6,.2,1); }
 
 /* Applied to a scrollable ancestor (never the flying panel itself) for
    exactly the transition's duration — see the comment above. */
@@ -421,7 +448,11 @@ tbody tr:hover { background: #EDE8DC; }
    "Round of 32"). .bracket needs its own height set by JS too
    (layoutBracketColumns) since absolutely-positioned children don't
    contribute to a parent's natural height the way flex/grid children do. */
-.bracket { position: relative; overflow-x: auto; padding: 0.4rem 0 1rem; }
+/* overflow-y is hidden (not just visible/auto) so a round lifting up and
+   off on hide (see shared.js's slideOutBracketColumns — real movement, per
+   brand-guidelines.md -> Motion, never an opacity fade) clips cleanly at
+   the top edge instead of floating up over the nav above. */
+.bracket { position: relative; overflow-x: auto; overflow-y: hidden; padding: 0.4rem 0 1rem; }
 .bracket-round { position: absolute; top: 0; display: flex; flex-direction: column; }
 .bracket-round-games { flex: 1; display: flex; flex-direction: column; justify-content: space-around; }
 /* Connector lines imply a 1-to-1 feed from the previous round. That's true
@@ -452,8 +483,8 @@ tbody tr:hover { background: #EDE8DC; }
 .bracket-team.winner .bracket-score { color: #1E8449; }
 .bracket-team.loser { opacity: 0.55; }
 .bracket-team.loser .icon { filter: saturate(0.8) grayscale(100%); }
-.bracket-score { font-family: 'Permanent Marker', cursive; font-size: 0.9rem; }
-.bracket-tbd { color: rgba(26, 26, 26, 0.5); font-style: italic; font-size: 0.72rem; }
+.bracket-score { font-family: 'Permanent Marker', cursive; font-size: 0.78rem; }
+.bracket-tbd { color: rgba(26, 26, 26, 0.5); font-style: italic; font-size: 0.64rem; }
 
 /* Match List: unresolved knockout slot (see homeFrom/awayFrom) */
 .tbd-slot { color: #948f81; font-style: italic; font-size: 0.72rem; }
@@ -2911,29 +2942,35 @@ function alignBracketColumnsToToggles(lo, hi) {
   }
 }
 
-// Fades newly-added round columns in, in place — see requirements/public.md
-// -> Knockout Bracket -> Round toggles. No horizontal movement: each column
-// is already sitting at its own fixed slot (see renderKnockout), so this is
-// an opacity transition only, not the sitewide translateX fly.
-function fadeInBracketColumns(added) {
+// Real movement, never an opacity fade (see brand-guidelines.md -> Motion:
+// physical paper doesn't dissolve, it's picked up or put down). Round
+// columns never move sideways (see alignBracketColumnsToToggles), so
+// showing/hiding uses a vertical lift instead of the sitewide horizontal
+// fly: a newly-added column drops down into its fixed slot from just above,
+// fully opaque throughout — .bracket's overflow-y:hidden (see shared.css)
+// clips it cleanly until it settles.
+const BRACKET_LIFT_PX = 36;
+
+function slideInBracketColumns(added) {
   if (!added.length) return;
   const cols = added.map(bracketColumnEl).filter(Boolean);
-  cols.forEach(function(el) { el.style.transition = 'none'; el.style.opacity = '0'; });
+  cols.forEach(function(el) { el.style.transition = 'none'; el.style.transform = `translateY(-${BRACKET_LIFT_PX}px) rotate(-3deg)`; });
   void (cols[0] && cols[0].offsetWidth);
   requestAnimationFrame(function() {
-    cols.forEach(function(el) { el.style.transition = `opacity ${FLY_MS}ms linear`; el.style.opacity = '1'; });
+    cols.forEach(function(el) { el.style.transition = `transform ${FLY_MS}ms cubic-bezier(.1,.6,.2,1)`; el.style.transform = ''; });
     window.setTimeout(function() {
-      cols.forEach(function(el) { el.style.transition = ''; el.style.opacity = ''; });
+      cols.forEach(function(el) { el.style.transition = ''; });
     }, FLY_MS);
   });
 }
 
-// Fades `els` out in place and resolves once the transition finishes —
-// the Knockout-specific counterpart to the sitewide flyOut() above, used
-// because round columns never move sideways (see fadeInBracketColumns).
-function fadeOutBracketColumns(els) {
+// Lifts `els` up and off, out of .bracket's clipped frame, and resolves
+// once the transition finishes — the Knockout-specific counterpart to the
+// sitewide flyOut() above, used because round columns never move sideways
+// (see slideInBracketColumns).
+function slideOutBracketColumns(els) {
   return new Promise(function(resolve) {
-    els.forEach(function(el) { el.style.transition = `opacity ${FLY_MS}ms linear`; el.style.opacity = '0'; });
+    els.forEach(function(el) { el.style.transition = `transform ${FLY_MS}ms linear`; el.style.transform = `translateY(-${BRACKET_LIFT_PX}px) rotate(-3deg)`; });
     window.setTimeout(resolve, FLY_MS);
   });
 }
@@ -2980,19 +3017,19 @@ function toggleBracketRound(roundIdx) {
   for (let i = after.lo; i <= after.hi; i++) if (i < before.lo || i > before.hi) added.push(i);
 
   if (removed.length === 0) {
-    // Pure growth — nothing to wait on fading out, render immediately and
-    // fade the newly-revealed columns in.
+    // Pure growth — nothing to wait on lifting out, render immediately and
+    // drop the newly-revealed columns in.
     renderKnockout();
-    fadeInBracketColumns(added);
+    slideInBracketColumns(added);
     return;
   }
   // Shrinking always removes exactly one edge column (see the guard above) —
-  // fade it out in place, then rebuild once it's clear and fade in whatever
+  // lift it up and off, then rebuild once it's clear and drop in whatever
   // was newly revealed (a shrink never also reveals a column, but kept
   // generic). Nothing else on screen shifts horizontally at any point here.
-  fadeOutBracketColumns(removed.map(bracketColumnEl).filter(Boolean)).then(function() {
+  slideOutBracketColumns(removed.map(bracketColumnEl).filter(Boolean)).then(function() {
     renderKnockout();
-    fadeInBracketColumns(added);
+    slideInBracketColumns(added);
   });
 }
 

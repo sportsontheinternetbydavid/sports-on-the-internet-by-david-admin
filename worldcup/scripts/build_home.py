@@ -155,15 +155,19 @@ body { font-family: 'Fredoka One', cursive; font-size: 1rem; line-height: 1.5; b
    too fast to read as physical paper sliding. Every other use of this
    transition elsewhere on the site keeps the fast/under-200ms pacing until
    this is validated. */
-.home-group > * { transition: transform 0.85s linear, opacity 0.85s linear; }
+/* Transform only, never opacity — see requirements/public.md's -> Motion
+   in brand-guidelines.md: physical paper doesn't dissolve, it slides. A
+   group stays fully opaque throughout; leaving/entering the frame is what
+   makes it disappear/appear. */
+.home-group > * { transition: transform 0.85s linear; }
 .home-group > *:nth-child(2) { transition-delay: 0.2s; }
 /* Exit off one side (right — taken off), enter from the other (left — put
    on): a one-way conveyor, not things retracing the same path. */
 .home-group.fly-out { pointer-events: none; }
-.home-group.fly-out > * { transform: translateX(105vw) rotate(8deg); opacity: 0; }
+.home-group.fly-out > * { transform: translateX(105vw) rotate(8deg); }
 .home-group.fly-in-start { pointer-events: none; }
-.home-group.fly-in-start > * { transform: translateX(-105vw) rotate(-8deg); opacity: 0; transition: none !important; }
-.home-group.fly-in-active > * { transform: translateX(0) rotate(0deg); opacity: 1; transition: transform 0.85s cubic-bezier(.1,.6,.2,1), opacity 0.85s linear; }
+.home-group.fly-in-start > * { transform: translateX(-105vw) rotate(-8deg); transition: none !important; }
+.home-group.fly-in-active > * { transform: translateX(0) rotate(0deg); transition: transform 0.85s cubic-bezier(.1,.6,.2,1); }
 .home-group.fly-in-active > *:nth-child(2) { transition-delay: 0.2s; }"""
 
 # Level 1's own JS toggle between "Sports!" and "Football" — see
