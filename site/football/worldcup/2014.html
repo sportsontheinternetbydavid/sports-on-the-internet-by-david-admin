@@ -73,7 +73,7 @@
   border-radius: 0;
   background: var(--chip-bg); color: #1A1A1A;
   box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.22);
-  transform: rotate(var(--rot));
+  rotate: var(--rot);
   position: relative;
 }
 .view-toggle strong, .view-toggle span.disabled { cursor: default; }
@@ -125,14 +125,6 @@
 .view-toggle > :nth-child(7n+6) { --tape-w: 28px; --tape-h: 12px; --tape-rot: -6deg; --tape-left: 58%; }
 .view-toggle > :nth-child(7n+7) { --tape-w: 26px; --tape-h: 11px; --tape-rot: 2deg;  --tape-left: 48%; }
 
-/* Hover — a clickable, not-yet-selected chip lifts slightly. Disabled
-   items are excluded by element type (span isn't in this selector list). */
-.view-toggle button:hover:not(.active):not(:disabled),
-.view-toggle a:hover:not(.active) {
-  transform: translateY(-2px) rotate(var(--rot));
-  box-shadow: 4px 6px 0 rgba(0, 0, 0, 0.28);
-}
-
 /* Selected — no recolor (background stays whatever this chip already drew
    from the palette above); lifts with a stronger shadow and a slight
    scale-up (visibly picked up and pressed down). Tape is exactly whatever
@@ -144,7 +136,8 @@
    Knockout round) — both mean "this is on." */
 .view-toggle button.active, .view-toggle a.active, .view-toggle strong.active {
   box-shadow: 4px 6px 0 rgba(0, 0, 0, 0.3);
-  transform: scale(1.08) rotate(var(--rot));
+  scale: 1.08;
+  rotate: var(--rot);
   z-index: 2;
 }
 
@@ -206,20 +199,39 @@
    translateX briefly inflates that ancestor's scrollable area otherwise,
    since scrollable overflow is computed from an element's transformed
    position. JS should also clear these classes back to no-transform once a
-   panel settles rather than leaving `transform: translateX(0)` sitting on
-   it forever — an identity transform still establishes a new containing
-   block, which would silently break any `position: fixed` descendant (see
-   #rank-info in build.py) from that point on. See .fly-item below for the
-   separate, much smaller per-item primitive used for everything that isn't
-   a board-level swap (a table's individual rows, a bracket's game cards,
-   a confederation panel's individual cells). */
-/* Transform only, never opacity — see brand-guidelines.md -> Motion:
-   physical paper doesn't dissolve, it slides. A panel stays fully opaque
-   throughout; leaving/entering the frame is what makes it disappear/appear. */
-.fly-panel { transition: transform calc(var(--fly-ms) * 1ms) linear; }
-.fly-panel.fly-out { transform: translateX(105vw) rotate(8deg); }
-.fly-panel.fly-in-start { transform: translateX(-105vw) rotate(-8deg); transition: none !important; }
-.fly-panel.fly-in-active { transform: translateX(0) rotate(0deg); transition: transform calc(var(--fly-ms) * 1ms) cubic-bezier(.1,.6,.2,1); }
+   panel settles rather than leaving `translate: 0 0` sitting on it forever
+   — a non-`none` translate/rotate/scale still establishes a new containing
+   block the same way `transform` does, which would silently break any
+   `position: fixed` descendant (see #rank-info in build.py) from that
+   point on. See .fly-item below for the separate, much smaller per-item
+   primitive used for everything that isn't a board-level swap (a table's
+   individual rows, a bracket's game cards, a confederation panel's
+   individual cells). */
+/* Never opacity — see brand-guidelines.md -> Motion: physical paper
+   doesn't dissolve, it slides. A panel stays fully opaque throughout;
+   leaving/entering the frame is what makes it disappear/appear. */
+/* translate/rotate here are the standalone CSS properties, not the
+   `transform` shorthand — deliberately, so a fly-panel move can never be
+   silently overridden by a chip's own resting/selected look. A board or
+   item can be mid-swap while also carrying .active (the outgoing view's
+   own selected tab, the just-arrived default round's tab), and
+   .view-toggle button.active/.strong.active (above) sets its own `scale`/
+   `rotate` for the "picked up" look — if this fly mechanism also used
+   `transform`, whichever rule's shorthand won would silently discard the
+   other's value entirely (that's exactly what happened before this was
+   split: an !important arms race, one bug already found and fixed that
+   way — see technical.md -> "A resting-state rule must never outrank a
+   fly-transition rule"). With `translate` as its own property, nothing
+   else in this file ever sets it, so it can never lose that fight,
+   structurally, not by convention. `rotate` is still shared with the
+   chip's own resting/selected rotation, so it keeps !important to make
+   sure the fly's spin wins that one property while airborne — but even if
+   a future rule got that priority wrong, the item would still visibly fly
+   (just with the wrong spin angle), never stay stuck in place. */
+.fly-panel { transition: translate calc(var(--fly-ms) * 1ms) linear, rotate calc(var(--fly-ms) * 1ms) linear; }
+.fly-panel.fly-out { translate: 105vw 0; rotate: 8deg !important; }
+.fly-panel.fly-in-start { translate: -105vw 0; rotate: -8deg !important; transition: none !important; }
+.fly-panel.fly-in-active { translate: 0 0; rotate: 0deg !important; transition: translate calc(var(--fly-ms) * 1ms) cubic-bezier(.1,.6,.2,1), rotate calc(var(--fly-ms) * 1ms) cubic-bezier(.1,.6,.2,1); }
 
 /* Item-level fly — "the invisible hands" (see brand-guidelines.md -> Motion)
    picking up or placing one row/card/cell at a time, as opposed to
@@ -237,10 +249,10 @@
    built into these classes, since the jitter is randomized per occurrence,
    not a fixed site-wide constant the way --fly-item-ms is. */
 :root { --fly-item-ms: 420; }
-.fly-item { transition: transform calc(var(--fly-item-ms) * 1ms) linear; }
-.fly-item.fly-item-out { transform: translateX(105vw) rotate(8deg); }
-.fly-item.fly-item-in-start { transform: translateX(-105vw) rotate(-8deg); transition: none !important; }
-.fly-item.fly-item-in-active { transform: translateX(0) rotate(0deg); transition: transform calc(var(--fly-item-ms) * 1ms) cubic-bezier(.1,.6,.2,1); }
+.fly-item { transition: translate calc(var(--fly-item-ms) * 1ms) linear, rotate calc(var(--fly-item-ms) * 1ms) linear; }
+.fly-item.fly-item-out { translate: 105vw 0; rotate: 8deg !important; }
+.fly-item.fly-item-in-start { translate: -105vw 0; rotate: -8deg !important; transition: none !important; }
+.fly-item.fly-item-in-active { translate: 0 0; rotate: 0deg !important; transition: translate calc(var(--fly-item-ms) * 1ms) cubic-bezier(.1,.6,.2,1), rotate calc(var(--fly-item-ms) * 1ms) cubic-bezier(.1,.6,.2,1); }
 
 /* Applied to a scrollable ancestor (never the flying panel itself) for
    exactly the transition's duration — see the comment above. */
@@ -2730,6 +2742,24 @@ window.addEventListener('hashchange', () => setPageView(location.hash.slice(1)))
 setPageView(location.hash.slice(1) || 'matches');
 initRankingsHover();
 
+</script>
+<script>
+// Cross-page navigation (Home <-> WC YY <-> Tournaments <-> History) — see
+// requirements/public.md -> Navigation -> Cross-page navigation and
+// brand-guidelines.md -> Motion -> "Walking to a different poster". Shared
+// mechanics from ../fly.js (loaded above, in <head>); no override needed
+// here — pageNavFlyItems()'s default (every in-frame nav chip at every
+// level: Level 1, the Match List/Groups/Knockout/Rankings tabs, and
+// whichever Level 3 toggle is currently visible) is exactly right for this
+// page, since .page-nav wraps all of it (see the markup above).
+//
+// This does not yet fly the active view's own content (a Match List row, a
+// Rankings flag, a Knockout card) on cross-page arrival/departure the way
+// History flies its table cells — requirements/public.md -> Cross-page
+// navigation already calls for that (it isn't a documented exception), this
+// page just doesn't do it yet. See workbench/cross-page-nav-content.md for
+// why and what's left.
+setupCrossPageNav();
 </script>
 
 </body>
