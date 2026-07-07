@@ -31,145 +31,6 @@
   window.__setFavicon();
 })();
 </script>
-<script>
-var __currentHomeView = 'sports';
-function setHomeView(view) {
-  if (view === __currentHomeView) return;
-  document.getElementById('tab-sports').classList.toggle('active', view === 'sports');
-  document.getElementById('tab-football').classList.toggle('active', view === 'football');
-
-  var outgoing = document.getElementById(__currentHomeView + '-group');
-  var incoming = document.getElementById(view + '-group');
-
-  outgoing.classList.remove('fly-in-active');
-  outgoing.classList.add('fly-out');
-
-  incoming.classList.remove('fly-out');
-  incoming.classList.add('fly-in-start');
-  void incoming.offsetWidth;
-  requestAnimationFrame(function() {
-    incoming.classList.remove('fly-in-start');
-    incoming.classList.add('fly-in-active');
-  });
-
-  document.getElementById('home-groups-wrap').style.height = incoming.scrollHeight + 'px';
-  __currentHomeView = view;
-}
-window.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('home-groups-wrap').style.height = document.getElementById('sports-group').scrollHeight + 'px';
-});
-
-// Cross-page navigation (Home <-> History) — see requirements/public.md ->
-// Navigation -> Cross-page navigation and brand-guidelines.md -> Motion ->
-// "Walking to a different poster". No native View Transition (its only
-// primitive is one whole-page snapshot, which is exactly the "component
-// dropped in" effect that section rules out) — instead every in-frame nav
-// chip flies out individually before leaving, and every in-frame one on
-// the arriving page flies in the same way. sessionStorage is the only
-// channel between the two separate documents; NAV_FLY_KEY must match
-// build.py's copy of this exactly — see FAVICON_SCRIPT above for why
-// duplicating a small page-specific script beats sharing one with
-// unrelated dependencies.
-var NAV_FLY_KEY = 'sotibd-nav-fly';
-var HOME_FLY_MS = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fly-item-ms'));
-var HOME_JITTER_MS = 250;
-
-function homeInFrame(el) {
-  var r = el.getBoundingClientRect();
-  return r.bottom > 0 && r.top < (window.innerHeight || document.documentElement.clientHeight);
-}
-
-function homeFlyOutItems(items) {
-  return new Promise(function(resolve) {
-    if (!items.length) { resolve(); return; }
-    var maxDelay = 0;
-    items.forEach(function(item) {
-      var delay = Math.random() * HOME_JITTER_MS;
-      if (delay > maxDelay) maxDelay = delay;
-      item.style.transitionDelay = delay + 'ms';
-      item.classList.add('fly-item', 'fly-item-out');
-    });
-    window.setTimeout(resolve, HOME_FLY_MS + maxDelay);
-  });
-}
-
-function homeFlyInItems(items) {
-  return new Promise(function(resolve) {
-    if (!items.length) { resolve(); return; }
-    items.forEach(function(item) { item.classList.add('fly-item', 'fly-item-in-start'); });
-    void (items[0] && items[0].offsetWidth);
-    requestAnimationFrame(function() {
-      var maxDelay = 0;
-      items.forEach(function(item) {
-        var delay = Math.random() * HOME_JITTER_MS;
-        if (delay > maxDelay) maxDelay = delay;
-        item.style.transitionDelay = delay + 'ms';
-        item.classList.remove('fly-item-in-start');
-        item.classList.add('fly-item-in-active');
-      });
-      window.setTimeout(function() {
-        items.forEach(function(item) {
-          item.classList.remove('fly-item', 'fly-item-in-active');
-          item.style.transitionDelay = '';
-        });
-        resolve();
-      }, HOME_FLY_MS + maxDelay);
-    });
-  });
-}
-
-// Every Level 1 chip, plus whichever of Sports!/Football's own Level 2-3
-// chips is currently showing (only Football's ever has a cross-page link —
-// History — but this stays general rather than assuming). Sports!'s own
-// Level 2-3 is the one typographic composition exempt from chip treatment
-// (see brand-guidelines.md -> "The homepage signature is exempt"), so it
-// flies as the single #sports-group item, not as separate chips.
-function homeDepartureItems() {
-  var level1 = Array.from(document.querySelector('.utility-bar').children);
-  var activeGroup = document.getElementById(__currentHomeView + '-group');
-  var level23 = __currentHomeView === 'sports'
-    ? [activeGroup]
-    : Array.from(activeGroup.querySelectorAll('.view-toggle > *'));
-  return level1.concat(level23).filter(Boolean).filter(homeInFrame);
-}
-
-document.addEventListener('click', function(e) {
-  var link = e.target.closest('a[href*="history.html"]');
-  if (!link) return;
-  e.preventDefault();
-  var href = link.getAttribute('href');
-  homeFlyOutItems(homeDepartureItems()).then(function() {
-    sessionStorage.setItem(NAV_FLY_KEY, '1');
-    window.location.href = href;
-  });
-});
-
-// Only a same-site click sets NAV_FLY_KEY (see build.py's build_history_page);
-// a direct load/refresh never does, so this never fires on those — matching
-// the sitewide "nothing flies on load" default (see requirements/public.md
-// -> Navigation -> Initial display) with its one sanctioned exception. On
-// arrival the homepage is always in its default Sports! state (Football's
-// state isn't carried across a navigation), so #sports-group is the only
-// Level 2-3 piece to fly in, alongside every Level 1 chip.
-if (sessionStorage.getItem(NAV_FLY_KEY) === '1') {
-  sessionStorage.removeItem(NAV_FLY_KEY);
-  var level1 = Array.from(document.querySelector('.utility-bar').children);
-  var arrivalItems = level1.concat([document.getElementById('sports-group')]).filter(homeInFrame);
-  // Pinned off-screen the instant they exist — before any paint, same as
-  // always — but the actual flight waits on document.fonts.ready. The
-  // Google Fonts <link> in <head> is render-blocking; starting the animated
-  // part before the page can actually paint it risks the whole staggered
-  // sequence executing before the browser ever shows a frame of it — the
-  // arrival reads as one clump landing instantly instead of individually
-  // staggered pieces landing over real time. See requirements/public.md ->
-  // Cross-page navigation -> "The board must already be standing before
-  // the first item moves — never a race."
-  arrivalItems.forEach(function(item) { item.classList.add('fly-item', 'fly-item-in-start'); });
-  document.fonts.ready.then(function() {
-    homeFlyInItems(arrivalItems);
-  });
-}
-</script>
 <style>
 /* Shared "cardboard cutout" nav component — Level 1-3's chip visual system,
    used by every page on the public site: the homepage (build_home.py) and
@@ -385,43 +246,16 @@ if (sessionStorage.getItem(NAV_FLY_KEY) === '1') {
    exactly the transition's duration — see the comment above. */
 .fly-scroll-lock { overflow-x: hidden !important; }
 
-/* Cross-page navigation — see requirements/public.md -> Navigation ->
-   Cross-page navigation and brand-guidelines.md -> Motion -> "Walking to a
-   different poster". A link to a different HTML document (Home, WC YY,
-   Tournaments, History) has no shared DOM for .fly-panel/.fly-item above to
-   act on, so this uses the browser's own cross-document View Transitions
-   API instead. `navigation: auto` opts every same-origin document
-   navigation on the site into it; unsupported browsers ignore this at-rule
-   entirely and keep today's instant cut — no fallback code needed.
-
-   The UA default for this is an opacity crossfade, which this site never
-   uses anywhere else (see brand-guidelines.md -> Motion), so it's replaced
-   below with the same slide .fly-panel already uses for an in-page board
-   swap: the outgoing page flies fully off-screen first, *then* the incoming
-   page flies in from the left — matching the sequential (not simultaneous)
-   out-then-in timing every other board-level swap on the site uses, via
-   `animation-delay` on the incoming page's animation. Same --fly-ms pace
-   and 105vw distance as .fly-panel, so a page swap reads as the same board
-   move at a bigger scale, not a different animation. */
-@view-transition { navigation: auto; }
-
-::view-transition-old(root),
-::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
-
-::view-transition-old(root) {
-  animation: page-fly-out calc(var(--fly-ms) * 1ms) linear both;
-}
-::view-transition-new(root) {
-  animation: page-fly-in calc(var(--fly-ms) * 1ms) cubic-bezier(.1,.6,.2,1) both;
-  animation-delay: calc(var(--fly-ms) * 1ms);
-}
-@keyframes page-fly-out {
-  to { transform: translateX(105vw) rotate(8deg); }
-}
-@keyframes page-fly-in {
-  from { transform: translateX(-105vw) rotate(-8deg); }
-  to { transform: translateX(0) rotate(0deg); }
-}
+/* Cross-page navigation (Home <-> History) is NOT done via the browser's
+   native cross-document View Transitions API — that was tried first and
+   rejected: its only real primitive is a single whole-page snapshot, which
+   arrives pre-assembled as one image, exactly the "component dropped in"
+   effect requirements/public.md -> Cross-page navigation and
+   brand-guidelines.md -> Motion -> "Walking to a different poster" rule
+   out. It's replaced by a hand-rolled click-intercept + sessionStorage +
+   per-item fly (see fly.js, and build.py/build_home.py's own click
+   handlers) so every nav chip and content piece flies individually instead
+   of the page arriving as one image. */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { overflow: hidden; }
@@ -510,5 +344,96 @@ body { font-family: 'Fredoka One', cursive; font-size: 1rem; line-height: 1.5; b
 </head>
 <body>
 <div class="page-nav" id="page-nav"><nav class="utility-bar view-toggle"><button id="tab-sports" class="active" onclick="setHomeView('sports')">Sports!</button><button id="tab-football" onclick="setHomeView('football')">Football</button><span class="disabled">Hockey</span><span class="disabled">Swimming</span></nav><div id="home-groups-wrap"><div id="sports-group" class="home-group fly-in-active"><nav id="sports-level2" class="page-toggle primary-tabs view-toggle"><strong class="active">On the Internet.</strong></nav><nav id="sports-level3" class="detail-bar view-toggle"><strong class="active">By David</strong></nav></div><div id="football-group" class="home-group fly-out"><nav id="football-level2" class="page-toggle primary-tabs view-toggle"><strong class="active">World Cup</strong><span class="disabled">Euros</span><span class="disabled">Copa América</span><span class="disabled">Gold Cup</span></nav><nav id="football-level3" class="detail-bar view-toggle"><a href="football/worldcup/history.html">History</a><a href="football/worldcup/2026.html">Tournaments</a></nav></div></div></div>
+<script src="fly.js"></script>
+<script>
+var __currentHomeView = 'sports';
+function setHomeView(view) {
+  if (view === __currentHomeView) return;
+  document.getElementById('tab-sports').classList.toggle('active', view === 'sports');
+  document.getElementById('tab-football').classList.toggle('active', view === 'football');
+
+  var outgoing = document.getElementById(__currentHomeView + '-group');
+  var incoming = document.getElementById(view + '-group');
+
+  outgoing.classList.remove('fly-in-active');
+  outgoing.classList.add('fly-out');
+
+  incoming.classList.remove('fly-out');
+  incoming.classList.add('fly-in-start');
+  void incoming.offsetWidth;
+  requestAnimationFrame(function() {
+    incoming.classList.remove('fly-in-start');
+    incoming.classList.add('fly-in-active');
+  });
+
+  document.getElementById('home-groups-wrap').style.height = incoming.scrollHeight + 'px';
+  __currentHomeView = view;
+}
+window.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('home-groups-wrap').style.height = document.getElementById('sports-group').scrollHeight + 'px';
+});
+
+// Cross-page navigation (Home <-> History) — see requirements/public.md ->
+// Navigation -> Cross-page navigation and brand-guidelines.md -> Motion ->
+// "Walking to a different poster". No native View Transition (its only
+// primitive is one whole-page snapshot, which is exactly the "component
+// dropped in" effect that section rules out) — instead every in-frame nav
+// chip flies out individually before leaving, and every in-frame one on
+// the arriving page flies in the same way, reusing flyOutItems()/
+// flyInItems()/inFrame()/NAV_FLY_KEY from fly.js (loaded before this
+// script — see build_home_html()'s <script src="fly.js">).
+
+// Every Level 1 chip, plus whichever of Sports!/Football's own Level 2-3
+// chips is currently showing (only Football's ever has a cross-page link —
+// History — but this stays general rather than assuming). Sports!'s own
+// Level 2-3 is the one typographic composition exempt from chip treatment
+// (see brand-guidelines.md -> "The homepage signature is exempt"), so it
+// flies as the single #sports-group item, not as separate chips.
+function homeDepartureItems() {
+  var level1 = Array.from(document.querySelector('.utility-bar').children);
+  var activeGroup = document.getElementById(__currentHomeView + '-group');
+  var level23 = __currentHomeView === 'sports'
+    ? [activeGroup]
+    : Array.from(activeGroup.querySelectorAll('.view-toggle > *'));
+  return level1.concat(level23).filter(Boolean).filter(inFrame);
+}
+
+document.addEventListener('click', function(e) {
+  var link = e.target.closest('a[href*="history.html"]');
+  if (!link) return;
+  e.preventDefault();
+  var href = link.getAttribute('href');
+  flyOutItems(homeDepartureItems()).then(function() {
+    sessionStorage.setItem(NAV_FLY_KEY, '1');
+    window.location.href = href;
+  });
+});
+
+// Only a same-site click sets NAV_FLY_KEY (see build.py's build_history_page);
+// a direct load/refresh never does, so this never fires on those — matching
+// the sitewide "nothing flies on load" default (see requirements/public.md
+// -> Navigation -> Initial display) with its one sanctioned exception. On
+// arrival the homepage is always in its default Sports! state (Football's
+// state isn't carried across a navigation), so #sports-group is the only
+// Level 2-3 piece to fly in, alongside every Level 1 chip.
+if (sessionStorage.getItem(NAV_FLY_KEY) === '1') {
+  sessionStorage.removeItem(NAV_FLY_KEY);
+  var level1 = Array.from(document.querySelector('.utility-bar').children);
+  var arrivalItems = level1.concat([document.getElementById('sports-group')]).filter(inFrame);
+  // Pinned off-screen the instant they exist — before any paint, same as
+  // always — but the actual flight waits on document.fonts.ready. The
+  // Google Fonts <link> in <head> is render-blocking; starting the animated
+  // part before the page can actually paint it risks the whole staggered
+  // sequence executing before the browser ever shows a frame of it — the
+  // arrival reads as one clump landing instantly instead of individually
+  // staggered pieces landing over real time. See requirements/public.md ->
+  // Cross-page navigation -> "The board must already be standing before
+  // the first item moves — never a race."
+  arrivalItems.forEach(function(item) { item.classList.add('fly-item', 'fly-item-in-start'); });
+  document.fonts.ready.then(function() {
+    flyInItems(arrivalItems);
+  });
+}
+</script>
 </body>
 </html>
