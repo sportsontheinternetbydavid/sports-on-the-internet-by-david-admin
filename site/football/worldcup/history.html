@@ -246,6 +246,44 @@
    exactly the transition's duration — see the comment above. */
 .fly-scroll-lock { overflow-x: hidden !important; }
 
+/* Cross-page navigation — see requirements/public.md -> Navigation ->
+   Cross-page navigation and brand-guidelines.md -> Motion -> "Walking to a
+   different poster". A link to a different HTML document (Home, WC YY,
+   Tournaments, History) has no shared DOM for .fly-panel/.fly-item above to
+   act on, so this uses the browser's own cross-document View Transitions
+   API instead. `navigation: auto` opts every same-origin document
+   navigation on the site into it; unsupported browsers ignore this at-rule
+   entirely and keep today's instant cut — no fallback code needed.
+
+   The UA default for this is an opacity crossfade, which this site never
+   uses anywhere else (see brand-guidelines.md -> Motion), so it's replaced
+   below with the same slide .fly-panel already uses for an in-page board
+   swap: the outgoing page flies fully off-screen first, *then* the incoming
+   page flies in from the left — matching the sequential (not simultaneous)
+   out-then-in timing every other board-level swap on the site uses, via
+   `animation-delay` on the incoming page's animation. Same --fly-ms pace
+   and 105vw distance as .fly-panel, so a page swap reads as the same board
+   move at a bigger scale, not a different animation. */
+@view-transition { navigation: auto; }
+
+::view-transition-old(root),
+::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+
+::view-transition-old(root) {
+  animation: page-fly-out calc(var(--fly-ms) * 1ms) linear both;
+}
+::view-transition-new(root) {
+  animation: page-fly-in calc(var(--fly-ms) * 1ms) cubic-bezier(.1,.6,.2,1) both;
+  animation-delay: calc(var(--fly-ms) * 1ms);
+}
+@keyframes page-fly-out {
+  to { transform: translateX(105vw) rotate(8deg); }
+}
+@keyframes page-fly-in {
+  from { transform: translateX(-105vw) rotate(-8deg); }
+  to { transform: translateX(0) rotate(0deg); }
+}
+
 /* Shared styles for all World Cup pages */
 
 body { font-family: 'Fredoka One', cursive; font-size: 1rem; line-height: 1.5; background: #F5F0E8; color: #1a1a1a; max-width: 1100px; margin: 0 auto; padding: 0 1.5rem 4rem; overflow-x: auto; }
@@ -489,6 +527,13 @@ tbody tr:hover { background: #EDE8DC; }
 /* Match List: unresolved knockout slot (see homeFrom/awayFrom) */
 .tbd-slot { color: #948f81; font-style: italic; font-size: 0.72rem; }
 
+/* Overrides shared.css's generic `th { background: #C0392B; color: #FFFFFF }`
+   (written for the actual Level 4 header row) — .year-cell is a <th> for
+   markup reasons (it's a row header, semantically), not a repeated copy of
+   the header itself. Without this it inherits white marker on red, which
+   isn't a real material this brand uses (see brand-guidelines.md ->
+   Typography: marker is black) — and reading down the column, every row's
+   year looked like a stack of headers instead of a handwritten label. */
 .year-cell {
   font-family: 'Permanent Marker', cursive;
   font-size: 1.1rem;
@@ -496,6 +541,8 @@ tbody tr:hover { background: #EDE8DC; }
   vertical-align: middle;
   white-space: nowrap;
   border-bottom: 2px solid #C0392B;
+  background: transparent;
+  color: #1a1a1a;
 }
 .hist-caption {
   color: #5a4a3a;
@@ -679,6 +726,86 @@ function flyInItems(items) {
         });
         resolve();
       }, HIST_ITEM_MS + maxDelay);
+    });
+  });
+}
+
+// Cross-page navigation (Home <-> History) — see requirements/public.md ->
+// Navigation -> Cross-page navigation and brand-guidelines.md -> Motion ->
+// "Walking to a different poster". No native View Transition (its only
+// primitive is one whole-page snapshot, which is exactly the "component
+// dropped in" effect that section rules out) — instead every in-frame nav
+// chip and cell flies out individually before leaving, and every in-frame
+// one on the arriving page flies in the same way, reusing flyOutItems/
+// flyInItems above. sessionStorage is the only channel between the two
+// separate documents; NAV_FLY_KEY must match build_home.py's copy of this
+// exactly — see FAVICON_SCRIPT for why duplicating a small page-specific
+// script beats sharing one with unrelated dependencies.
+const NAV_FLY_KEY = 'sotibd-nav-fly';
+
+function inFrame(el) {
+  const r = el.getBoundingClientRect();
+  return r.bottom > 0 && r.top < (window.innerHeight || document.documentElement.clientHeight);
+}
+
+// Every nav chip at every level, plus the active round's own cells — reuses
+// histItems as-is, since History already flies at cell granularity for its
+// own round toggle (see setHistRound below); only Match List needs a finer
+// grain than its usual row-level item for this feature (see
+// requirements/public.md -> Cross-page navigation).
+function historyFlyItems() {
+  const chips = [document.querySelector('.utility-bar a')]
+    .concat(Array.from(document.querySelectorAll('.primary-tabs button')));
+  const cells = histItems(document.getElementById('hist-tbody'));
+  return chips.concat(cells).filter(Boolean).filter(inFrame);
+}
+
+document.querySelector('.utility-bar a').addEventListener('click', function(e) {
+  e.preventDefault();
+  const href = e.currentTarget.getAttribute('href');
+  const scrollEl = document.querySelector('.table-wrap');
+  // Nav chips (the Home chip, the round tabs) live outside .table-wrap, in
+  // <body> — which has its own overflow-x: auto for the table's legitimate
+  // horizontal scroll (see shared.css). An off-screen translateX inflates
+  // whichever ancestor's scrollable width the same way .table-wrap's own
+  // cells already needed locking against (see the comment on setHistRound
+  // below) — body needs the same lock while chips are in flight, or the
+  // whole page can visibly lurch instead of reading as individual pieces.
+  if (scrollEl) scrollEl.classList.add('fly-scroll-lock');
+  document.body.classList.add('fly-scroll-lock');
+  flyOutItems(historyFlyItems()).then(function() {
+    sessionStorage.setItem(NAV_FLY_KEY, '1');
+    window.location.href = href;
+  });
+});
+
+// Only a same-site click sets NAV_FLY_KEY (see build_home.py) — a direct
+// load/refresh never does, so this never fires on those, matching the
+// sitewide "nothing flies on load" default (see requirements/public.md ->
+// Navigation -> Initial display) with its one sanctioned exception.
+if (sessionStorage.getItem(NAV_FLY_KEY) === '1') {
+  sessionStorage.removeItem(NAV_FLY_KEY);
+  const arrivalItems = historyFlyItems();
+  // Pinned off-screen the instant they exist — before any paint, same as
+  // always — but the actual flight waits on document.fonts.ready. The
+  // Google Fonts <link> in <head> is render-blocking; if this script's
+  // synchronous class mutations above happened to win the race against
+  // that fetch, the flight would run correctly, but there's no guarantee
+  // it does. Starting the animated part before the page can actually paint
+  // it risks the whole staggered sequence executing before the browser
+  // ever shows a frame of it — the arrival reads as one clump landing
+  // instantly instead of individually staggered pieces landing over real
+  // time, because the reader never saw the individual motion happen. See
+  // requirements/public.md -> Cross-page navigation -> "The board must
+  // already be standing before the first item moves — never a race."
+  arrivalItems.forEach(function(item) { item.classList.add('fly-item', 'fly-item-in-start'); });
+  document.fonts.ready.then(function() {
+    const scrollEl = document.querySelector('.table-wrap');
+    if (scrollEl) scrollEl.classList.add('fly-scroll-lock');
+    document.body.classList.add('fly-scroll-lock');
+    flyInItems(arrivalItems).then(function() {
+      if (scrollEl) scrollEl.classList.remove('fly-scroll-lock');
+      document.body.classList.remove('fly-scroll-lock');
     });
   });
 }

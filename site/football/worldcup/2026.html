@@ -246,6 +246,44 @@
    exactly the transition's duration — see the comment above. */
 .fly-scroll-lock { overflow-x: hidden !important; }
 
+/* Cross-page navigation — see requirements/public.md -> Navigation ->
+   Cross-page navigation and brand-guidelines.md -> Motion -> "Walking to a
+   different poster". A link to a different HTML document (Home, WC YY,
+   Tournaments, History) has no shared DOM for .fly-panel/.fly-item above to
+   act on, so this uses the browser's own cross-document View Transitions
+   API instead. `navigation: auto` opts every same-origin document
+   navigation on the site into it; unsupported browsers ignore this at-rule
+   entirely and keep today's instant cut — no fallback code needed.
+
+   The UA default for this is an opacity crossfade, which this site never
+   uses anywhere else (see brand-guidelines.md -> Motion), so it's replaced
+   below with the same slide .fly-panel already uses for an in-page board
+   swap: the outgoing page flies fully off-screen first, *then* the incoming
+   page flies in from the left — matching the sequential (not simultaneous)
+   out-then-in timing every other board-level swap on the site uses, via
+   `animation-delay` on the incoming page's animation. Same --fly-ms pace
+   and 105vw distance as .fly-panel, so a page swap reads as the same board
+   move at a bigger scale, not a different animation. */
+@view-transition { navigation: auto; }
+
+::view-transition-old(root),
+::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+
+::view-transition-old(root) {
+  animation: page-fly-out calc(var(--fly-ms) * 1ms) linear both;
+}
+::view-transition-new(root) {
+  animation: page-fly-in calc(var(--fly-ms) * 1ms) cubic-bezier(.1,.6,.2,1) both;
+  animation-delay: calc(var(--fly-ms) * 1ms);
+}
+@keyframes page-fly-out {
+  to { transform: translateX(105vw) rotate(8deg); }
+}
+@keyframes page-fly-in {
+  from { transform: translateX(-105vw) rotate(-8deg); }
+  to { transform: translateX(0) rotate(0deg); }
+}
+
 /* Shared styles for all World Cup pages */
 
 body { font-family: 'Fredoka One', cursive; font-size: 1rem; line-height: 1.5; background: #F5F0E8; color: #1a1a1a; max-width: 1100px; margin: 0 auto; padding: 0 1.5rem 4rem; overflow-x: auto; }
@@ -1650,11 +1688,11 @@ const games2026 = [
   {
     "gameNumber": 97,
     "homeTeam": null,
-    "homeScore": null,
+    "homeScore": 3,
     "awayTeam": null,
-    "awayScore": null,
+    "awayScore": 2,
     "date": "2026-07-09",
-    "eloChange": null,
+    "eloChange": 5,
     "round": 2,
     "homeFrom": {
       "game": 89,
