@@ -410,38 +410,50 @@ tbody tr:hover { background: #EDE8DC; }
    toggleBracketRound), but growing can jump straight to any hidden round in
    one click, revealing everything between it and the current edge — so the
    visible set can never have a gap in the middle. */
-/* Each round is positioned absolutely at a fixed offset by its own round
-   index (set inline by shared.js's renderKnockout, in lockstep with
-   BRACKET_COL_W/BRACKET_GAP there) rather than flowing left-to-right among
-   whichever rounds are currently rendered — see requirements/public.md ->
-   Knockout Bracket -> Round toggles. That's what keeps a round in the same
-   horizontal spot regardless of which other rounds are shown/hidden: showing
-   or hiding one never moves any other round sideways. .bracket needs its own
-   height set by JS too (layoutBracketColumns) since absolutely-positioned
-   children don't contribute to a parent's natural height the way flex/grid
-   children do. */
-.bracket { position: relative; overflow-x: auto; padding: 0.5rem 0 1.5rem; }
-.bracket-round { position: absolute; top: 0; width: 190px; display: flex; flex-direction: column; }
+/* Each round's left/width is set inline by shared.js's
+   alignBracketColumnsToToggles, matched exactly to its own toggle button's
+   position/width above — not a fixed column size — rather than flowing
+   left-to-right among whichever rounds are currently rendered. That's what
+   keeps a round in the same horizontal spot regardless of which other
+   rounds are shown/hidden (showing or hiding one never moves any other
+   round sideways), and what keeps a column no wider than its own round
+   needs (a narrow "Final" column stays narrow, not stretched to match
+   "Round of 32"). .bracket needs its own height set by JS too
+   (layoutBracketColumns) since absolutely-positioned children don't
+   contribute to a parent's natural height the way flex/grid children do. */
+.bracket { position: relative; overflow-x: auto; padding: 0.4rem 0 1rem; }
+.bracket-round { position: absolute; top: 0; display: flex; flex-direction: column; }
 .bracket-round-games { flex: 1; display: flex; flex-direction: column; justify-content: space-around; }
 /* Connector lines imply a 1-to-1 feed from the previous round. That's true
    for every round except the last, which bundles the Final and Third-Place
    Match — a line into each would wrongly suggest each semifinal feeds both
-   games, so skip it there. */
+   games, so skip it there. Length matches the tight gap between chips
+   above (nav.css's .view-toggle gap), not the old fixed column gap. */
 .bracket-round:not(:first-child):not(:last-child) .bracket-game-wrap { position: relative; }
-.bracket-round:not(:first-child):not(:last-child) .bracket-game-wrap::before { content: ''; position: absolute; left: -1.25rem; top: 50%; width: 1.25rem; height: 0; border-top: 2px solid #C0392B; opacity: 0.5; }
-.bracket-game-wrap { padding: 0.4rem 0; }
-.bracket-game { border: 1px solid #ddd; border-radius: 6px; background: #fff; font-size: 0.8rem; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-.bracket-game-sub { font-family: 'Permanent Marker', cursive; font-size: 0.68rem; color: #948f81; text-align: center; padding: 0.2rem 0.3rem 0; }
-.bracket-date { font-size: 0.68rem; color: #888; text-align: center; padding: 0.2rem 0.3rem; border-bottom: 1px solid #eee; }
-.bracket-team { display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.5rem; }
-.bracket-team + .bracket-team { border-top: 1px solid #eee; }
-.bracket-team .icon { display: inline-block; width: 1.6em; height: 1.1em; flex: none; background-size: cover; background-position: center; background-repeat: no-repeat; border: 1px solid #ccc; filter: saturate(0.8); }
-.bracket-team-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bracket-team.winner { font-weight: bold; }
-.bracket-team.loser { opacity: 0.5; }
-.bracket-score { font-weight: bold; }
-.bracket-team.loser .bracket-score { font-weight: normal; }
-.bracket-tbd { color: #999; font-style: italic; font-size: 0.72rem; }
+.bracket-round:not(:first-child):not(:last-child) .bracket-game-wrap::before { content: ''; position: absolute; left: -10px; top: 50%; width: 10px; height: 0; border-top: 2px solid #C0392B; opacity: 0.5; }
+.bracket-game-wrap { padding: 0.25rem 0; }
+/* A printed slip taped onto the poster, not a modern web card — hard offset
+   shadow instead of a soft blur (see brand-guidelines.md -> Materials), and
+   a tiny per-game rotation (--game-rot, set inline in shared.js the same
+   way flag rotation is: a deterministic hash of the game number, not
+   random-per-load) so a column of cards doesn't look machine-stamped. */
+.bracket-game { border: 1px solid rgba(0,0,0,0.1); border-radius: 2px; background: #fff; font-size: 0.72rem; overflow: hidden; box-shadow: 2px 3px 0 rgba(0,0,0,0.18); transform: rotate(var(--game-rot, 0deg)); }
+.bracket-game-sub { font-family: 'Permanent Marker', cursive; font-size: 0.62rem; color: #C0392B; text-align: center; padding: 0.15rem 0.3rem 0; }
+.bracket-date { font-family: 'Permanent Marker', cursive; font-size: 0.56rem; color: #948f81; text-align: center; padding: 0.2rem 0.3rem; border-bottom: 1px dashed rgba(0,0,0,0.15); }
+.bracket-team { display: flex; align-items: center; justify-content: space-between; gap: 0.3rem; padding: 0.25rem 0.4rem; }
+.bracket-team + .bracket-team { border-top: 1px dashed rgba(0,0,0,0.12); }
+.bracket-team .icon { display: inline-block; width: 1.5em; height: 1em; flex: none; background-size: cover; background-position: center; background-repeat: no-repeat; border: 1px solid #ccc; filter: saturate(0.8); }
+/* Winner/loser used to be shown by bolding/dimming the team name; now that
+   teams are flags only (see brand-guidelines.md -> Flags, Not Names), the
+   distinction has to live elsewhere: a green tint on the winning row, and
+   the same grayscale treatment Rankings already uses for an eliminated
+   team's flag on the losing one — not a new convention, reusing that one. */
+.bracket-team.winner { background: rgba(30, 132, 73, 0.1); }
+.bracket-team.winner .bracket-score { color: #1E8449; }
+.bracket-team.loser { opacity: 0.55; }
+.bracket-team.loser .icon { filter: saturate(0.8) grayscale(100%); }
+.bracket-score { font-family: 'Permanent Marker', cursive; font-size: 0.9rem; }
+.bracket-tbd { color: rgba(26, 26, 26, 0.5); font-style: italic; font-size: 0.72rem; }
 
 /* Match List: unresolved knockout slot (see homeFrom/awayFrom) */
 .tbd-slot { color: #948f81; font-style: italic; font-size: 0.72rem; }
@@ -1565,11 +1577,11 @@ const games2026 = [
   {
     "gameNumber": 94,
     "homeTeam": "USA",
-    "homeScore": null,
+    "homeScore": 1,
     "awayTeam": "Belgium",
-    "awayScore": null,
+    "awayScore": 4,
     "date": "2026-07-06",
-    "eloChange": null,
+    "eloChange": -51,
     "round": 1,
     "homeFrom": null,
     "awayFrom": null,
@@ -2834,6 +2846,9 @@ function knockoutRounds(size) {
   return rounds;
 }
 
+// Flags only, never a printed name — see brand-guidelines.md -> Flags, Not
+// Names. The name still surfaces as a native hover tooltip (title attr),
+// same as every other flag on the site (see flagCellHtml above).
 function bracketTeamRowHtml(game, side, decided) {
   const team = game[side + 'Team'];
   const score = game[side + 'Score'];
@@ -2843,11 +2858,17 @@ function bracketTeamRowHtml(game, side, decided) {
   const otherScore = game[side === 'home' ? 'awayScore' : 'homeScore'];
   let cls = 'bracket-team';
   if (decided && score !== otherScore) cls += score > otherScore ? ' winner' : ' loser';
-  const flag = flagByTeam[team]
-    ? `<span class="icon" style="background-image:url('flags/${flagByTeam[team]}.svg');transform:rotate(${flagRotation(team)}deg)"></span>`
-    : '';
+  const flag = `<span class="icon" style="background-image:url('flags/${flagByTeam[team]}.svg');transform:rotate(${flagRotation(team)}deg)" title="${esc(team)}"></span>`;
   const scoreHtml = score != null ? `<span class="bracket-score">${score}</span>` : '';
-  return `<div class="${cls}">${flag}<span class="bracket-team-name">${esc(team)}</span>${scoreHtml}</div>`;
+  return `<div class="${cls}">${flag}${scoreHtml}</div>`;
+}
+
+// Deterministic tiny rotation per game card (see .bracket-game's --game-rot
+// in shared.css) — same idea as flagRotation above, a stable hash instead of
+// random-per-load, keyed on game number instead of team name.
+function gameCardRotation(gameNumber) {
+  const h = Math.imul(gameNumber, 2654435761) >>> 0;
+  return (((h >>> 24) % 21) - 10) * 0.12; // -1.2 to +1.2 degrees
 }
 
 // Which contiguous range of rounds [lo, hi] (inclusive, by round index) is
@@ -2868,14 +2889,27 @@ function bracketColumnEl(roundIdx) {
   return document.querySelector(`.bracket-round[data-round-idx="${roundIdx}"]`);
 }
 
-// Fixed pixel step between rounds' absolute left offsets — must match
-// .bracket-round's CSS width (nav.css... no, shared.css) plus the gap that
-// used to come from .bracket's flex `gap`. Kept as one JS constant instead
-// of reading the CSS width back, since renderKnockout is the only thing
-// that needs it.
-const BRACKET_COL_W = 190;
-const BRACKET_GAP = 40;
-const BRACKET_STEP = BRACKET_COL_W + BRACKET_GAP;
+// Aligns each visible round's column to its own toggle button directly
+// above it — same left position, same width — instead of a fixed column
+// size/gap. That's what makes the bracket read as a direct continuation of
+// the toggle row rather than a separately-proportioned grid, and it's also
+// what keeps columns compact: a column is only ever as wide as its own
+// round's label needs to be, gapped the same tight amount the chips above
+// are (see nav.css's .view-toggle gap), not a fixed oversized slot.
+function alignBracketColumnsToToggles(lo, hi) {
+  const toggleContainer = document.getElementById('bracket-round-toggle');
+  const bracket = document.querySelector('#knockout-outer .bracket');
+  if (!bracket) return;
+  const bracketRect = bracket.getBoundingClientRect();
+  for (let roundIdx = lo; roundIdx <= hi; roundIdx++) {
+    const btn = toggleContainer.children[roundIdx];
+    const col = bracketColumnEl(roundIdx);
+    if (!btn || !col) continue;
+    const btnRect = btn.getBoundingClientRect();
+    col.style.left = (btnRect.left - bracketRect.left + bracket.scrollLeft) + 'px';
+    col.style.width = btnRect.width + 'px';
+  }
+}
 
 // Fades newly-added round columns in, in place — see requirements/public.md
 // -> Knockout Bracket -> Round toggles. No horizontal movement: each column
@@ -2983,11 +3017,12 @@ function renderKnockout() {
     return `<button class="bool-toggle${visible ? ' active' : ''}"${clickable ? '' : ' disabled'} onclick="toggleBracketRound(${roundIdx})">${esc(label)}</button>`;
   }).join('');
 
-  // Only currently-visible rounds are rendered at all, each pinned to the
-  // fixed horizontal slot matching its own round index (not its position
-  // among the rounds that happen to be visible) — see requirements/public.md
-  // -> Knockout Bracket -> Round toggles. That's what keeps a round from
-  // shifting sideways when a different round is shown/hidden.
+  // Only currently-visible rounds are rendered at all. Position/width are
+  // filled in afterward by alignBracketColumnsToToggles, which pins each to
+  // its own toggle button above (not its position among the rounds that
+  // happen to be visible) — see requirements/public.md -> Knockout Bracket
+  // -> Round toggles. That's what keeps a round from shifting sideways when
+  // a different round is shown/hidden.
   const html = rounds.map(([label, count], roundIdx) => {
     if (roundIdx < lo || roundIdx > hi) return '';
     const games = GAMES.filter(g => g.round === roundIdx).sort((a, b) => a.gameNumber - b.gameNumber);
@@ -3000,18 +3035,27 @@ function renderKnockout() {
       const sub = roundIdx === lastRound
         ? `<div class="bracket-game-sub">${gameIdx === 0 ? 'Final' : 'Third-Place Match'}</div>`
         : '';
-      return `<div class="bracket-game-wrap"><div class="bracket-game">` +
+      return `<div class="bracket-game-wrap"><div class="bracket-game" style="--game-rot:${gameCardRotation(game.gameNumber)}deg">` +
         sub +
         `<div class="bracket-date">${game.date ? formatDate(game.date) : 'Date TBD'}</div>` +
         bracketTeamRowHtml(game, 'home', decided) +
         bracketTeamRowHtml(game, 'away', decided) +
         `</div></div>`;
     }).join('');
-    return `<div class="bracket-round" data-round-idx="${roundIdx}" style="left:${roundIdx * BRACKET_STEP}px"><div class="bracket-round-games">${gamesHtml}</div></div>`;
+    return `<div class="bracket-round" data-round-idx="${roundIdx}"><div class="bracket-round-games">${gamesHtml}</div></div>`;
   }).join('');
 
   container.innerHTML = `<div class="bracket">${html}</div>`;
+  alignBracketColumnsToToggles(lo, hi);
   layoutBracketColumns();
+  // Rounds' own positions never move (see alignBracketColumnsToToggles), but
+  // the viewport onto them does: keep the leftmost visible round flush
+  // against the scroll container's left edge, so collapsing away early
+  // rounds doesn't leave a wall of blank scrolled-past space where they used
+  // to be.
+  const bracket = container.querySelector('.bracket');
+  const loCol = bracketColumnEl(lo);
+  if (bracket && loCol) bracket.scrollLeft = parseFloat(loCol.style.left) || 0;
 }
 
 // ── Page view (Match List / Rankings / Groups / Knockout) ────────────────
