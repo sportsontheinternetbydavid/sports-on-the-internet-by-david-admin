@@ -183,8 +183,19 @@
    the computed style with no unit-string parsing — see FLY_MS in
    shared.js and build.py's history script, both of which derive their
    setTimeout delay from this instead of hardcoding a matching number.
-   Change the pace in exactly this one place. */
-:root { --fly-ms: 850; }
+   Change the pace in exactly this one place.
+
+   --fly-distance/--fly-rotate are the other two numbers every fly
+   mechanism on the site shares (always fully off-screen, always the same
+   spin) — .fly-panel/.fly-item below read them, and so does build_home.py's
+   .home-group (loaded after this file on the homepage, see
+   build_home_html()), rather than each hand-copying "105vw"/"8deg"
+   separately. That duplication used to be real — .home-group carried its
+   own literal copies of these two values plus its own --fly-ms-equivalent
+   duration — and was exactly why a past bug (see "A resting-state rule
+   must never outrank a fly-transition rule" below) needed the same fix
+   applied twice by hand instead of once. */
+:root { --fly-ms: 850; --fly-distance: 105vw; --fly-rotate: 8deg; }
 
 /* Shared "fly panel" swap mechanism — the universal board-level transition
    speed *and* distance, see requirements/public.md -> Navigation ->
@@ -229,8 +240,8 @@
    a future rule got that priority wrong, the item would still visibly fly
    (just with the wrong spin angle), never stay stuck in place. */
 .fly-panel { transition: translate calc(var(--fly-ms) * 1ms) linear, rotate calc(var(--fly-ms) * 1ms) linear; }
-.fly-panel.fly-out { translate: 105vw 0; rotate: 8deg !important; }
-.fly-panel.fly-in-start { translate: -105vw 0; rotate: -8deg !important; transition: none !important; }
+.fly-panel.fly-out { translate: var(--fly-distance) 0; rotate: var(--fly-rotate) !important; }
+.fly-panel.fly-in-start { translate: calc(var(--fly-distance) * -1) 0; rotate: calc(var(--fly-rotate) * -1) !important; transition: none !important; }
 .fly-panel.fly-in-active { translate: 0 0; rotate: 0deg !important; transition: translate calc(var(--fly-ms) * 1ms) cubic-bezier(.1,.6,.2,1), rotate calc(var(--fly-ms) * 1ms) cubic-bezier(.1,.6,.2,1); }
 
 /* Item-level fly — "the invisible hands" (see brand-guidelines.md -> Motion)
@@ -250,8 +261,8 @@
    not a fixed site-wide constant the way --fly-item-ms is. */
 :root { --fly-item-ms: 420; }
 .fly-item { transition: translate calc(var(--fly-item-ms) * 1ms) linear, rotate calc(var(--fly-item-ms) * 1ms) linear; }
-.fly-item.fly-item-out { translate: 105vw 0; rotate: 8deg !important; }
-.fly-item.fly-item-in-start { translate: -105vw 0; rotate: -8deg !important; transition: none !important; }
+.fly-item.fly-item-out { translate: var(--fly-distance) 0; rotate: var(--fly-rotate) !important; }
+.fly-item.fly-item-in-start { translate: calc(var(--fly-distance) * -1) 0; rotate: calc(var(--fly-rotate) * -1) !important; transition: none !important; }
 .fly-item.fly-item-in-active { translate: 0 0; rotate: 0deg !important; transition: translate calc(var(--fly-item-ms) * 1ms) cubic-bezier(.1,.6,.2,1), rotate calc(var(--fly-item-ms) * 1ms) cubic-bezier(.1,.6,.2,1); }
 
 /* Applied to a scrollable ancestor (never the flying panel itself) for

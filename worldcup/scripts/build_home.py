@@ -154,14 +154,22 @@ body { font-family: 'Fredoka One', cursive; font-size: 1rem; line-height: 1.5; b
    to it automatically. */
 #home-groups-wrap { position: relative; transition: height 0.6s ease; }
 .home-group { position: absolute; top: 0; left: 0; width: 100%; display: flex; flex-direction: column; gap: 10px; }
-/* Speed (0.85s) matches ../nav.css's sitewide --fly-ms exactly — this was
-   an experimental homepage-only override at one point (production feedback
-   said an earlier faster pacing didn't read as physical paper sliding),
-   but the sitewide default was since brought up to match it, so this is no
-   longer actually diverging from anything; kept as its own literal instead
-   of reading --fly-ms since this whole block is a separate, homepage-only
-   swap mechanism from ../nav.css's .fly-panel (see requirements/public.md
-   -> Navigation -> Transitions -> "Homepage exception"). */
+/* Distance/rotation/duration all read ../nav.css's shared --fly-distance/
+   --fly-rotate/--fly-ms (nav_css is embedded ahead of this block on the
+   homepage — see build_home_html()) rather than each carrying its own
+   hand-copied "105vw"/"8deg"/"0.85s" — this file used to (production
+   feedback had briefly diverged the pacing before the sitewide default
+   caught up to match it, and the distance/rotation were just copied
+   alongside it), and that duplication was exactly why a past bug (see
+   ../nav.css -> "A resting-state rule must never outrank a fly-transition
+   rule") needed fixing twice by hand instead of once. What's still
+   genuinely homepage-only, not shared with ../nav.css's .fly-panel/
+   .fly-item, is *where* the transform lands and its per-child stagger:
+   here it's each group's own two direct children (its Level 2 and Level 3
+   nav rows), Level 3 always lagging Level 2 by a fixed 0.2s, moving
+   together as a two-piece unit rather than either a single .fly-panel
+   board or .fly-item's per-chip random jitter — see requirements/public.md
+   -> Navigation -> Transitions -> "Homepage exception". */
 /* translate/rotate, never transform or opacity — see ../nav.css's matching
    comment on .fly-panel/.fly-item for why these are the standalone
    properties and not the transform shorthand: a direct child here can
@@ -175,15 +183,15 @@ body { font-family: 'Fredoka One', cursive; font-size: 1rem; line-height: 1.5; b
    that one property while airborne. Never opacity either way — physical
    paper doesn't dissolve, it slides; a group stays fully opaque throughout,
    leaving/entering the frame is what makes it disappear/appear. */
-.home-group > * { transition: translate 0.85s linear, rotate 0.85s linear; }
+.home-group > * { transition: translate calc(var(--fly-ms) * 1ms) linear, rotate calc(var(--fly-ms) * 1ms) linear; }
 .home-group > *:nth-child(2) { transition-delay: 0.2s; }
 /* Exit off one side (right — taken off), enter from the other (left — put
    on): a one-way conveyor, not things retracing the same path. */
 .home-group.fly-out { pointer-events: none; }
-.home-group.fly-out > * { translate: 105vw 0; rotate: 8deg !important; }
+.home-group.fly-out > * { translate: var(--fly-distance) 0; rotate: var(--fly-rotate) !important; }
 .home-group.fly-in-start { pointer-events: none; }
-.home-group.fly-in-start > * { translate: -105vw 0; rotate: -8deg !important; transition: none !important; }
-.home-group.fly-in-active > * { translate: 0 0; rotate: 0deg !important; transition: translate 0.85s cubic-bezier(.1,.6,.2,1), rotate 0.85s cubic-bezier(.1,.6,.2,1); }
+.home-group.fly-in-start > * { translate: calc(var(--fly-distance) * -1) 0; rotate: calc(var(--fly-rotate) * -1) !important; transition: none !important; }
+.home-group.fly-in-active > * { translate: 0 0; rotate: 0deg !important; transition: translate calc(var(--fly-ms) * 1ms) cubic-bezier(.1,.6,.2,1), rotate calc(var(--fly-ms) * 1ms) cubic-bezier(.1,.6,.2,1); }
 .home-group.fly-in-active > *:nth-child(2) { transition-delay: 0.2s; }"""
 
 # Level 1's own JS toggle between "Sports!" and "Football" — see
