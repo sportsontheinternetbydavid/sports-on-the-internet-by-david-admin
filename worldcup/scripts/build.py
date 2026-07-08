@@ -860,19 +860,17 @@ def page_html(year, script_block, shared_css, shared_js):
 // Cross-page navigation (Home <-> WC YY <-> Tournaments <-> History) — see
 // requirements/public.md -> Navigation -> Cross-page navigation and
 // brand-guidelines.md -> Motion -> "Walking to a different poster". Shared
-// mechanics from ../fly.js (loaded above, in <head>); no override needed
-// here — pageNavFlyItems()'s default (every in-frame nav chip at every
-// level: Level 1, the Match List/Groups/Knockout/Rankings tabs, and
-// whichever Level 3 toggle is currently visible) is exactly right for this
-// page, since .page-nav wraps all of it (see the markup above).
-//
-// This does not yet fly the active view's own content (a Match List row, a
-// Rankings flag, a Knockout card) on cross-page arrival/departure the way
-// History flies its table cells — requirements/public.md -> Cross-page
-// navigation already calls for that (it isn't a documented exception), this
-// page just doesn't do it yet. See workbench/cross-page-nav-content.md for
-// why and what's left.
-setupCrossPageNav();
+// mechanics from ../fly.js (loaded above, in <head>); every in-frame nav
+// chip at every level (pageNavFlyItems(), .page-nav wraps all of it — see
+// the markup above) plus whichever view is actually showing's own content
+// (currentViewFlyItems(), in shared.js, loaded just above this script) —
+// Match List rows/Rankings flags/Knockout cards on departure, and Match
+// List specifically on arrival, since that's the only view a fresh
+// cross-page arrival ever lands on (currentPageView starts 'matches' and
+// nothing carries a #hash across a navigation).
+setupCrossPageNav(function() {{
+  return pageNavFlyItems().concat(currentViewFlyItems());
+}});
 </script>
 
 </body>

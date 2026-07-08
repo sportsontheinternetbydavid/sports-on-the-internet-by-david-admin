@@ -184,12 +184,26 @@ function feedLabel(from) {
   return `${from.result === 'loser' ? 'Loser' : 'Winner'} of Game ${from.game}`;
 }
 
+// .ml-inner marks a Match List row's own individually-flyable pieces — see
+// requirements/public.md -> Navigation -> Cross-page navigation -> "The
+// item, for a row-based view (Match List), is finer than the in-page
+// row-swap grain": each flag/score/ELO figure flies on its own on a
+// cross-page arrival/departure, not the row as a unit. The flag icon
+// already carries its own resting tilt via an inline `transform:rotate()`
+// (a different CSS property than the standalone `translate`/`rotate` the
+// site's fly mechanism uses — see nav.css's comment on .fly-item for why
+// that split matters — so the two compose instead of one silently
+// discarding the other) — no extra wrapper needed there, `.ml-inner` goes
+// directly on the existing .icon span. A plain text piece (a score, an ELO
+// figure, a still-pending knockout slot's label) has no such element yet,
+// so it gets one purely to have something to fly — same reasoning as
+// build.py's pending_cell wrapping its message in .hist-inner.
 function flagCellHtml(game, side) {
   const team = game[side + 'Team'];
   if (team) {
-    return `<td class="flag"><span class="icon" style="background-image:url('flags/${flagByTeam[team]}.svg');transform:rotate(${flagRotation(team)}deg)" data-team="${esc(team)}"></span></td>`;
+    return `<td class="flag"><span class="ml-inner icon" style="background-image:url('flags/${flagByTeam[team]}.svg');transform:rotate(${flagRotation(team)}deg)" data-team="${esc(team)}"></span></td>`;
   }
-  return `<td class="flag tbd-slot">${esc(feedLabel(game[side + 'From']))}</td>`;
+  return `<td class="flag tbd-slot"><span class="ml-inner">${esc(feedLabel(game[side + 'From']))}</span></td>`;
 }
 
 function gameRowCells(game) {
@@ -202,13 +216,13 @@ function gameRowCells(game) {
     `<td class="narrow">${formatDate(game.date)}</td>` +
     `<td class="narrow">#${game.gameNumber}</td>` +
     `<td class="spacer"></td>` +
-    `<td class="elo">${eloCell(game.homeEloPre, homeEloDelta)}</td>` +
+    `<td class="elo"><span class="ml-inner">${eloCell(game.homeEloPre, homeEloDelta)}</span></td>` +
     flagCellHtml(game, 'home') +
-    `<td class="narrow">${homeScore}</td>` +
+    `<td class="narrow"><span class="ml-inner">${homeScore}</span></td>` +
     `<td class="score-sep">-</td>` +
-    `<td class="narrow">${awayScore}</td>` +
+    `<td class="narrow"><span class="ml-inner">${awayScore}</span></td>` +
     flagCellHtml(game, 'away') +
-    `<td class="elo">${eloCell(game.awayEloPre, awayEloDelta)}</td>`
+    `<td class="elo"><span class="ml-inner">${eloCell(game.awayEloPre, awayEloDelta)}</span></td>`
   );
 }
 
@@ -1256,6 +1270,32 @@ function setPageView(view) {
     flyIn([incoming], { onSettled: function() { document.body.classList.remove('fly-scroll-lock'); } });
   });
   if (location.hash.slice(1) !== view) history.replaceState(null, '', '#' + view);
+}
+
+// The active view's own in-frame content, for cross-page nav's extra-items
+// function (see build.py's page_html() -> setupCrossPageNav call, and
+// ../fly.js's setupCrossPageNav) — nav chips themselves are handled by that
+// function's own default (pageNavFlyItems), this is only ever the page's
+// additional content beyond its nav. Reads currentPageView fresh each call
+// rather than being fixed at setup time, so a departure mid-Knockout-browse
+// flies Knockout's cards, not whatever view happened to be showing when the
+// listener was attached.
+//
+// Match List is the one view needing its own finer-than-usual grain here —
+// see requirements/public.md -> Navigation -> Cross-page navigation ->
+// "The item, for a row-based view... is finer than the in-page row-swap
+// grain": each flag/score/ELO figure (.ml-inner — see gameRowCells/
+// flagCellHtml) flies on its own, not the row. Knockout's game cards and
+// Rankings' flags are already each view's own finest independently-
+// meaningful unit — the same elements slideInBracketColumns/
+// slideOutBracketColumns and renderRankings already treat as items — so
+// gathering them needs no further restructuring, just a selector. Groups
+// has no real content yet (still a "coming soon" placeholder).
+function currentViewFlyItems() {
+  if (currentPageView === 'matches') return Array.from(document.querySelectorAll('#matches-view tbody .ml-inner'));
+  if (currentPageView === 'knockout') return Array.from(document.querySelectorAll('#knockout-outer .bracket-game-wrap'));
+  if (currentPageView === 'rankings') return Array.from(document.querySelectorAll('#rankings-body .flag-pin'));
+  return [];
 }
 
 function validateContract() {

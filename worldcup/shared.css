@@ -21,6 +21,15 @@ th { font-family: 'Permanent Marker', cursive; background: #C0392B; color: #FFFF
 .elo { text-align: left; }
 .flag { text-align: center; }
 .flag .icon { display: inline-block; width: 2.2em; height: 1.5em; background-size: cover; background-position: center; background-repeat: no-repeat; vertical-align: middle; border: 1px solid #ccc; filter: saturate(0.8); }
+/* Marks a Match List row's individually-flyable pieces (a score, an ELO
+   figure, a still-pending knockout slot's label) for cross-page nav — see
+   shared.js's flagCellHtml/gameRowCells and requirements/public.md ->
+   Navigation -> Cross-page navigation. inline-block so translate/rotate
+   (../nav.css's .fly-item) has a box to move without disturbing the
+   surrounding <td>'s own text-align. The flag icon needs no separate rule
+   here — .flag .icon above already sets inline-block, and .ml-inner is
+   just an additional class on that same span, not a second wrapper. */
+.ml-inner { display: inline-block; }
 .conf { text-align: center; min-width: 5em; }
 .conf-first { border-left: 2px solid rgba(255,255,255,0.3); }
 
