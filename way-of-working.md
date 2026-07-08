@@ -19,6 +19,7 @@ There are two requirements docs, for two separate sites — see `00-index.md` fo
 - Each requirements doc is the source of truth for its own site. If the implementation and a requirements doc ever disagree, that's a bug — fix one to match the other.
 - Keep the implementation as simple as the requirements docs allow — see `technical.md` → *Shape of the system* for the specific constraints (no npm/bundler/framework, the one build-step exception).
 - Never remove working functionality just because a requirements doc says it belongs somewhere else, unless the replacement already exists and works, or the human has explicitly confirmed the interim gap is fine. Rewriting a requirements doc to describe a future split (e.g. "this belongs on a separate admin site now") is not authorization to delete the current implementation before that split is actually built.
+- When verifying a CSS transition/animation via the browser preview tool, trust a screenshot over `getComputedStyle`/`getBoundingClientRect` read through `eval`. In practice those reads have gone stale for an element whose classList was mutated by an *earlier* `eval` call in the same session — reporting the pre-mutation style back with no error — while the actual rendered frame (and a fresh screenshot of it) was correct. A screenshot goes through the real render pipeline; a follow-up `eval` read of computed style doesn't reliably do the same in this environment.
 
 ## Git
 

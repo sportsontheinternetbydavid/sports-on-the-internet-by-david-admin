@@ -125,9 +125,14 @@ body { font-family: 'Fredoka One', cursive; font-size: 1rem; line-height: 1.5; b
    makes the whole block read as one thing, in either state. Deliberate
    homepage-only exception, not a change to the general rule. */
 #page-nav .view-toggle { justify-content: center; }
-#sports-level2 strong.active { background: none; box-shadow: none; transform: none; color: #C0392B; font-size: 1.4rem; padding: 0; }
+/* scale/rotate: none (not transform: none) — .view-toggle strong.active
+   (../nav.css) sets its "picked up" look via the standalone scale/rotate
+   properties now, not the transform shorthand (see that file's comment on
+   why), so canceling it here needs to reset those same two properties
+   rather than a transform that no longer carries either value. */
+#sports-level2 strong.active { background: none; box-shadow: none; scale: none; rotate: none; color: #C0392B; font-size: 1.4rem; padding: 0; }
 #sports-level2 strong.active::before { display: none; }
-#sports-level3 strong.active { background: none; box-shadow: none; transform: none; color: #5a4a3a; font-size: 1.1rem; padding: 0; }
+#sports-level3 strong.active { background: none; box-shadow: none; scale: none; rotate: none; color: #5a4a3a; font-size: 1.1rem; padding: 0; }
 #sports-level3 strong.active::before { display: none; }
 /* A little breathing room on all sides so a chip's shadow/tape isn't
    clipped by the viewport edge (or, since overflow:hidden above means
@@ -149,25 +154,36 @@ body { font-family: 'Fredoka One', cursive; font-size: 1rem; line-height: 1.5; b
    to it automatically. */
 #home-groups-wrap { position: relative; transition: height 0.6s ease; }
 .home-group { position: absolute; top: 0; left: 0; width: 100%; display: flex; flex-direction: column; gap: 10px; }
-/* Speed is an experimental homepage-only override — see
-   requirements/public.md -> Navigation -> Transitions -> "Homepage
-   exception": production feedback called the original ~100-150ms pacing
-   too fast to read as physical paper sliding. Every other use of this
-   transition elsewhere on the site keeps the fast/under-200ms pacing until
-   this is validated. */
-/* Transform only, never opacity — see requirements/public.md's -> Motion
-   in brand-guidelines.md: physical paper doesn't dissolve, it slides. A
-   group stays fully opaque throughout; leaving/entering the frame is what
-   makes it disappear/appear. */
-.home-group > * { transition: transform 0.85s linear; }
+/* Speed (0.85s) matches ../nav.css's sitewide --fly-ms exactly — this was
+   an experimental homepage-only override at one point (production feedback
+   said an earlier faster pacing didn't read as physical paper sliding),
+   but the sitewide default was since brought up to match it, so this is no
+   longer actually diverging from anything; kept as its own literal instead
+   of reading --fly-ms since this whole block is a separate, homepage-only
+   swap mechanism from ../nav.css's .fly-panel (see requirements/public.md
+   -> Navigation -> Transitions -> "Homepage exception"). */
+/* translate/rotate, never transform or opacity — see ../nav.css's matching
+   comment on .fly-panel/.fly-item for why these are the standalone
+   properties and not the transform shorthand: a direct child here can
+   carry .active (e.g. "World Cup", the only real Level 2 item) while its
+   group is mid-swap, and .view-toggle strong.active sets its own scale/
+   rotate for the "picked up" look — sharing the transform property would
+   let whichever rule's shorthand wins silently discard the other's value.
+   translate is untouched by anything else in this file or ../nav.css, so
+   it can't lose that fight structurally; rotate is shared with the chip's
+   own resting rotation, so it keeps !important to make sure the fly wins
+   that one property while airborne. Never opacity either way — physical
+   paper doesn't dissolve, it slides; a group stays fully opaque throughout,
+   leaving/entering the frame is what makes it disappear/appear. */
+.home-group > * { transition: translate 0.85s linear, rotate 0.85s linear; }
 .home-group > *:nth-child(2) { transition-delay: 0.2s; }
 /* Exit off one side (right — taken off), enter from the other (left — put
    on): a one-way conveyor, not things retracing the same path. */
 .home-group.fly-out { pointer-events: none; }
-.home-group.fly-out > * { transform: translateX(105vw) rotate(8deg); }
+.home-group.fly-out > * { translate: 105vw 0; rotate: 8deg !important; }
 .home-group.fly-in-start { pointer-events: none; }
-.home-group.fly-in-start > * { transform: translateX(-105vw) rotate(-8deg); transition: none !important; }
-.home-group.fly-in-active > * { transform: translateX(0) rotate(0deg); transition: transform 0.85s cubic-bezier(.1,.6,.2,1); }
+.home-group.fly-in-start > * { translate: -105vw 0; rotate: -8deg !important; transition: none !important; }
+.home-group.fly-in-active > * { translate: 0 0; rotate: 0deg !important; transition: translate 0.85s cubic-bezier(.1,.6,.2,1), rotate 0.85s cubic-bezier(.1,.6,.2,1); }
 .home-group.fly-in-active > *:nth-child(2) { transition-delay: 0.2s; }"""
 
 # Level 1's own JS toggle between "Sports!" and "Football" — see
@@ -203,67 +219,36 @@ window.addEventListener('DOMContentLoaded', function() {
   document.getElementById('home-groups-wrap').style.height = document.getElementById('sports-group').scrollHeight + 'px';
 });
 
-// Cross-page navigation (Home <-> History) — see requirements/public.md ->
-// Navigation -> Cross-page navigation and brand-guidelines.md -> Motion ->
-// "Walking to a different poster". No native View Transition (its only
-// primitive is one whole-page snapshot, which is exactly the "component
-// dropped in" effect that section rules out) — instead every in-frame nav
-// chip flies out individually before leaving, and every in-frame one on
-// the arriving page flies in the same way, reusing flyOutItems()/
-// flyInItems()/inFrame()/NAV_FLY_KEY from fly.js (loaded before this
-// script — see build_home_html()'s <script src="fly.js">).
-
+// Cross-page navigation (Home <-> WC YY <-> Tournaments <-> History) — see
+// requirements/public.md -> Navigation -> Cross-page navigation and
+// brand-guidelines.md -> Motion -> "Walking to a different poster". The
+// actual click-intercept/sessionStorage/scroll-lock/fonts.ready mechanics
+// are shared sitewide now (see setupCrossPageNav in fly.js, loaded before
+// this script) — this page only supplies which elements are its own to fly.
+//
 // Every Level 1 chip, plus whichever of Sports!/Football's own Level 2-3
-// chips is currently showing (only Football's ever has a cross-page link —
-// History — but this stays general rather than assuming). Sports!'s own
-// Level 2-3 is the one typographic composition exempt from chip treatment
-// (see brand-guidelines.md -> "The homepage signature is exempt"), so it
-// flies as the single #sports-group item, not as separate chips.
-function homeDepartureItems() {
+// chips is currently showing (every one of Football's Level 2-3 items is a
+// cross-page link somewhere — World Cup's Tournaments, History — but this
+// stays general rather than assuming). Sports!'s own Level 2-3 is the one
+// typographic composition exempt from chip treatment (see
+// brand-guidelines.md -> "The homepage signature is exempt"), so it flies
+// as the single #sports-group item, not as separate chips — the one reason
+// this page can't just use setupCrossPageNav()'s pageNavFlyItems() default.
+function homeFlyItems() {
   var level1 = Array.from(document.querySelector('.utility-bar').children);
   var activeGroup = document.getElementById(__currentHomeView + '-group');
   var level23 = __currentHomeView === 'sports'
     ? [activeGroup]
     : Array.from(activeGroup.querySelectorAll('.view-toggle > *'));
-  return level1.concat(level23).filter(Boolean).filter(inFrame);
+  return level1.concat(level23);
 }
 
-document.addEventListener('click', function(e) {
-  var link = e.target.closest('a[href*="history.html"]');
-  if (!link) return;
-  e.preventDefault();
-  var href = link.getAttribute('href');
-  flyOutItems(homeDepartureItems()).then(function() {
-    sessionStorage.setItem(NAV_FLY_KEY, '1');
-    window.location.href = href;
-  });
-});
-
-// Only a same-site click sets NAV_FLY_KEY (see build.py's build_history_page);
-// a direct load/refresh never does, so this never fires on those — matching
-// the sitewide "nothing flies on load" default (see requirements/public.md
-// -> Navigation -> Initial display) with its one sanctioned exception. On
-// arrival the homepage is always in its default Sports! state (Football's
-// state isn't carried across a navigation), so #sports-group is the only
-// Level 2-3 piece to fly in, alongside every Level 1 chip.
-if (sessionStorage.getItem(NAV_FLY_KEY) === '1') {
-  sessionStorage.removeItem(NAV_FLY_KEY);
-  var level1 = Array.from(document.querySelector('.utility-bar').children);
-  var arrivalItems = level1.concat([document.getElementById('sports-group')]).filter(inFrame);
-  // Pinned off-screen the instant they exist — before any paint, same as
-  // always — but the actual flight waits on document.fonts.ready. The
-  // Google Fonts <link> in <head> is render-blocking; starting the animated
-  // part before the page can actually paint it risks the whole staggered
-  // sequence executing before the browser ever shows a frame of it — the
-  // arrival reads as one clump landing instantly instead of individually
-  // staggered pieces landing over real time. See requirements/public.md ->
-  // Cross-page navigation -> "The board must already be standing before
-  // the first item moves — never a race."
-  arrivalItems.forEach(function(item) { item.classList.add('fly-item', 'fly-item-in-start'); });
-  document.fonts.ready.then(function() {
-    flyInItems(arrivalItems);
-  });
-}
+// On arrival the homepage is always in its default Sports! state
+// (Football's state isn't carried across a navigation) — homeFlyItems()
+// reads __currentHomeView freshly each call, so this naturally returns
+// #sports-group both on departure from the Sports! state and on arrival,
+// with no separate arrival-specific item list needed.
+setupCrossPageNav(homeFlyItems);
 </script>"""
 
 

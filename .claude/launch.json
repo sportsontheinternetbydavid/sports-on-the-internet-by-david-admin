@@ -3,9 +3,10 @@
   "configurations": [
     {
       "name": "2026",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8765", "--directory", "site"],
-      "port": 8765
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "python3 -m http.server \"$PORT\" --directory site"],
+      "port": 8765,
+      "autoPort": true
     },
     {
       "name": "admin",

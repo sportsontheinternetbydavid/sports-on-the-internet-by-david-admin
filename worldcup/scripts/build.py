@@ -672,77 +672,21 @@ function histItems(tbody) {{
   return Array.from(tbody.querySelectorAll('.hist-inner'));
 }}
 
-// Cross-page navigation (Home <-> History) — see requirements/public.md ->
-// Navigation -> Cross-page navigation and brand-guidelines.md -> Motion ->
-// "Walking to a different poster". No native View Transition (its only
-// primitive is one whole-page snapshot, which is exactly the "component
-// dropped in" effect that section rules out) — instead every in-frame nav
-// chip and cell flies out individually before leaving, and every in-frame
-// one on the arriving page flies in the same way, reusing flyOutItems()/
-// flyInItems()/inFrame()/NAV_FLY_KEY from ../fly.js (loaded before this
-// script — see page_html()/build_history_page()'s <script src="fly.js">).
-
-// Every nav chip at every level, plus the active round's own cells — reuses
-// histItems as-is, since History already flies at cell granularity for its
-// own round toggle (see setHistRound below); only Match List needs a finer
-// grain than its usual row-level item for this feature (see
-// requirements/public.md -> Cross-page navigation).
-function historyFlyItems() {{
-  const chips = [document.querySelector('.utility-bar a')]
-    .concat(Array.from(document.querySelectorAll('.primary-tabs button')));
-  const cells = histItems(document.getElementById('hist-tbody'));
-  return chips.concat(cells).filter(Boolean).filter(inFrame);
-}}
-
-document.querySelector('.utility-bar a').addEventListener('click', function(e) {{
-  e.preventDefault();
-  const href = e.currentTarget.getAttribute('href');
-  const scrollEl = document.querySelector('.table-wrap');
-  // Nav chips (the Home chip, the round tabs) live outside .table-wrap, in
-  // <body> — which has its own overflow-x: auto for the table's legitimate
-  // horizontal scroll (see shared.css). An off-screen translateX inflates
-  // whichever ancestor's scrollable width the same way .table-wrap's own
-  // cells already needed locking against (see the comment on setHistRound
-  // below) — body needs the same lock while chips are in flight, or the
-  // whole page can visibly lurch instead of reading as individual pieces.
-  if (scrollEl) scrollEl.classList.add('fly-scroll-lock');
-  document.body.classList.add('fly-scroll-lock');
-  flyOutItems(historyFlyItems()).then(function() {{
-    sessionStorage.setItem(NAV_FLY_KEY, '1');
-    window.location.href = href;
-  }});
+// Cross-page navigation (Home <-> WC YY <-> Tournaments <-> History) — see
+// requirements/public.md -> Navigation -> Cross-page navigation and
+// brand-guidelines.md -> Motion -> "Walking to a different poster". The
+// actual click-intercept/sessionStorage/scroll-lock/fonts.ready mechanics
+// are shared sitewide now (see setupCrossPageNav in ../fly.js, loaded
+// before this script) — this page only supplies which elements are its own
+// to fly: every nav chip at every level (pageNavFlyItems(), also in
+// ../fly.js), plus the active round's own cells, reusing histItems as-is
+// since History already flies at cell granularity for its own round toggle
+// (see setHistRound below); only Match List needs a finer grain than its
+// usual row-level item for this feature (see requirements/public.md ->
+// Cross-page navigation).
+setupCrossPageNav(function() {{
+  return pageNavFlyItems().concat(histItems(document.getElementById('hist-tbody')));
 }});
-
-// Only a same-site click sets NAV_FLY_KEY (see build_home.py) — a direct
-// load/refresh never does, so this never fires on those, matching the
-// sitewide "nothing flies on load" default (see requirements/public.md ->
-// Navigation -> Initial display) with its one sanctioned exception.
-if (sessionStorage.getItem(NAV_FLY_KEY) === '1') {{
-  sessionStorage.removeItem(NAV_FLY_KEY);
-  const arrivalItems = historyFlyItems();
-  // Pinned off-screen the instant they exist — before any paint, same as
-  // always — but the actual flight waits on document.fonts.ready. The
-  // Google Fonts <link> in <head> is render-blocking; if this script's
-  // synchronous class mutations above happened to win the race against
-  // that fetch, the flight would run correctly, but there's no guarantee
-  // it does. Starting the animated part before the page can actually paint
-  // it risks the whole staggered sequence executing before the browser
-  // ever shows a frame of it — the arrival reads as one clump landing
-  // instantly instead of individually staggered pieces landing over real
-  // time, because the reader never saw the individual motion happen. See
-  // requirements/public.md -> Cross-page navigation -> "The board must
-  // already be standing before the first item moves — never a race."
-  arrivalItems.forEach(function(item) {{ item.classList.add('fly-item', 'fly-item-in-start'); }});
-  document.fonts.ready.then(function() {{
-    const scrollEl = document.querySelector('.table-wrap');
-    if (scrollEl) scrollEl.classList.add('fly-scroll-lock');
-    document.body.classList.add('fly-scroll-lock');
-    flyInItems(arrivalItems).then(function() {{
-      if (scrollEl) scrollEl.classList.remove('fly-scroll-lock');
-      document.body.classList.remove('fly-scroll-lock');
-    }});
-  }});
-}}
 
 function setHistRound(round) {{
   if (round === __currentHistRound) return;
@@ -911,6 +855,24 @@ def page_html(year, script_block, shared_css, shared_js):
 </script>
 <script>
 {shared_js}
+</script>
+<script>
+// Cross-page navigation (Home <-> WC YY <-> Tournaments <-> History) — see
+// requirements/public.md -> Navigation -> Cross-page navigation and
+// brand-guidelines.md -> Motion -> "Walking to a different poster". Shared
+// mechanics from ../fly.js (loaded above, in <head>); no override needed
+// here — pageNavFlyItems()'s default (every in-frame nav chip at every
+// level: Level 1, the Match List/Groups/Knockout/Rankings tabs, and
+// whichever Level 3 toggle is currently visible) is exactly right for this
+// page, since .page-nav wraps all of it (see the markup above).
+//
+// This does not yet fly the active view's own content (a Match List row, a
+// Rankings flag, a Knockout card) on cross-page arrival/departure the way
+// History flies its table cells — requirements/public.md -> Cross-page
+// navigation already calls for that (it isn't a documented exception), this
+// page just doesn't do it yet. See workbench/cross-page-nav-content.md for
+// why and what's left.
+setupCrossPageNav();
 </script>
 
 </body>
