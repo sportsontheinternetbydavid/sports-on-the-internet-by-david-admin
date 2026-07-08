@@ -1,7 +1,7 @@
 """Shared fused-nav-bar rendering — the Level 1-3 component used by both the
 homepage (build_home.py) and every World Cup page (build.py). Not a script:
 no CLI, imported like knockout.py. See ../nav.css for the CSS this markup
-depends on, and requirements/public.md -> Navigation for the full spec.
+depends on, and requirements/navigation.md for the full spec.
 
 Only covers the "flat row of equal-width links" shape (Level 1 everywhere,
 Level 2 and a plain Level 3 on the homepage). World Cup pages' own Level 2

@@ -17,7 +17,7 @@ import argparse
 import json
 import sys
 import urllib.request
-from datetime import date, timedelta
+from datetime import date
 from pathlib import Path
 
 import build
@@ -125,8 +125,9 @@ def main():
     parser.add_argument("--all", action="store_true", help="Update all unscored games, not just past ones.")
     args = parser.parse_args()
 
-    today = str(date.today())
-    cutoff = today if args.all else str(date.today() - timedelta(days=0))  # include today too
+    # Games dated after today are "future" and skipped unless --all is passed
+    # (see the --all check below) — today's own games are always included.
+    cutoff = str(date.today())
 
     print(f"Fetching {TSV_URL} ...")
     try:

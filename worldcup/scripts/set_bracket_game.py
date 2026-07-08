@@ -43,19 +43,9 @@ from pathlib import Path
 
 import build
 import gitops
+from teams import load_teams, resolve_team
 
 ROOT = Path(__file__).resolve().parent.parent
-
-
-def load_teams():
-    return json.load(open(ROOT / "data" / "teams.json"))
-
-
-def resolve_team(shorthand, teams):
-    match = [t for t in teams if t["shorthand"].upper() == shorthand.upper()]
-    if not match:
-        sys.exit(f"Unknown team shorthand '{shorthand}'. Use set_result.py --list-teams to see valid codes.")
-    return match[0]["name"]
 
 
 def parse_from(spec, flag_name):

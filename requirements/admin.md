@@ -86,6 +86,8 @@ Same mechanism as the public site (see `public.md` → *Favicon*), but this site
 
 Red + white is reused here for the same reason it was reused on the public site: it already means "this can change data" everywhere else this project has used it. "Live" for this site won't be reachable until it has its own backend (see *Hosting* above), but the favicon logic doesn't need to know that — it already renders correctly the moment this site is opened from a non-local host.
 
+**Implementation:** `worldcup/scripts/build_admin.py` has its own copy of the `window.__setFavicon()` script (see `public.md` → *Favicon* → *Implementation*) — a third copy alongside `build.py`'s and `build_home.py`'s, for the same reason: it must run before any page-specific data exists, so it can't be a shared runtime import.
+
 ---
 
 ## Data Sources

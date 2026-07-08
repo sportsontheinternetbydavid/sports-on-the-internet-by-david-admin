@@ -6,8 +6,11 @@ games are in each round, halving each round down to the semifinals,
 followed by a final round of 2 games (third-place playoff, then the final).
 
 Used by build.py (validation + embedding into pages), set_knockout_size.py
-(scaffolding stub games), and set_bracket_game.py (editing them). The JS
-mirror of rounds_for_size() lives in shared.js as knockoutRounds().
+(scaffolding stub games), and set_bracket_game.py (editing them). Two
+independent JS mirrors of rounds_for_size() exist, both named
+knockoutRounds(): shared.js's copy (public World Cup pages) and
+build_admin.py's own copy (admin pages). Keep all three in sync if this
+ever changes.
 """
 
 VALID_SIZES = (32, 16, 8, 4)

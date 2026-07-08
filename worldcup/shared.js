@@ -961,7 +961,9 @@ function initRankingsHover() {
 // ── Knockout bracket view ─────────────────────────────────────────────────
 
 // Mirrors knockout.py's rounds_for_size() — see that file for the round
-// shape rationale. Keep the two in sync if this ever changes.
+// shape rationale. A second, independent JS copy lives in build_admin.py
+// for the admin site's own bracket tab. Keep all three in sync if this
+// ever changes.
 const KNOCKOUT_ROUND_LABELS = { 32: 'Round of 32', 16: 'Round of 16', 8: 'Quarterfinals', 4: 'Semifinals' };
 function knockoutRounds(size) {
   const rounds = [];

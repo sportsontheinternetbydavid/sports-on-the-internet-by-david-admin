@@ -24,19 +24,9 @@ import sys
 from pathlib import Path
 
 import build
+from teams import load_teams, list_teams
 
 ROOT = Path(__file__).resolve().parent.parent
-
-
-def load_teams():
-    return json.load(open(ROOT / "data" / "teams.json"))
-
-
-def list_teams():
-    teams = load_teams()
-    width = max(len(t["name"]) for t in teams)
-    for t in sorted(teams, key=lambda t: t["name"]):
-        print(f"{t['shorthand']}  {t['name']:<{width}}  {t['confederation']}")
 
 
 def main():

@@ -493,7 +493,7 @@ def build_history_page(shared_css):
 
     def pending_cell(colspan, msg='Not yet played'):
         # Wrapped in .hist-inner too (same as flag_cell) so setHistRound's
-        # per-item fly (see requirements/public.md -> Navigation ->
+        # per-item fly (see requirements/navigation.md ->
         # Transitions) has something to animate here as well — the message
         # itself is the one "item" this row holds when there's no flag data.
         return f'<td colspan="{colspan}" class="hist-pending"><div class="hist-inner">{msg}</div></td>'
@@ -664,7 +664,7 @@ function attachHistHoverHandlers() {{
 }}
 
 // Every flag+ELO cell (or, for a not-yet-played row, its message) is its
-// own item — see requirements/public.md -> Navigation -> Transitions ->
+// own item — see requirements/navigation.md -> Transitions ->
 // "The unit that moves, by action". The row itself, and the year
 // identifying it, are the board and never appear in this list — only
 // what's placed into a row's cells does.
@@ -673,7 +673,7 @@ function histItems(tbody) {{
 }}
 
 // Cross-page navigation (Home <-> WC YY <-> Tournaments <-> History) — see
-// requirements/public.md -> Navigation -> Cross-page navigation and
+// requirements/navigation.md -> Cross-page navigation and
 // brand-guidelines.md -> Motion -> "Walking to a different poster". The
 // actual click-intercept/sessionStorage/scroll-lock/fonts.ready mechanics
 // are shared sitewide now (see setupCrossPageNav in ../fly.js, loaded
@@ -858,7 +858,7 @@ def page_html(year, script_block, shared_css, shared_js):
 </script>
 <script>
 // Cross-page navigation (Home <-> WC YY <-> Tournaments <-> History) — see
-// requirements/public.md -> Navigation -> Cross-page navigation and
+// requirements/navigation.md -> Cross-page navigation and
 // brand-guidelines.md -> Motion -> "Walking to a different poster". Shared
 // mechanics from ../fly.js (loaded above, in <head>); every in-frame nav
 // chip at every level (pageNavFlyItems(), .page-nav wraps all of it — see

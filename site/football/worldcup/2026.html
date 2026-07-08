@@ -2944,7 +2944,9 @@ function initRankingsHover() {
 // ── Knockout bracket view ─────────────────────────────────────────────────
 
 // Mirrors knockout.py's rounds_for_size() — see that file for the round
-// shape rationale. Keep the two in sync if this ever changes.
+// shape rationale. A second, independent JS copy lives in build_admin.py
+// for the admin site's own bracket tab. Keep all three in sync if this
+// ever changes.
 const KNOCKOUT_ROUND_LABELS = { 32: 'Round of 32', 16: 'Round of 16', 8: 'Quarterfinals', 4: 'Semifinals' };
 function knockoutRounds(size) {
   const rounds = [];
@@ -3342,7 +3344,7 @@ initRankingsHover();
 </script>
 <script>
 // Cross-page navigation (Home <-> WC YY <-> Tournaments <-> History) — see
-// requirements/public.md -> Navigation -> Cross-page navigation and
+// requirements/navigation.md -> Cross-page navigation and
 // brand-guidelines.md -> Motion -> "Walking to a different poster". Shared
 // mechanics from ../fly.js (loaded above, in <head>); every in-frame nav
 // chip at every level (pageNavFlyItems(), .page-nav wraps all of it — see

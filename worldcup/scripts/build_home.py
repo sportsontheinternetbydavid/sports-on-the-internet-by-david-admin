@@ -2,7 +2,7 @@
 """Regenerate the homepage (site/index.html) from the nav config below.
 
 The homepage's nav is the exact same component (nav.py) and CSS (../nav.css)
-as every World Cup page's own nav — see requirements/public.md -> Navigation.
+as every World Cup page's own nav — see requirements/navigation.md.
 Making the homepage a build artifact, same as every other public page, means
 that shared component has exactly one implementation instead of a
 hand-maintained second copy that could silently drift from it.
@@ -89,7 +89,7 @@ FAVICON_SCRIPT = """<script>
 HOME_CSS = """*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { overflow: hidden; }
 /* max-width + margin:0 auto matches shared.css's body rule (used by every
-   World Cup page) — see requirements/public.md -> Navigation: the nav
+   World Cup page) — see requirements/navigation.md: the nav
    "spans the page's full content width (the same max width the rest of
    the page uses ... not shrink-to-fit)". Without this, the row is full
    raw-viewport width, so on a wide monitor the centered signature (which
@@ -109,12 +109,12 @@ body { font-family: 'Fredoka One', cursive; font-size: 1rem; line-height: 1.5; b
    last row) trigger a real vertical scrollbar that silently ate into the
    content width and threw off centering. */
 /* The "Sports!" signature (On the Internet. / By David / the tagline) is
-   the site's byline, not a choice — see requirements/public.md -> Navigation
+   the site's byline, not a choice — see requirements/navigation.md
    -> "The homepage signature is exempt". No chip styling at all: no fill,
    no shadow, no tape, no rotation, just handwritten/printed text directly
    on the page, sized down in weight level by level. */
 /* Every row is left-aligned everywhere else on the site (see
-   requirements/public.md -> Navigation -> General nav chip characteristics)
+   requirements/navigation.md -> General nav chip characteristics)
    because those pages are functional multi-page toolbars. The homepage
    isn't — it's one splash/title composition ("the nav *is* the page"), so
    every row centers here instead: Level 1 above, and both states' Level 2/3
@@ -228,7 +228,7 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 
 // Cross-page navigation (Home <-> WC YY <-> Tournaments <-> History) — see
-// requirements/public.md -> Navigation -> Cross-page navigation and
+// requirements/navigation.md -> Cross-page navigation and
 // brand-guidelines.md -> Motion -> "Walking to a different poster". The
 // actual click-intercept/sessionStorage/scroll-lock/fonts.ready mechanics
 // are shared sitewide now (see setupCrossPageNav in fly.js, loaded before
