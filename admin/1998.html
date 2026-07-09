@@ -78,7 +78,8 @@ h2 { font-size: 1.05rem; margin: 2rem 0 0.6rem; }
 .ab-score { font-weight: bold; }
 .ab-team.loser .ab-score { font-weight: normal; }
 .ab-tbd { color: #999; font-style: italic; font-size: 0.72rem; }
-#bracket-edit-panel:not(:empty) { border: 1px solid #ccc; border-radius: 4px; padding: 0.6rem 0.8rem; background: #f4f8ff; margin-top: 0.5rem; }
+.ab-edit-panel { border: 1px solid #ccc; border-radius: 4px; padding: 0.5rem 0.7rem; background: #f4f8ff; margin: 0.3rem 0; min-width: 220px; }
+.ab-edit-hint { font-size: 0.78rem; color: #666; margin: 0.4rem 0 0; }
 </style>
 </head>
 <body>
@@ -1447,8 +1448,6 @@ function knockoutRounds(size) {
   return rounds;
 }
 
-let selectedBracketGameNumber = null;
-
 function bracketAdminTeamHtml(game, side, flagByTeam, decided) {
   const team = game[side + 'Team'];
   if (!team) return `<div class="ab-team ab-tbd">${esc(feedLabel(game[side + 'From']))}</div>`;
@@ -1493,7 +1492,6 @@ function renderKnockoutAdmin(data, teams, flagByTeam) {
   container.innerHTML = `
     <p>Bracket size: ${data.knockoutSize} (starts at ${rounds[0][0]})</p>
     <div class="ab-wrap" id="ab-wrap"></div>
-    <div id="bracket-edit-panel"></div>
   `;
 
   const wrap = document.getElementById('ab-wrap');
@@ -1508,7 +1506,7 @@ function renderKnockoutAdmin(data, teams, flagByTeam) {
     roundGames.forEach((game, gameIdx) => {
       const decided = game.homeScore != null && game.awayScore != null;
       const sub = roundIdx === lastRound
-        ? `<div class="ab-sub">${gameIdx === 0 ? 'Third-Place Match' : 'Final'}</div>`
+        ? `<div class="ab-sub">${gameIdx === 0 ? '3rd Place' : 'Final'}</div>`
         : '';
       const wrapDiv = document.createElement('div');
       wrapDiv.className = 'ab-game-wrap';
@@ -1519,7 +1517,7 @@ function renderKnockoutAdmin(data, teams, flagByTeam) {
         `<div class="ab-date">${game.date ? esc(game.date) : 'Date TBD'}</div>` +
         bracketAdminTeamHtml(game, 'home', flagByTeam, decided) +
         bracketAdminTeamHtml(game, 'away', flagByTeam, decided);
-      box.addEventListener('click', () => selectBracketGame(game, box, shorthandByName));
+      box.addEventListener('click', () => toggleBracketExpand(game, wrapDiv, box, shorthandByName, rounds, roundIdx));
       wrapDiv.appendChild(box);
       gamesDiv.appendChild(wrapDiv);
     });
@@ -1528,49 +1526,80 @@ function renderKnockoutAdmin(data, teams, flagByTeam) {
   });
 }
 
-function selectBracketGame(game, box, shorthandByName) {
-  const panel = document.getElementById('bracket-edit-panel');
-  const allBoxes = document.querySelectorAll('.ab-game');
+// Same pattern as Match List's row-click panel (toggleExpand above): the
+// edit panel is inserted directly below the clicked game, as a sibling
+// within that round's own column, rather than in one shared panel
+// elsewhere on the page — so it's always obvious which game's controls
+// you're looking at. This does mean the round's other games shift down
+// while a panel is open (the old shared-panel design was chosen specifically
+// to avoid that), but for a plain data-entry tool that's a fair trade for
+// matching the one panel pattern this site already uses everywhere else —
+// see requirements/admin.md -> Knockout Bracket -> Editing a bracket game.
+let expandBracketPanel = null;
+let expandBracketGameNumber = null;
 
-  if (selectedBracketGameNumber === game.gameNumber) {
-    selectedBracketGameNumber = null;
-    panel.innerHTML = '';
-    allBoxes.forEach(b => b.classList.remove('selected'));
-    return;
+function toggleBracketExpand(game, wrapDiv, box, shorthandByName, rounds, roundIdx) {
+  const reopening = expandBracketGameNumber !== game.gameNumber;
+  if (expandBracketPanel) {
+    expandBracketPanel.remove();
+    expandBracketPanel = null;
+    expandBracketGameNumber = null;
+    document.querySelectorAll('.ab-game.selected').forEach(b => b.classList.remove('selected'));
   }
-  selectedBracketGameNumber = game.gameNumber;
-  allBoxes.forEach(b => b.classList.toggle('selected', Number(b.dataset.game) === game.gameNumber));
+  if (!reopening) return;
+
+  expandBracketGameNumber = game.gameNumber;
+  box.classList.add('selected');
+
+  // Round 0 (the entry round) never defers to an earlier game — its
+  // matchups always come from group standings, a concrete source, same as
+  // every non-bracket game (see set_knockout_size.py) — so "From game"
+  // isn't offered there at all, not just discouraged. "loser" is only ever
+  // meaningful on the last round's third-place game (see
+  // knockout.check_from_ref), so every other round only offers "winner".
+  const allowFrom = roundIdx > 0;
+  const allowLoser = roundIdx === rounds.length - 1;
+  const prevRoundLabel = allowFrom ? rounds[roundIdx - 1][0] : null;
 
   const homeShorthand = game.homeTeam ? (shorthandByName[game.homeTeam] || '') : '';
   const awayShorthand = game.awayTeam ? (shorthandByName[game.awayTeam] || '') : '';
-  const homeMode = game.homeTeam ? 'team' : 'from';
-  const awayMode = game.awayTeam ? 'team' : 'from';
+  const homeMode = game.homeTeam || !allowFrom ? 'team' : 'from';
+  const awayMode = game.awayTeam || !allowFrom ? 'team' : 'from';
   const homeFromGame = game.homeFrom ? game.homeFrom.game : '';
   const homeFromResult = game.homeFrom ? game.homeFrom.result : 'winner';
   const awayFromGame = game.awayFrom ? game.awayFrom.game : '';
   const awayFromResult = game.awayFrom ? game.awayFrom.result : 'winner';
 
   function slotHtml(side, mode, shorthand, fromGame, fromResult) {
-    return `
-      <div class="br-slot">
-        <strong>${side === 'home' ? 'Home' : 'Away'}:</strong>
-        <select class="br-${side}-mode">
+    const modeSelect = allowFrom
+      ? `<select class="br-${side}-mode">
           <option value="team" ${mode === 'team' ? 'selected' : ''}>Team</option>
-          <option value="from" ${mode === 'from' ? 'selected' : ''}>From game</option>
-        </select>
-        <input class="br-${side}-team" type="text" placeholder="shorthand e.g. CAN" value="${esc(shorthand)}" style="display:${mode === 'team' ? 'inline-block' : 'none'}">
-        <span class="br-${side}-from-wrap" style="display:${mode === 'from' ? 'inline-flex' : 'none'};gap:0.4rem;align-items:center">
+          <option value="from" ${mode === 'from' ? 'selected' : ''}>From game (${esc(prevRoundLabel)})</option>
+        </select>`
+      : '';
+    const fromBlock = allowFrom
+      ? `<span class="br-${side}-from-wrap" style="display:${mode === 'from' ? 'inline-flex' : 'none'};gap:0.4rem;align-items:center">
           <input class="br-${side}-from-game" type="number" placeholder="game #" value="${fromGame}">
           <select class="br-${side}-from-result">
             <option value="winner" ${fromResult === 'winner' ? 'selected' : ''}>winner</option>
-            <option value="loser" ${fromResult === 'loser' ? 'selected' : ''}>loser</option>
+            ${allowLoser ? `<option value="loser" ${fromResult === 'loser' ? 'selected' : ''}>loser</option>` : ''}
           </select>
-        </span>
+        </span>`
+      : '';
+    return `
+      <div class="br-slot">
+        <strong>${side === 'home' ? 'Home' : 'Away'}:</strong>
+        ${modeSelect}
+        <input class="br-${side}-team" type="text" placeholder="shorthand e.g. CAN" value="${esc(shorthand)}" style="display:${mode === 'team' ? 'inline-block' : 'none'}">
+        ${fromBlock}
       </div>`;
   }
 
+  const panel = document.createElement('div');
+  panel.className = 'ab-edit-panel';
+  panel.addEventListener('click', e => e.stopPropagation());
   panel.innerHTML = `
-    <div class="ur-line"><strong>#${game.gameNumber}</strong></div>
+    <div class="ur-line"><strong>#${game.gameNumber}</strong> — ${esc(rounds[roundIdx][0])}</div>
     <div class="ur-line"><label>Date: <input class="br-date" type="date" value="${game.date || ''}"></label></div>
     <div class="ur-line">${slotHtml('home', homeMode, homeShorthand, homeFromGame, homeFromResult)}</div>
     <div class="ur-line">${slotHtml('away', awayMode, awayShorthand, awayFromGame, awayFromResult)}</div>
@@ -1579,22 +1608,27 @@ function selectBracketGame(game, box, shorthandByName) {
       <input class="ur-cmd" type="text" readonly placeholder="command will appear here">
       <button class="ur-copy">Copy</button>
     </div>
+    <p class="ab-edit-hint">Only the fields you change need a value.${
+      allowFrom ? ` A "from game" number must be a game in ${esc(prevRoundLabel)}.` : ''
+    } Running the command will report a clear error if a reference doesn't check out.</p>
   `;
 
-  ['home', 'away'].forEach(side => {
-    panel.querySelector(`.br-${side}-mode`).addEventListener('change', e => {
-      const isTeam = e.target.value === 'team';
-      panel.querySelector(`.br-${side}-team`).style.display = isTeam ? 'inline-block' : 'none';
-      panel.querySelector(`.br-${side}-from-wrap`).style.display = isTeam ? 'none' : 'inline-flex';
+  if (allowFrom) {
+    ['home', 'away'].forEach(side => {
+      panel.querySelector(`.br-${side}-mode`).addEventListener('change', e => {
+        const isTeam = e.target.value === 'team';
+        panel.querySelector(`.br-${side}-team`).style.display = isTeam ? 'inline-block' : 'none';
+        panel.querySelector(`.br-${side}-from-wrap`).style.display = isTeam ? 'none' : 'inline-flex';
+      });
     });
-  });
+  }
 
   panel.querySelector('.ur-gen').addEventListener('click', () => {
     let cmd = `python3 worldcup/scripts/set_bracket_game.py ${YEAR} ${game.gameNumber}`;
     const date = panel.querySelector('.br-date').value;
     if (date) cmd += ` --date ${date}`;
     ['home', 'away'].forEach(side => {
-      const mode = panel.querySelector(`.br-${side}-mode`).value;
+      const mode = allowFrom ? panel.querySelector(`.br-${side}-mode`).value : 'team';
       if (mode === 'team') {
         const shorthand = panel.querySelector(`.br-${side}-team`).value.trim();
         if (shorthand) cmd += ` --${side} ${shorthand}`;
@@ -1612,6 +1646,9 @@ function selectBracketGame(game, box, shorthandByName) {
     cmdInput.select();
     navigator.clipboard.writeText(cmdInput.value);
   });
+
+  wrapDiv.after(panel);
+  expandBracketPanel = panel;
 }
 
 function main() {

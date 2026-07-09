@@ -932,27 +932,47 @@ function knockoutRounds(size) {
 
 // Flags only, never a printed name — see brand-guidelines.md -> Flags, Not
 // Names. The name still surfaces as a native hover tooltip (title attr),
-// same as every other flag on the site (see flagCellHtml above).
-function bracketTeamRowHtml(game, side, decided) {
+// same as every other flag on the site (see flagCellHtml above). Just the
+// flag and its score, full stop — see requirements/public.md -> Knockout
+// Bracket -> Game boxes: no winner/loser tint, the score alone already says
+// who won. The score itself is a sticky note stuck on the flag's own
+// bottom-right corner (see .bracket-score in shared.css) rather than a
+// separate figure sitting beside it — .bracket-flag-wrap is what the sticky
+// positions itself against, a sibling of the flag rather than a child of it
+// so the sticky's own tilt (scoreStickyRotation below) doesn't get dragged
+// along by the flag's independent rotation.
+function bracketTeamRowHtml(game, side) {
   const team = game[side + 'Team'];
   const score = game[side + 'Score'];
   if (!team) {
-    return `<div class="bracket-team bracket-tbd">${esc(feedLabel(game[side + 'From']))}</div>`;
+    // Unresolved slot: a flag-shaped placeholder (same size as a real flag,
+    // so the row reads the same shape whether or not it's decided yet), a
+    // "?" standing in for the missing sticker, muted the same way any other
+    // not-yet-available item on this site is (nav.css's Disabled chip
+    // palette — see requirements/public.md -> Knockout Bracket -> Game
+    // boxes). The "Winner of Game N"/"TBD" text isn't gone, just moved to
+    // the same sitewide hover-name label every flag already uses (see
+    // ../fly.js) via data-team, rather than being printed on the poster.
+    const label = feedLabel(game[side + 'From']);
+    return `<div class="bracket-team"><span class="bracket-flag-wrap"><span class="bracket-flag-placeholder" data-team="${esc(label)}">?</span></span></div>`;
   }
-  const otherScore = game[side === 'home' ? 'awayScore' : 'homeScore'];
-  let cls = 'bracket-team';
-  if (decided && score !== otherScore) cls += score > otherScore ? ' winner' : ' loser';
   const flag = `<span class="icon" style="background-image:url('flags/${flagByTeam[team]}.svg');transform:rotate(${flagRotation(team)}deg)" data-team="${esc(team)}"></span>`;
-  const scoreHtml = score != null ? `<span class="bracket-score">${score}</span>` : '';
-  return `<div class="${cls}">${flag}${scoreHtml}</div>`;
+  const scoreHtml = score != null
+    ? `<span class="bracket-score" style="transform:rotate(${scoreStickyRotation(game.gameNumber, side)}deg)">${score}</span>`
+    : '';
+  return `<div class="bracket-team"><span class="bracket-flag-wrap">${flag}${scoreHtml}</span></div>`;
 }
 
-// Deterministic tiny rotation per game card (see .bracket-game's --game-rot
-// in shared.css) — same idea as flagRotation above, a stable hash instead of
-// random-per-load, keyed on game number instead of team name.
-function gameCardRotation(gameNumber) {
-  const h = Math.imul(gameNumber, 2654435761) >>> 0;
-  return (((h >>> 24) % 21) - 10) * 0.12; // -1.2 to +1.2 degrees
+// Deterministic tilt for a score sticky note — same -5..+5 degree range the
+// site's other stickies use (the W/D/L diff highlight, the flag-name hover
+// label), but a stable hash instead of their Math.random(): those two are
+// ephemeral, recreated fresh on every hover, so a fresh random tilt each
+// time is fine; this one is part of the page's resting state, so it needs
+// to be the same tilt on every load, the same reason flagRotation is a hash
+// and not a Math.random() call.
+function scoreStickyRotation(gameNumber, side) {
+  const h = Math.imul(gameNumber * 2 + (side === 'home' ? 0 : 1), 2654435761) >>> 0;
+  return (((h >>> 24) % 101) - 50) * 0.1; // -5.0 to +5.0 degrees
 }
 
 // Which contiguous range of rounds [lo, hi] (inclusive, by round index) is
@@ -976,14 +996,26 @@ function bracketColumnEl(roundIdx) {
 // Aligns each visible round's column to its own toggle button directly
 // above it — same left position, same width — instead of a fixed column
 // size/gap. That's what makes the bracket read as a direct continuation of
-// the toggle row rather than a separately-proportioned grid, and it's also
-// what keeps columns compact: a column is only ever as wide as its own
-// round's label needs to be, gapped the same tight amount the chips above
-// are (see nav.css's .view-toggle gap), not a fixed oversized slot.
+// the toggle row rather than a separately-proportioned grid. Every round's
+// toggle button (and the column beneath it) shares one uniform width — the
+// widest round name's own natural width, across every round regardless of
+// which are currently visible, so the toggle row's width never jumps as
+// rounds are shown/hidden — rather than each column matching only its own
+// (possibly narrower) button; a narrow "Final" column stretched no further
+// than its own label used to read as a bracket tree of mismatched widths,
+// not one continuous grid. Forcing the buttons themselves to that same
+// width (not just the columns) is what keeps a column exactly under its own
+// toggle button regardless: the browser's own flex layout respaces the
+// row once every button is the same size, so no manual gap math is needed
+// here to keep two same-width neighbors from overlapping.
 function alignBracketColumnsToToggles(lo, hi) {
   const toggleContainer = document.getElementById('bracket-round-toggle');
   const bracket = document.querySelector('#knockout-outer .bracket');
   if (!bracket) return;
+  const buttons = Array.from(toggleContainer.children);
+  buttons.forEach(function(btn) { btn.style.width = ''; });
+  const maxW = Math.max.apply(null, buttons.map(function(btn) { return btn.getBoundingClientRect().width; }));
+  buttons.forEach(function(btn) { btn.style.width = maxW + 'px'; });
   const bracketRect = bracket.getBoundingClientRect();
   for (let roundIdx = lo; roundIdx <= hi; roundIdx++) {
     const btn = toggleContainer.children[roundIdx];
@@ -1149,19 +1181,23 @@ function renderKnockout() {
     if (roundIdx < lo || roundIdx > hi) return '';
     const games = GAMES.filter(g => g.round === roundIdx).sort((a, b) => a.gameNumber - b.gameNumber);
     // The last round bundles the Final (higher game number) and the
-    // Third-Place Match (lower game number, scheduled earlier). Show the
+    // 3rd Place (lower game number, scheduled earlier). Show the
     // Final on top since it's the headline game.
     const orderedGames = roundIdx === lastRound ? [...games].reverse() : games;
+    // Every game, Final and 3rd Place included, is just its two
+    // flag+score rows — see requirements/public.md -> Knockout Bracket ->
+    // Game boxes. The Final/Third-Place pair's only extra is a small paper
+    // label laid across the seam between their two rows (.bracket-final),
+    // not a card, a date, or anything else.
     const gamesHtml = orderedGames.map((game, gameIdx) => {
-      const decided = game.homeScore != null && game.awayScore != null;
-      const sub = roundIdx === lastRound
-        ? `<div class="bracket-game-sub">${gameIdx === 0 ? 'Final' : 'Third-Place Match'}</div>`
-        : '';
-      return `<div class="bracket-game-wrap"><div class="bracket-game" style="--game-rot:${gameCardRotation(game.gameNumber)}deg">` +
-        sub +
-        `<div class="bracket-date">${game.date ? formatDate(game.date) : 'Date TBD'}</div>` +
-        bracketTeamRowHtml(game, 'home', decided) +
-        bracketTeamRowHtml(game, 'away', decided) +
+      const rows = bracketTeamRowHtml(game, 'home') + bracketTeamRowHtml(game, 'away');
+      if (roundIdx !== lastRound) {
+        return `<div class="bracket-game-wrap"><div class="bracket-simple">${rows}</div></div>`;
+      }
+      const sub = gameIdx === 0 ? 'Final' : '3rd Place';
+      return `<div class="bracket-game-wrap"><div class="bracket-simple bracket-final">` +
+        `<div class="bracket-game-sub">${sub}</div>` +
+        rows +
         `</div></div>`;
     }).join('');
     return `<div class="bracket-round" data-round-idx="${roundIdx}"><div class="bracket-round-games">${gamesHtml}</div></div>`;

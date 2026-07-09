@@ -163,8 +163,8 @@
 /* Disabled — muted, flatter than a live chip, no hover, dimmed near-black
    text (never nav.css's old washed-out white — marker-only-black applies
    here too). Used for an item with no destination yet (the homepage's
-   `Hockey`/`Swimming`, `WC 30` on tournament pages) and the Groups
-   placeholder note. */
+   `Hockey`/`Swimming`, the other three football competitions) and the
+   Groups placeholder note. */
 .view-toggle span.disabled {
   --chip-bg: #B9AF9E;
   color: rgba(26, 26, 26, 0.55);
@@ -172,12 +172,13 @@
 }
 
 /* Level 2 — the single most visually dominant level, wherever it appears
-   (the homepage's Football competition row, World Cup pages' primary
-   tabs): bigger font/padding than every other level, applied to every item
-   type alike (including disabled spans) so nothing in this row renders at
-   a different size than its siblings. Dominance comes from size alone now
-   — it shares the same varied paper color / black text system as every
-   other level rather than a special always-red default. */
+   (the homepage's Football competition row, World Cup pages' tournament-year
+   list, History's Final 4/8/16 round switch): bigger font/padding than every
+   other level, applied to every item type alike (including disabled spans)
+   so nothing in this row renders at a different size than its siblings.
+   Dominance comes from size alone now — it shares the same varied paper
+   color / black text system as every other level rather than a special
+   always-red default. */
 .primary-tabs.view-toggle > * { font-size: 0.95rem; padding: 0.45rem 1.1rem; }
 
 /* Universal transition duration — the single source of truth for pacing,

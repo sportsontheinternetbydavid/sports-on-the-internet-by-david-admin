@@ -267,6 +267,24 @@ Nothing floats.
 
 Nothing feels machine-made.
 
+A card is earned, not automatic.
+
+Most information can just sit on the page.
+
+A card, a box, a cutout with its own shadow — these mark something as genuinely its own object: a decision, a result that matters, a note pinned on top of everything else. Not every fact needs one.
+
+A poster with a card around every single line stops reading as a poster. It reads as a stack of forms.
+
+The best poster in the classroom saves the cutouts for what deserves them.
+
+A placeholder keeps the shape of what it's standing in for.
+
+A blank flag waiting for its sticker is still a flag-sized cutout — not a sentence explaining that it's missing.
+
+Don't know the answer yet? Leave the slot the right shape and size, with a question mark where the picture goes. The grid never breaks just because one answer hasn't come in.
+
+The full label can still be found — a fingertip away, not printed on the poster.
+
 ---
 
 ## Motion
@@ -420,4 +438,6 @@ They're simply the next posters waiting to be made.
 * The website should never feel corporate, ironic, or nostalgic.
 * The visual style should always have an in-universe explanation.
 * Readability always comes before decoration.
+* A card is earned, not automatic — save it for what's genuinely its own object.
+* A placeholder keeps the shape of what it's standing in for, never a differently-shaped explanation.
 * Every project should help people see sports differently.

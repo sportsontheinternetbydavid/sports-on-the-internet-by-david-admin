@@ -46,7 +46,7 @@ FOOTBALL_LEVEL_2 = [
 ]
 
 # "Football" state — Level 3: two equal segments. Tournaments lands on the
-# current/latest year; from there, that page's own Level 1 reaches any other
+# current/latest year; from there, that page's own Level 2 reaches any other
 # year.
 FOOTBALL_LEVEL_3 = [
     ('History', 'football/worldcup/history.html', None),

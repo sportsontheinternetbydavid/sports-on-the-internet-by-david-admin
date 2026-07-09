@@ -31,6 +31,13 @@ Setting --home/--away on a game clears any --home-from/--away-from on that
 side (and vice versa) — a slot is either a concrete team or a deferred
 reference, never both.
 
+A --home-from/--away-from reference is checked before anything is written:
+the game it points at must exist, must be in the immediately preceding
+round (never an earlier or later one), "loser" must only be used on the
+last round's third-place game, and no other slot may already defer to that
+same game+result. A bad reference exits with a specific error instead of
+writing structure that would only surface as a problem later.
+
 After updating, the script commits and pushes the change to the private
 admin repo, then deploys the rebuilt site/ (same as set_result.py). Pass
 --no-push to update local files only.
@@ -43,6 +50,7 @@ from pathlib import Path
 
 import build
 import gitops
+import knockout
 from teams import load_teams, resolve_team
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -77,6 +85,8 @@ def main():
         sys.exit("Pass only one of --away / --away-from.")
     if not any([args.date, args.home, args.home_from, args.away, args.away_from]):
         sys.exit("Nothing to update — pass at least one of --date/--home/--home-from/--away/--away-from.")
+    if args.date and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", args.date):
+        sys.exit(f"--date must look like YYYY-MM-DD, got '{args.date}'.")
 
     path = ROOT / "data" / f"{args.year}.json"
     if not path.exists():
@@ -120,6 +130,22 @@ def main():
         game["awayFrom"] = parse_from(args.away_from, "--away-from")
         game["awayTeam"] = None
         changes.append(f"awayFrom={game['awayFrom']}")
+
+    # Catch a bad --home-from/--away-from before anything is written — a
+    # reference to a game that doesn't exist, isn't in the immediately
+    # preceding round, or already feeds a different slot. Same check
+    # build.py's validate() runs on every game already in the file (see
+    # knockout.check_from_ref), just run here first so a mistake is caught
+    # with a clean message instead of silently writing bad structure (or
+    # surfacing later as a build error against data that's already on disk).
+    knockout_size = data.get("knockoutSize") if isinstance(data, dict) else None
+    for from_key in ("homeFrom", "awayFrom"):
+        frm = game.get(from_key)
+        if frm is not None:
+            try:
+                knockout.check_from_ref(games, game, from_key, frm, knockout_size)
+            except ValueError as e:
+                sys.exit(str(e))
 
     if isinstance(data, dict):
         data["games"] = games

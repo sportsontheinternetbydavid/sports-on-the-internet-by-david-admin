@@ -310,16 +310,18 @@ def validate(data, year, team_names):
             missing = sorted(set(expected) - set(actual))
             raise ValueError(f"{year}.json: game numbers are not contiguous from 1; missing: {missing}")
 
-    # homeFrom/awayFrom must reference an earlier, existing game
+    # homeFrom/awayFrom must reference a real game in the immediately
+    # preceding round, "loser" only makes sense on the last round, and no
+    # result may feed more than one slot — see knockout.check_from_ref,
+    # shared with set_bracket_game.py's own pre-write check so the rule
+    # can't drift between the two.
     for g in games:
+        if g.get("round") is None:
+            continue
         for from_key in ("homeFrom", "awayFrom"):
             frm = g.get(from_key)
-            if frm is None:
-                continue
-            if frm["game"] not in seen_numbers:
-                raise ValueError(f"{year}.json game #{g['gameNumber']}: {from_key} references game #{frm['game']} which does not exist")
-            if frm["game"] >= g["gameNumber"]:
-                raise ValueError(f"{year}.json game #{g['gameNumber']}: {from_key} must reference an earlier game (#{frm['game']} is not before #{g['gameNumber']})")
+            if frm is not None:
+                knockout.check_from_ref(games, g, from_key, frm, knockout_size)
 
     # Each knockout round is either fully scaffolded (exact expected game
     # count) or not yet created (0) — catches a partial/corrupted scaffold.
@@ -337,30 +339,43 @@ def validate(data, year, team_names):
                 )
 
 
+def build_utility_nav():
+    """Level 1 on tournament pages: Home, History — small cross-page links
+    out of the per-year page, mirroring history.html's own Home/Tournaments
+    Level 1 below. Not the tournament-year list — see build_nav for that,
+    now Level 2."""
+    return nav.render_row([
+        ('Home', '../../index.html', None),
+        ('History', 'history.html', None),
+    ], 'utility-bar')
+
+
 def build_nav(current_year):
-    """Utility bar: Home, then a WC-YY item per tournament year plus a
-    disabled WC 30 placeholder for the next one — Level 1 of the shared
-    nav (see nav.py and ../nav.css), same component the homepage uses
-    (build_home.py). This is the first tier of the 3-row nav on tournament
-    pages (see page_html) — history.html does not use this; see
-    build_history_nav below for why it's standalone instead."""
-    items = [('Home', '../../index.html', None)]
-    for y in YEARS:
+    """Level 2 on tournament pages: the tournament-year list, one WC-YY item
+    per year, most recent first — dominant sizing (see nav.py and
+    ../nav.css), same component the homepage uses for its own Level 2
+    (build_home.py). history.html does not use this; see build_history_nav
+    below for its own standalone Level 1."""
+    items = []
+    for y in reversed(YEARS):
         label = f'WC {str(y)[-2:]}'
         items.append((label, f'{y}.html', 'active' if y == current_year else None))
-    items.append(('WC 30', None, 'disabled'))  # placeholder — no 2030 data/page yet
 
-    return nav.render_row(items, 'utility-bar')
+    return nav.render_row(items, 'page-toggle primary-tabs')
 
 
 def build_history_nav():
-    """history.html's Level 1: a single Home chip, not the WC-years utility
-    bar — see requirements/public.md -> History page. History compares
+    """history.html's Level 1: Home and Tournaments — not the WC-years list
+    itself (see requirements/public.md -> History page). History compares
     across tournaments rather than switching between them, so it isn't one
-    of the tournament pages' Level 1 destinations; it's reached only via
-    the homepage's Football -> History link, and this single chip is how
-    you navigate back."""
-    return nav.render_row([('Home', '../../index.html', None)], 'utility-bar')
+    of the tournament pages' Level 2 destinations; it's reached only via
+    the homepage's Football -> History link or a tournament page's own
+    Level 1, and Tournaments here is how you go the other way, landing on
+    the current/latest year same as the homepage's own Tournaments link."""
+    return nav.render_row([
+        ('Home', '../../index.html', None),
+        ('Tournaments', f'{YEARS[-1]}.html', None),
+    ], 'utility-bar')
 
 
 def build_history_round_toggle(default='f16'):
@@ -792,7 +807,8 @@ def build_script_block(year, games_js, teams_js, team_elos_js, config, knockout_
 
 
 def page_html(year, script_block, shared_css, shared_js):
-    nav = build_nav(year)
+    level_1 = build_utility_nav()
+    level_2 = build_nav(year)
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -810,8 +826,9 @@ def page_html(year, script_block, shared_css, shared_js):
 </head>
 <body>
 <div class="page-nav">
-{nav}
-  <div class="page-toggle primary-tabs view-toggle">
+{level_1}
+{level_2}
+  <div class="detail-bar view-toggle">
     <button id="tab-matches" class="active" onclick="setPageView('matches')">Match List</button>
     <button id="tab-groups" onclick="setPageView('groups')">Groups</button>
     <button id="tab-knockout" onclick="setPageView('knockout')">Knockout</button>

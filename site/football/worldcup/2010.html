@@ -197,8 +197,8 @@
 /* Disabled — muted, flatter than a live chip, no hover, dimmed near-black
    text (never nav.css's old washed-out white — marker-only-black applies
    here too). Used for an item with no destination yet (the homepage's
-   `Hockey`/`Swimming`, `WC 30` on tournament pages) and the Groups
-   placeholder note. */
+   `Hockey`/`Swimming`, the other three football competitions) and the
+   Groups placeholder note. */
 .view-toggle span.disabled {
   --chip-bg: #B9AF9E;
   color: rgba(26, 26, 26, 0.55);
@@ -206,12 +206,13 @@
 }
 
 /* Level 2 — the single most visually dominant level, wherever it appears
-   (the homepage's Football competition row, World Cup pages' primary
-   tabs): bigger font/padding than every other level, applied to every item
-   type alike (including disabled spans) so nothing in this row renders at
-   a different size than its siblings. Dominance comes from size alone now
-   — it shares the same varied paper color / black text system as every
-   other level rather than a special always-red default. */
+   (the homepage's Football competition row, World Cup pages' tournament-year
+   list, History's Final 4/8/16 round switch): bigger font/padding than every
+   other level, applied to every item type alike (including disabled spans)
+   so nothing in this row renders at a different size than its siblings.
+   Dominance comes from size alone now — it shares the same varied paper
+   color / black text system as every other level rather than a special
+   always-red default. */
 .primary-tabs.view-toggle > * { font-size: 0.95rem; padding: 0.45rem 1.1rem; }
 
 /* Universal transition duration — the single source of truth for pacing,
@@ -376,23 +377,29 @@ th { font-family: 'Permanent Marker', cursive; background: #C0392B; color: #1a1a
   pointer-events: none;
 }
 
-/* Level 1 (utility bar — Home, History, WC-YY items), the .page-nav fused
-   wrapper, the base .view-toggle look, and Level 2 (.page-toggle
-   .primary-tabs) are all defined once in ../nav.css, shared with the
+/* Level 1 (utility bar — Home, History), the .page-nav fused wrapper, the
+   base .view-toggle look, and Level 2 (.page-toggle .primary-tabs — the
+   tournament-year list) are all defined once in ../nav.css, shared with the
    homepage's own nav (see build_home.py) — see requirements/public.md ->
-   Navigation. Only this page's own Level 3 variants (below) are specific
-   to World Cup pages. */
+   Navigation. Only this page's own Level 3 (the Match List/Groups/Knockout/
+   Rankings tabs, .detail-bar) and its own Level 3 variants (below) are
+   specific to World Cup pages. */
 
 tbody tr:hover { background: #EDE8DC; }
 
-/* World Cup pages' own Level 3 variants — each has unique layout beyond the
-   shared chip shape (a bracket-round picker, Rankings' toggles, a Groups
-   placeholder note), so unlike Level 1/2 they aren't reusable as-is and
+/* World Cup pages' own per-view detail-control rows — the active tab's own
+   controls (a bracket-round picker, Rankings' toggles, a Groups placeholder
+   note), rendered directly beneath Level 3 (the Match List/Groups/Knockout/
+   Rankings tabs). Not one of the four numbered nav Levels (see
+   requirements/navigation.md's Level table — Level 4 is reserved sitewide
+   for table/grid column headers only), just page-specific content attached
+   to whichever Level 3 tab is active; each has unique layout beyond the
+   shared chip shape, so unlike Level 1/2/3 they aren't reusable as-is and
    keep their own CSS here. They're ordinary .view-toggle chip rows like
-   every other level — see nav.css for the shared chip visual system — with
-   no shared background or stretch-to-fill of their own; min-height alone
-   reserves this row's space before JS populates it, so nothing jumps on
-   first paint. */
+   every numbered level — see nav.css for the shared chip visual system —
+   with no shared background or stretch-to-fill of their own; min-height
+   alone reserves this row's space before JS populates it, so nothing jumps
+   on first paint. */
 .bracket-round-toggle, .match-view-toggle, .groups-view-toggle, .rankings-view-toggle { min-height: 2.5rem; }
 
 /* Rankings */
@@ -564,36 +571,68 @@ tbody tr:hover { background: #EDE8DC; }
 .bracket { position: relative; overflow-x: auto; overflow-y: hidden; padding: 0.4rem 0 1rem; }
 .bracket-round { position: absolute; top: 0; display: flex; flex-direction: column; }
 .bracket-round-games { flex: 1; display: flex; flex-direction: column; justify-content: space-around; }
-/* Connector lines imply a 1-to-1 feed from the previous round. That's true
-   for every round except the last, which bundles the Final and Third-Place
-   Match — a line into each would wrongly suggest each semifinal feeds both
-   games, so skip it there. Length matches the tight gap between chips
-   above (nav.css's .view-toggle gap), not the old fixed column gap. */
-.bracket-round:not(:first-child):not(:last-child) .bracket-game-wrap { position: relative; }
-.bracket-round:not(:first-child):not(:last-child) .bracket-game-wrap::before { content: ''; position: absolute; left: -10px; top: 50%; width: 10px; height: 0; border-top: 2px solid #C0392B; opacity: 0.5; }
-.bracket-game-wrap { padding: 0.25rem 0; }
-/* A printed slip taped onto the poster, not a modern web card — hard offset
-   shadow instead of a soft blur (see brand-guidelines.md -> Materials), and
-   a tiny per-game rotation (--game-rot, set inline in shared.js the same
-   way flag rotation is: a deterministic hash of the game number, not
-   random-per-load) so a column of cards doesn't look machine-stamped. */
-.bracket-game { border: 1px solid rgba(0,0,0,0.1); border-radius: 2px; background: #fff; font-size: 0.72rem; overflow: hidden; box-shadow: 2px 3px 0 rgba(0,0,0,0.18); transform: rotate(var(--game-rot, 0deg)); }
-.bracket-game-sub { font-family: 'Permanent Marker', cursive; font-size: 0.62rem; color: #C0392B; text-align: center; padding: 0.15rem 0.3rem 0; }
-.bracket-date { font-family: 'Permanent Marker', cursive; font-size: 0.56rem; color: #948f81; text-align: center; padding: 0.2rem 0.3rem; border-bottom: 1px dashed rgba(0,0,0,0.15); }
-.bracket-team { display: flex; align-items: center; justify-content: space-between; gap: 0.3rem; padding: 0.25rem 0.4rem; }
-.bracket-team + .bracket-team { border-top: 1px dashed rgba(0,0,0,0.12); }
-.bracket-team .icon { display: inline-block; width: 1.5em; height: 1em; flex: none; background-size: cover; background-position: center; background-repeat: no-repeat; border: 1px solid #ccc; filter: saturate(0.8); }
-/* Winner/loser used to be shown by bolding/dimming the team name; now that
-   teams are flags only (see brand-guidelines.md -> Flags, Not Names), the
-   distinction has to live elsewhere: a green tint on the winning row, and
-   the same grayscale treatment Rankings already uses for an eliminated
-   team's flag on the losing one — not a new convention, reusing that one. */
-.bracket-team.winner { background: rgba(30, 132, 73, 0.1); }
-.bracket-team.winner .bracket-score { color: #1E8449; }
-.bracket-team.loser { opacity: 0.55; }
-.bracket-team.loser .icon { filter: saturate(0.8) grayscale(100%); }
-.bracket-score { font-family: 'Permanent Marker', cursive; font-size: 0.78rem; }
-.bracket-tbd { color: rgba(26, 26, 26, 0.5); font-style: italic; font-size: 0.64rem; }
+/* Separation between one game and the next — no connector line into each
+   game either (see below), so the gap itself is the only thing marking
+   where one game ends and the next begins. */
+.bracket-game-wrap { padding: 0.26rem 0; }
+/* Every game, Final and 3rd Place included, is just its two
+   flag+score rows — see requirements/public.md -> Knockout Bracket -> Game
+   boxes. No box, no date on a regular game: a real bracket sketched on a
+   poster wouldn't draw a card around every single game either, just the two
+   results stacked. Centered, not left-hung, within the round's (now
+   uniform-width — see Round toggles) column, the same way a photo is
+   centered on a page rather than jammed against one edge. */
+.bracket-team { display: flex; justify-content: center; align-items: center; padding: 0.05rem 0; }
+.bracket-flag-wrap { position: relative; display: inline-block; }
+.bracket-team .icon { display: block; width: 3.9em; height: 2.6em; background-size: cover; background-position: center; background-repeat: no-repeat; border: 1px solid #ccc; filter: saturate(0.8); }
+/* The score is a sticky note stuck on the flag's own bottom-right corner —
+   same #FAD7A0 material as every other sticky note on the site (the W/D/L
+   diff highlight, the flag-name hover label — see shared.js's renderWld and
+   ../fly.js), reused rather than inventing a fourth way to say "here's a
+   number." A sibling of .icon, not a child of it, so the sticky's own tilt
+   (shared.js's scoreStickyRotation, its own inline transform) is independent
+   of the flag's own rotation (flagRotation, also its own inline transform)
+   — the same reason the chip tape in nav.css has to be its own element
+   rather than a rotated pseudo-element of a rotated parent. */
+/* z-index: without it, this sticky and the *next* row's .bracket-flag-wrap
+   are both "positioned, z-index:auto" in the same stacking context, so tree
+   order alone decides the winner where they overlap — the later (lower)
+   row's flag would silently paint over the sticky poking out of the row
+   above it. A sticky note sits on top of whatever's under it, always, so it
+   needs a real z-index rather than relying on DOM order to happen to work
+   out. */
+.bracket-score { position: absolute; bottom: -0.35em; right: -0.4em; z-index: 2; background: #FAD7A0; color: #1A1A1A; font-family: 'Permanent Marker', cursive; font-size: 0.85rem; min-width: 1.3em; line-height: 1.3em; text-align: center; padding: 0 0.15em; box-shadow: 1px 2px 3px rgba(0,0,0,0.25); }
+/* An unresolved slot: same footprint as a real flag (so the row doesn't
+   reflow once a result comes in), muted the same way any other
+   not-yet-available item on the site is (nav.css's Disabled chip palette —
+   #B9AF9E background, dimmed near-black text) rather than inventing a
+   second "not ready yet" look. The "Winner of Game N"/"TBD" text lives on
+   data-team now (see bracketTeamRowHtml), surfacing via the sitewide
+   hover-name label like any other flag instead of being printed here. */
+.bracket-flag-placeholder { display: flex; align-items: center; justify-content: center; width: 3.9em; height: 2.6em; background: #B9AF9E; border: 1px solid #ccc; font-family: 'Permanent Marker', cursive; font-size: 1.3em; color: rgba(26, 26, 26, 0.55); }
+
+/* The Final and 3rd Place are the one exception — not a boxed card
+   (every game in the tree, this pair included, is just its bare flag+score
+   rows — see .bracket-simple above), just one thing on top of those same
+   two rows: a small paper label announcing what the game is. No date, no
+   card, no background of its own beyond the label itself — those two facts
+   (which round, when) don't earn a whole separate card just because this
+   pair of games matters more than the rest of the tree. .bracket-final only
+   adds the positioning context the label needs. */
+.bracket-final { position: relative; }
+/* A scrap of paper laid diagonally across the seam between the two flags,
+   not a header sitting above them — leaning toward the left side, its
+   bottom-left corner over the top flag and its top-right corner over the
+   bottom flag, the way a label actually dropped onto a stack of two photos
+   would land across the join rather than floating above both. Red paper,
+   near-black text (marker only comes in black — same rule as every chip,
+   see navigation.md -> General nav chip characteristics -> Color), a hard
+   offset shadow instead of a soft blur — every piece of this site is a
+   physically assembled object (see brand-guidelines.md -> Materials), so
+   this is its own scrap of paper rather than bare typeset text floating on
+   top of the flags. z-index above both .bracket-score (2) and the flags
+   themselves so it's never the thing that gets buried. */
+.bracket-game-sub { position: absolute; top: 50%; left: 4%; z-index: 3; transform: translateY(-50%) rotate(-8deg); display: inline-block; font-family: 'Permanent Marker', cursive; font-size: 0.68rem; color: #1A1A1A; background: #C0392B; text-align: center; white-space: nowrap; padding: 0.15rem 0.5rem; box-shadow: 2px 2px 0 rgba(0,0,0,0.2); }
 
 /* Match List: unresolved knockout slot (see homeFrom/awayFrom) */
 .tbd-slot { color: #948f81; font-style: italic; font-size: 0.72rem; }
@@ -603,8 +642,9 @@ tbody tr:hover { background: #EDE8DC; }
 </head>
 <body>
 <div class="page-nav">
-<nav class="utility-bar view-toggle"><a href="../../index.html">Home</a><a href="1998.html">WC 98</a><a href="2002.html">WC 02</a><a href="2006.html">WC 06</a><strong class="active">WC 10</strong><a href="2014.html">WC 14</a><a href="2018.html">WC 18</a><a href="2022.html">WC 22</a><a href="2026.html">WC 26</a><span class="disabled">WC 30</span></nav>
-  <div class="page-toggle primary-tabs view-toggle">
+<nav class="utility-bar view-toggle"><a href="../../index.html">Home</a><a href="history.html">History</a></nav>
+<nav class="page-toggle primary-tabs view-toggle"><a href="2026.html">WC 26</a><a href="2022.html">WC 22</a><a href="2018.html">WC 18</a><a href="2014.html">WC 14</a><strong class="active">WC 10</strong><a href="2006.html">WC 06</a><a href="2002.html">WC 02</a><a href="1998.html">WC 98</a></nav>
+  <div class="detail-bar view-toggle">
     <button id="tab-matches" class="active" onclick="setPageView('matches')">Match List</button>
     <button id="tab-groups" onclick="setPageView('groups')">Groups</button>
     <button id="tab-knockout" onclick="setPageView('knockout')">Knockout</button>
@@ -2424,27 +2464,47 @@ function knockoutRounds(size) {
 
 // Flags only, never a printed name — see brand-guidelines.md -> Flags, Not
 // Names. The name still surfaces as a native hover tooltip (title attr),
-// same as every other flag on the site (see flagCellHtml above).
-function bracketTeamRowHtml(game, side, decided) {
+// same as every other flag on the site (see flagCellHtml above). Just the
+// flag and its score, full stop — see requirements/public.md -> Knockout
+// Bracket -> Game boxes: no winner/loser tint, the score alone already says
+// who won. The score itself is a sticky note stuck on the flag's own
+// bottom-right corner (see .bracket-score in shared.css) rather than a
+// separate figure sitting beside it — .bracket-flag-wrap is what the sticky
+// positions itself against, a sibling of the flag rather than a child of it
+// so the sticky's own tilt (scoreStickyRotation below) doesn't get dragged
+// along by the flag's independent rotation.
+function bracketTeamRowHtml(game, side) {
   const team = game[side + 'Team'];
   const score = game[side + 'Score'];
   if (!team) {
-    return `<div class="bracket-team bracket-tbd">${esc(feedLabel(game[side + 'From']))}</div>`;
+    // Unresolved slot: a flag-shaped placeholder (same size as a real flag,
+    // so the row reads the same shape whether or not it's decided yet), a
+    // "?" standing in for the missing sticker, muted the same way any other
+    // not-yet-available item on this site is (nav.css's Disabled chip
+    // palette — see requirements/public.md -> Knockout Bracket -> Game
+    // boxes). The "Winner of Game N"/"TBD" text isn't gone, just moved to
+    // the same sitewide hover-name label every flag already uses (see
+    // ../fly.js) via data-team, rather than being printed on the poster.
+    const label = feedLabel(game[side + 'From']);
+    return `<div class="bracket-team"><span class="bracket-flag-wrap"><span class="bracket-flag-placeholder" data-team="${esc(label)}">?</span></span></div>`;
   }
-  const otherScore = game[side === 'home' ? 'awayScore' : 'homeScore'];
-  let cls = 'bracket-team';
-  if (decided && score !== otherScore) cls += score > otherScore ? ' winner' : ' loser';
   const flag = `<span class="icon" style="background-image:url('flags/${flagByTeam[team]}.svg');transform:rotate(${flagRotation(team)}deg)" data-team="${esc(team)}"></span>`;
-  const scoreHtml = score != null ? `<span class="bracket-score">${score}</span>` : '';
-  return `<div class="${cls}">${flag}${scoreHtml}</div>`;
+  const scoreHtml = score != null
+    ? `<span class="bracket-score" style="transform:rotate(${scoreStickyRotation(game.gameNumber, side)}deg)">${score}</span>`
+    : '';
+  return `<div class="bracket-team"><span class="bracket-flag-wrap">${flag}${scoreHtml}</span></div>`;
 }
 
-// Deterministic tiny rotation per game card (see .bracket-game's --game-rot
-// in shared.css) — same idea as flagRotation above, a stable hash instead of
-// random-per-load, keyed on game number instead of team name.
-function gameCardRotation(gameNumber) {
-  const h = Math.imul(gameNumber, 2654435761) >>> 0;
-  return (((h >>> 24) % 21) - 10) * 0.12; // -1.2 to +1.2 degrees
+// Deterministic tilt for a score sticky note — same -5..+5 degree range the
+// site's other stickies use (the W/D/L diff highlight, the flag-name hover
+// label), but a stable hash instead of their Math.random(): those two are
+// ephemeral, recreated fresh on every hover, so a fresh random tilt each
+// time is fine; this one is part of the page's resting state, so it needs
+// to be the same tilt on every load, the same reason flagRotation is a hash
+// and not a Math.random() call.
+function scoreStickyRotation(gameNumber, side) {
+  const h = Math.imul(gameNumber * 2 + (side === 'home' ? 0 : 1), 2654435761) >>> 0;
+  return (((h >>> 24) % 101) - 50) * 0.1; // -5.0 to +5.0 degrees
 }
 
 // Which contiguous range of rounds [lo, hi] (inclusive, by round index) is
@@ -2468,14 +2528,26 @@ function bracketColumnEl(roundIdx) {
 // Aligns each visible round's column to its own toggle button directly
 // above it — same left position, same width — instead of a fixed column
 // size/gap. That's what makes the bracket read as a direct continuation of
-// the toggle row rather than a separately-proportioned grid, and it's also
-// what keeps columns compact: a column is only ever as wide as its own
-// round's label needs to be, gapped the same tight amount the chips above
-// are (see nav.css's .view-toggle gap), not a fixed oversized slot.
+// the toggle row rather than a separately-proportioned grid. Every round's
+// toggle button (and the column beneath it) shares one uniform width — the
+// widest round name's own natural width, across every round regardless of
+// which are currently visible, so the toggle row's width never jumps as
+// rounds are shown/hidden — rather than each column matching only its own
+// (possibly narrower) button; a narrow "Final" column stretched no further
+// than its own label used to read as a bracket tree of mismatched widths,
+// not one continuous grid. Forcing the buttons themselves to that same
+// width (not just the columns) is what keeps a column exactly under its own
+// toggle button regardless: the browser's own flex layout respaces the
+// row once every button is the same size, so no manual gap math is needed
+// here to keep two same-width neighbors from overlapping.
 function alignBracketColumnsToToggles(lo, hi) {
   const toggleContainer = document.getElementById('bracket-round-toggle');
   const bracket = document.querySelector('#knockout-outer .bracket');
   if (!bracket) return;
+  const buttons = Array.from(toggleContainer.children);
+  buttons.forEach(function(btn) { btn.style.width = ''; });
+  const maxW = Math.max.apply(null, buttons.map(function(btn) { return btn.getBoundingClientRect().width; }));
+  buttons.forEach(function(btn) { btn.style.width = maxW + 'px'; });
   const bracketRect = bracket.getBoundingClientRect();
   for (let roundIdx = lo; roundIdx <= hi; roundIdx++) {
     const btn = toggleContainer.children[roundIdx];
@@ -2641,19 +2713,23 @@ function renderKnockout() {
     if (roundIdx < lo || roundIdx > hi) return '';
     const games = GAMES.filter(g => g.round === roundIdx).sort((a, b) => a.gameNumber - b.gameNumber);
     // The last round bundles the Final (higher game number) and the
-    // Third-Place Match (lower game number, scheduled earlier). Show the
+    // 3rd Place (lower game number, scheduled earlier). Show the
     // Final on top since it's the headline game.
     const orderedGames = roundIdx === lastRound ? [...games].reverse() : games;
+    // Every game, Final and 3rd Place included, is just its two
+    // flag+score rows — see requirements/public.md -> Knockout Bracket ->
+    // Game boxes. The Final/Third-Place pair's only extra is a small paper
+    // label laid across the seam between their two rows (.bracket-final),
+    // not a card, a date, or anything else.
     const gamesHtml = orderedGames.map((game, gameIdx) => {
-      const decided = game.homeScore != null && game.awayScore != null;
-      const sub = roundIdx === lastRound
-        ? `<div class="bracket-game-sub">${gameIdx === 0 ? 'Final' : 'Third-Place Match'}</div>`
-        : '';
-      return `<div class="bracket-game-wrap"><div class="bracket-game" style="--game-rot:${gameCardRotation(game.gameNumber)}deg">` +
-        sub +
-        `<div class="bracket-date">${game.date ? formatDate(game.date) : 'Date TBD'}</div>` +
-        bracketTeamRowHtml(game, 'home', decided) +
-        bracketTeamRowHtml(game, 'away', decided) +
+      const rows = bracketTeamRowHtml(game, 'home') + bracketTeamRowHtml(game, 'away');
+      if (roundIdx !== lastRound) {
+        return `<div class="bracket-game-wrap"><div class="bracket-simple">${rows}</div></div>`;
+      }
+      const sub = gameIdx === 0 ? 'Final' : '3rd Place';
+      return `<div class="bracket-game-wrap"><div class="bracket-simple bracket-final">` +
+        `<div class="bracket-game-sub">${sub}</div>` +
+        rows +
         `</div></div>`;
     }).join('');
     return `<div class="bracket-round" data-round-idx="${roundIdx}"><div class="bracket-round-games">${gamesHtml}</div></div>`;
