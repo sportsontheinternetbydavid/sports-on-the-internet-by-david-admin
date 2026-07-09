@@ -23,7 +23,7 @@ for (const t of teams) flagByTeam[t.name] = t.flag;
 // FLY_MS, flyOut(), and flyIn() — the shared board-level fly-out/fly-in
 // primitives used by setPageView, setMatchView, and toggleBracketRound below
 // — now live in ../fly.js (loaded before this script), since cross-page
-// navigation's own board phase (see requirements/navigation.md ->
+// navigation's own board phase (see requirements/transitions.md ->
 // Cross-page navigation) needs them on pages that don't load shared.js at
 // all (the homepage, History).
 
@@ -1258,7 +1258,7 @@ function setPageView(view) {
   // runs the other two Layering phases in sequence, each fully settling
   // before the next starts: the outgoing view's own items clear first, then
   // the outgoing board (the whole panel) exits; the new board settles, then
-  // its own items fly in. See requirements/navigation.md -> Transitions ->
+  // its own items fly in. See requirements/transitions.md -> Transitions ->
   // "Layering".
   flyOutItems(boardSwapItems(outgoing)).then(function() {
     return flyOut([outEl]);
@@ -1281,10 +1281,10 @@ function setPageView(view) {
 // call, and ../fly.js's setupCrossPageNav; nav chips themselves are handled
 // by that function's own default, pageNavFlyItems) and by setPageView below,
 // for the outgoing view's own item-out phase (see requirements/
-// navigation.md -> Transitions -> "Layering").
+// transitions.md -> Transitions -> "Layering").
 //
 // Match List is the one view needing its own finer-than-usual grain here —
-// see requirements/navigation.md -> Cross-page navigation -> "The item,
+// see requirements/transitions.md -> Cross-page navigation -> "The item,
 // for a row-based view... is finer than the in-page row-swap grain": each
 // flag/score/ELO figure (.ml-inner — see gameRowCells/flagCellHtml) flies
 // on its own, not the row. Knockout's game cards and Rankings' flags are
@@ -1311,10 +1311,10 @@ function currentViewFlyItems() {
 // A view's own items for the *within-page* Level 2 board swap (setPageView
 // below) — row-level for Match List, since the finer .ml-inner-per-cell
 // grain viewFlyItems uses is specifically a cross-page-nav-only exception
-// (see requirements/navigation.md -> Cross-page navigation -> "The item,
+// (see requirements/transitions.md -> Cross-page navigation -> "The item,
 // for a row-based view... is finer than the in-page row-swap grain" — the
 // plain in-page case stays row-level, per the row in requirements/
-// navigation.md -> Transitions -> "The unit that moves, by action"); every
+// transitions.md -> Transitions -> "The unit that moves, by action"); every
 // other view already uses its finest unit either way, so this just reuses
 // viewFlyItems for those. Scoped to what's actually in frame — a Match List
 // can run 50+ rows deep, and flying rows the reader can't see wastes motion

@@ -226,10 +226,10 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 
 // Cross-page navigation (Home <-> WC YY <-> Tournaments <-> History) — see
-// requirements/navigation.md -> Cross-page navigation and
+// requirements/transitions.md -> Cross-page navigation and
 // brand-guidelines.md -> Motion -> "Walking to a different poster". The
 // actual click-intercept/sessionStorage/scroll-lock/fonts.ready mechanics,
-// plus the nav/board/content phase ordering (requirements/navigation.md ->
+// plus the nav/board/content phase ordering (requirements/transitions.md ->
 // Transitions -> "Layering"), are shared sitewide now (see
 // setupCrossPageNav in fly.js, loaded before this script) — this page only
 // supplies which elements are its own nav to fly; it has no board and no

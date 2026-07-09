@@ -78,7 +78,7 @@
 }
 /* Selection's own lift (a stronger shadow, see the Selected rule below)
    needs a real transition duration — a physical pick-up is a quick motion,
-   not an instant swap — see requirements/navigation.md -> Transitions ->
+   not an instant swap — see requirements/transitions.md -> Transitions ->
    "Selection is a motion, not a snap". Deliberately its own rule, wrapped
    in :where() to carry zero specificity, rather than folded into the base
    rule above: a plain `.view-toggle button { transition: ... }` would have
@@ -164,7 +164,7 @@
    same instinct wearing `scale` instead of `translate`. Animated by the
    base rule's own `transition: box-shadow` above, not an instant class
    swap — a real hand doesn't teleport a chip to its picked-up shadow (see
-   requirements/navigation.md -> Transitions -> "Selection is a motion, not
+   requirements/transitions.md -> Transitions -> "Selection is a motion, not
    a snap"). Tape is exactly whatever piece this chip already had — real
    tape doesn't grow because the thing under it got picked up, so selection
    is shadow only, never a tape resize. Text stays the same near-black —
@@ -320,6 +320,19 @@
 
 /* Shared styles for all World Cup pages */
 
+/* Reserves the vertical scrollbar's gutter unconditionally, on every page,
+   regardless of whether that page's own content is actually tall enough to
+   need one. Without this, body's max-width + margin:0 auto centering below
+   gets a different amount of horizontal space to work with depending on
+   whether a scrollbar happens to be showing — a tournament page's default
+   Match List view runs ~4700px tall, History's own table is only ~1200px,
+   so crossing that threshold differently between the two shifts the whole
+   centered column sideways by the scrollbar's width the instant one loads,
+   which is exactly the kind of motion a chip the reader was told never
+   moves (see requirements/transitions.md -> "The general rule") should
+   never have — the chip itself never gets a transform either page, the
+   ground under it does. */
+html { scrollbar-gutter: stable; }
 body { font-family: 'Fredoka One', cursive; font-size: 1rem; line-height: 1.5; background: #F5F0E8; color: #1a1a1a; max-width: 1100px; margin: 0 auto; padding: 0 1.5rem 4rem; overflow-x: auto; }
 h1 { font-family: 'Permanent Marker', cursive; font-size: 2.2rem; margin: 0.5rem 0 1rem; }
 a { color: #1A5276; }
@@ -777,7 +790,7 @@ function attachHistHoverHandlers() {
 }
 
 // Every flag+ELO cell (or, for a not-yet-played row, its message) is its
-// own item — see requirements/navigation.md -> Transitions ->
+// own item — see requirements/transitions.md -> Transitions ->
 // "The unit that moves, by action". The row itself, and the year
 // identifying it, are the board and never appear in this list — only
 // what's placed into a row's cells does.
@@ -786,10 +799,10 @@ function histItems(tbody) {
 }
 
 // Cross-page navigation (Home <-> WC YY <-> Tournaments <-> History) — see
-// requirements/navigation.md -> Cross-page navigation and
+// requirements/transitions.md -> Cross-page navigation and
 // brand-guidelines.md -> Motion -> "Walking to a different poster". The
 // actual click-intercept/sessionStorage/scroll-lock/fonts.ready mechanics,
-// plus the nav/board/content phase ordering (requirements/navigation.md ->
+// plus the nav/board/content phase ordering (requirements/transitions.md ->
 // Transitions -> "Layering"), are shared sitewide now (see
 // setupCrossPageNav in ../fly.js, loaded before this script) — nav chips
 // use that function's own default (pageNavFlyItems, also in ../fly.js);
@@ -797,13 +810,13 @@ function histItems(tbody) {
 // cells, reusing histItems as-is since History already flies at cell
 // granularity for its own round toggle — see setHistRound below; only
 // Match List needs a finer grain than its usual row-level item for this
-// feature, see requirements/navigation.md -> Cross-page navigation) and its
+// feature, see requirements/transitions.md -> Cross-page navigation) and its
 // own board: #hist-board, the wrapper around both the caption paragraph
 // and the table itself, not just the table alone — the caption explains
 // what the table is showing, so it's part of the same physical clipping
 // as the table, not a separate loose scrap sitting outside it; leaving it
 // out of the board would mean it just sits there unanimated, exactly the
-// bug this board phase exists to prevent (see requirements/navigation.md ->
+// bug this board phase exists to prevent (see requirements/transitions.md ->
 // Cross-page navigation for why a page-specific board can't be assumed
 // "already there" the way universal chrome can — that reasoning applies
 // to every piece of the board, not only the table).

@@ -78,7 +78,7 @@
 }
 /* Selection's own lift (a stronger shadow, see the Selected rule below)
    needs a real transition duration — a physical pick-up is a quick motion,
-   not an instant swap — see requirements/navigation.md -> Transitions ->
+   not an instant swap — see requirements/transitions.md -> Transitions ->
    "Selection is a motion, not a snap". Deliberately its own rule, wrapped
    in :where() to carry zero specificity, rather than folded into the base
    rule above: a plain `.view-toggle button { transition: ... }` would have
@@ -164,7 +164,7 @@
    same instinct wearing `scale` instead of `translate`. Animated by the
    base rule's own `transition: box-shadow` above, not an instant class
    swap — a real hand doesn't teleport a chip to its picked-up shadow (see
-   requirements/navigation.md -> Transitions -> "Selection is a motion, not
+   requirements/transitions.md -> Transitions -> "Selection is a motion, not
    a snap"). Tape is exactly whatever piece this chip already had — real
    tape doesn't grow because the thing under it got picked up, so selection
    is shadow only, never a tape resize. Text stays the same near-black —
@@ -320,6 +320,19 @@
 
 /* Shared styles for all World Cup pages */
 
+/* Reserves the vertical scrollbar's gutter unconditionally, on every page,
+   regardless of whether that page's own content is actually tall enough to
+   need one. Without this, body's max-width + margin:0 auto centering below
+   gets a different amount of horizontal space to work with depending on
+   whether a scrollbar happens to be showing — a tournament page's default
+   Match List view runs ~4700px tall, History's own table is only ~1200px,
+   so crossing that threshold differently between the two shifts the whole
+   centered column sideways by the scrollbar's width the instant one loads,
+   which is exactly the kind of motion a chip the reader was told never
+   moves (see requirements/transitions.md -> "The general rule") should
+   never have — the chip itself never gets a transform either page, the
+   ground under it does. */
+html { scrollbar-gutter: stable; }
 body { font-family: 'Fredoka One', cursive; font-size: 1rem; line-height: 1.5; background: #F5F0E8; color: #1a1a1a; max-width: 1100px; margin: 0 auto; padding: 0 1.5rem 4rem; overflow-x: auto; }
 h1 { font-family: 'Permanent Marker', cursive; font-size: 2.2rem; margin: 0.5rem 0 1rem; }
 a { color: #1A5276; }
@@ -1555,7 +1568,7 @@ for (const t of teams) flagByTeam[t.name] = t.flag;
 // FLY_MS, flyOut(), and flyIn() — the shared board-level fly-out/fly-in
 // primitives used by setPageView, setMatchView, and toggleBracketRound below
 // — now live in ../fly.js (loaded before this script), since cross-page
-// navigation's own board phase (see requirements/navigation.md ->
+// navigation's own board phase (see requirements/transitions.md ->
 // Cross-page navigation) needs them on pages that don't load shared.js at
 // all (the homepage, History).
 
@@ -2790,7 +2803,7 @@ function setPageView(view) {
   // runs the other two Layering phases in sequence, each fully settling
   // before the next starts: the outgoing view's own items clear first, then
   // the outgoing board (the whole panel) exits; the new board settles, then
-  // its own items fly in. See requirements/navigation.md -> Transitions ->
+  // its own items fly in. See requirements/transitions.md -> Transitions ->
   // "Layering".
   flyOutItems(boardSwapItems(outgoing)).then(function() {
     return flyOut([outEl]);
@@ -2813,10 +2826,10 @@ function setPageView(view) {
 // call, and ../fly.js's setupCrossPageNav; nav chips themselves are handled
 // by that function's own default, pageNavFlyItems) and by setPageView below,
 // for the outgoing view's own item-out phase (see requirements/
-// navigation.md -> Transitions -> "Layering").
+// transitions.md -> Transitions -> "Layering").
 //
 // Match List is the one view needing its own finer-than-usual grain here —
-// see requirements/navigation.md -> Cross-page navigation -> "The item,
+// see requirements/transitions.md -> Cross-page navigation -> "The item,
 // for a row-based view... is finer than the in-page row-swap grain": each
 // flag/score/ELO figure (.ml-inner — see gameRowCells/flagCellHtml) flies
 // on its own, not the row. Knockout's game cards and Rankings' flags are
@@ -2843,10 +2856,10 @@ function currentViewFlyItems() {
 // A view's own items for the *within-page* Level 2 board swap (setPageView
 // below) — row-level for Match List, since the finer .ml-inner-per-cell
 // grain viewFlyItems uses is specifically a cross-page-nav-only exception
-// (see requirements/navigation.md -> Cross-page navigation -> "The item,
+// (see requirements/transitions.md -> Cross-page navigation -> "The item,
 // for a row-based view... is finer than the in-page row-swap grain" — the
 // plain in-page case stays row-level, per the row in requirements/
-// navigation.md -> Transitions -> "The unit that moves, by action"); every
+// transitions.md -> Transitions -> "The unit that moves, by action"); every
 // other view already uses its finest unit either way, so this just reuses
 // viewFlyItems for those. Scoped to what's actually in frame — a Match List
 // can run 50+ rows deep, and flying rows the reader can't see wastes motion
@@ -2920,10 +2933,10 @@ initRankingsHover();
 </script>
 <script>
 // Cross-page navigation (Home <-> WC YY <-> Tournaments <-> History) — see
-// requirements/navigation.md -> Cross-page navigation and
+// requirements/transitions.md -> Cross-page navigation and
 // brand-guidelines.md -> Motion -> "Walking to a different poster". Shared
 // mechanics from ../fly.js (loaded above, in <head>), including the
-// nav/board/content phase ordering (requirements/navigation.md ->
+// nav/board/content phase ordering (requirements/transitions.md ->
 // Transitions -> "Layering"); every in-frame nav chip at every level uses
 // that function's own default (pageNavFlyItems(), .page-nav wraps all of
 // it — see the markup above), so this page supplies its own content beyond

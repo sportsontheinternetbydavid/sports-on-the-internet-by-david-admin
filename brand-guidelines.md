@@ -309,6 +309,8 @@ If there are a hundred items to swap, there are a hundred small movements, not o
 
 So: many small motions, slightly out of sync with each other. Never one large motion carrying everything at once.
 
+The hands are economical, not just careful. Before taking anything down, they check whether the next version of the poster actually needs it gone. A piece that's staying exactly where it is — same item, same spot, nothing about it different — never gets touched at all: not lifted, not set aside, not repinned. Only a piece that's actually changing — leaving for good, arriving for the first time, or changing what it shows — ever moves. Real hands work this way too: nobody re-pins a flyer that isn't changing just because the poster next to it is getting redone. This holds no matter how big the surrounding change is — even walking to a different poster entirely (see *Walking to a different poster* below), anything genuinely identical on both posters, in the same place, is left standing exactly as it was, undisturbed by the walk.
+
 ### The board stays on the wall
 
 Not everything is a loose item. Some things are the board itself — a table's headers, an axis, the frame something else is pinned to.
@@ -318,6 +320,8 @@ The board doesn't move when the things pinned to it change. Swap the confederati
 The board only comes off the wall when the board itself is what's changing — swapping a table of scores for a bracket, say. Then the old board comes down as one piece (it's a single fixture, not a collection of loose items), the new one goes up, and its contents get pinned on one at a time same as always.
 
 A board is a single physical surface — the frame lines of a table, an axis, the trellis of connecting lines in a bracket, a backing sheet. It is never a row of separately cut-out pieces. A nav bar is not a board just because its chips happen to sit in a line: every chip in it is already its own small paper cutout, with its own shape, its own tape, its own tilt (see *Visual Identity* → *Layout*), so a nav bar — however many chips it has — is always a collection of items, never a board. The same goes for anything else made of individually cut pieces: game cards, sticky notes, flags. However many of them appear together, and however new they are to the screen, each one is still placed by hand, one at a time. A row of chips sliding in together, still perfectly lined up edge to edge, doesn't read as several things being placed — it reads as one component being dropped in, and a pair of hands can only ever hold one piece of paper at once.
+
+A board can itself be pinned to a bigger board, and can have its own boards pinned to it in turn. A poster isn't one flat surface with loose items directly on it — a poster can have a smaller card clipped to it, and that card can have its own smaller items pinned to *it*. "Board" and "item" aren't two fixed roles handed out once; they're relative to whichever change is actually happening. Something is a board exactly when something smaller is changing on top of it while it holds still, and an item exactly when it's the thing coming down and going back up — the same piece of paper can be either, depending on what's moving. When only a small clipped-on card needs to change, the invisible hands never touch anything bigger than that card: they don't lift the whole poster to swap one card on it, the same way they don't lift the whole board to swap one item on it. They always work at the smallest surface that actually contains the change.
 
 ### Nothing appears from nothing
 

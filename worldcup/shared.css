@@ -1,5 +1,18 @@
 /* Shared styles for all World Cup pages */
 
+/* Reserves the vertical scrollbar's gutter unconditionally, on every page,
+   regardless of whether that page's own content is actually tall enough to
+   need one. Without this, body's max-width + margin:0 auto centering below
+   gets a different amount of horizontal space to work with depending on
+   whether a scrollbar happens to be showing — a tournament page's default
+   Match List view runs ~4700px tall, History's own table is only ~1200px,
+   so crossing that threshold differently between the two shifts the whole
+   centered column sideways by the scrollbar's width the instant one loads,
+   which is exactly the kind of motion a chip the reader was told never
+   moves (see requirements/transitions.md -> "The general rule") should
+   never have — the chip itself never gets a transform either page, the
+   ground under it does. */
+html { scrollbar-gutter: stable; }
 body { font-family: 'Fredoka One', cursive; font-size: 1rem; line-height: 1.5; background: #F5F0E8; color: #1a1a1a; max-width: 1100px; margin: 0 auto; padding: 0 1.5rem 4rem; overflow-x: auto; }
 h1 { font-family: 'Permanent Marker', cursive; font-size: 2.2rem; margin: 0.5rem 0 1rem; }
 a { color: #1A5276; }

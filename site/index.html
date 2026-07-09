@@ -78,7 +78,7 @@
 }
 /* Selection's own lift (a stronger shadow, see the Selected rule below)
    needs a real transition duration — a physical pick-up is a quick motion,
-   not an instant swap — see requirements/navigation.md -> Transitions ->
+   not an instant swap — see requirements/transitions.md -> Transitions ->
    "Selection is a motion, not a snap". Deliberately its own rule, wrapped
    in :where() to carry zero specificity, rather than folded into the base
    rule above: a plain `.view-toggle button { transition: ... }` would have
@@ -164,7 +164,7 @@
    same instinct wearing `scale` instead of `translate`. Animated by the
    base rule's own `transition: box-shadow` above, not an instant class
    swap — a real hand doesn't teleport a chip to its picked-up shadow (see
-   requirements/navigation.md -> Transitions -> "Selection is a motion, not
+   requirements/transitions.md -> Transitions -> "Selection is a motion, not
    a snap"). Tape is exactly whatever piece this chip already had — real
    tape doesn't grow because the thing under it got picked up, so selection
    is shadow only, never a tape resize. Text stays the same near-black —
@@ -457,10 +457,10 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 
 // Cross-page navigation (Home <-> WC YY <-> Tournaments <-> History) — see
-// requirements/navigation.md -> Cross-page navigation and
+// requirements/transitions.md -> Cross-page navigation and
 // brand-guidelines.md -> Motion -> "Walking to a different poster". The
 // actual click-intercept/sessionStorage/scroll-lock/fonts.ready mechanics,
-// plus the nav/board/content phase ordering (requirements/navigation.md ->
+// plus the nav/board/content phase ordering (requirements/transitions.md ->
 // Transitions -> "Layering"), are shared sitewide now (see
 // setupCrossPageNav in fly.js, loaded before this script) — this page only
 // supplies which elements are its own nav to fly; it has no board and no

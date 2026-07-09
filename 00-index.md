@@ -15,11 +15,12 @@ Docs that apply to the whole site (not any one feature) live at the root:
 | 3 | [technical.md](technical.md) | How the system is actually built: two-repo structure, every script's job, the build pipeline, where CSS/JS/markup changes go. Architecture reference, not process. |
 | 4 | [brand-guidelines.md](brand-guidelines.md) | "Sports! On the Internet. By David" brand: concept, audience, voice, visual direction. Applies to the public site only — not admin. |
 | 5 | [requirements/public.md](requirements/public.md) | What the public-facing site should be/do — the homepage plus every public feature under it (currently just World Cup). Source of truth for desired behavior on the site anyone can visit — no admin/data-entry content. |
-| 6 | [requirements/navigation.md](requirements/navigation.md) | Deep-dive on the shared nav "sticky notes" design system and the sitewide fly in/out transition rules — factored out of `public.md` since it's cross-cutting infrastructure used by every page/feature, not any one feature's own content. A requirements doc, so it lives alongside public.md/admin.md rather than in a feature's own folder. |
-| 7 | [requirements/admin.md](requirements/admin.md) | What the admin site should be/do — source of truth for the internal data-entry tool, covering every feature that has one (currently just World Cup). Not a mirror of the public site — see the doc for why. |
-| 8 | [requirements/scale-algorithm.md](requirements/scale-algorithm.md) | Deep-dive on the World Cup Rankings Scale view's layout algorithm — a requirements doc, so it lives alongside public.md/admin.md rather than in the feature's own folder. Update when scale rendering logic changes. |
-| 9 | [open-questions.md](open-questions.md) | Unresolved project-level questions (naming, hosting, etc.) that don't block work but shouldn't be forgotten. |
-| 10 | [operations.md](operations.md) | Account inventory, domain/DNS, and hosting/deployment facts. Not a build doc — reference only. |
+| 6 | [requirements/navigation.md](requirements/navigation.md) | Deep-dive on the shared nav "sticky notes" design system — the four nav levels and their chip characteristics — factored out of `public.md` since it's cross-cutting infrastructure used by every page/feature, not any one feature's own content. A requirements doc, so it lives alongside public.md/admin.md rather than in a feature's own folder. Covers what nav looks like; see `transitions.md` for how anything (nav included) moves. |
+| 7 | [requirements/transitions.md](requirements/transitions.md) | Deep-dive on the sitewide fly in/out transition model — the recursive board/item test, the layering order, pace and direction. A general information-display rule, not a nav-specific one, so it's its own doc rather than living inside `navigation.md`: it governs a table cell or a bracket game exactly the same way it governs a nav chip. Every feature's own **Transition:**/**On load:** lines in `public.md` point back here. |
+| 8 | [requirements/admin.md](requirements/admin.md) | What the admin site should be/do — source of truth for the internal data-entry tool, covering every feature that has one (currently just World Cup). Not a mirror of the public site — see the doc for why. |
+| 9 | [requirements/scale-algorithm.md](requirements/scale-algorithm.md) | Deep-dive on the World Cup Rankings Scale view's layout algorithm — a requirements doc, so it lives alongside public.md/admin.md rather than in the feature's own folder. Update when scale rendering logic changes. |
+| 10 | [open-questions.md](open-questions.md) | Unresolved project-level questions (naming, hosting, etc.) that don't block work but shouldn't be forgotten. |
+| 11 | [operations.md](operations.md) | Account inventory, domain/DNS, and hosting/deployment facts. Not a build doc — reference only. |
 
 Multi-session milestones (a rebrand, an infra migration) are tracked as a checklist in `workbench/<milestone-name>.md` — see `way-of-working.md` → *Milestones*. The folder is empty between milestones, so it has no permanent entry here.
 
@@ -67,7 +68,7 @@ The admin site described in `requirements/admin.md` lives in `admin/` — a top-
 ## Adding a new feature
 
 1. Create a top-level folder for it (e.g. `basketball/`), holding that feature's scripts, data, and shared CSS/JS — mirroring how `worldcup/` is structured.
-2. Add a section for it to `requirements/public.md` (and `requirements/admin.md` if it needs data entry). Nav/motion behavior is already covered by `requirements/navigation.md` — reuse it rather than re-describing it, unless the new feature genuinely needs a nav rule that doc doesn't already have.
+2. Add a section for it to `requirements/public.md` (and `requirements/admin.md` if it needs data entry). Nav look-and-feel is already covered by `requirements/navigation.md` and how anything (nav or otherwise) transitions on screen is covered by `requirements/transitions.md` — reuse both rather than re-describing them, unless the new feature genuinely needs a rule neither doc already has.
 3. Create its output folder under `site/` (e.g. `site/basketball/`).
 4. Add it to `worldcup/scripts/build_home.py`'s nav config (`LEVEL_1`/`LEVEL_2`/`LEVEL_3`) — that's what puts it on the homepage; `site/index.html` is a build artifact, not hand-edited.
 5. Update this index.

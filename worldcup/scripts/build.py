@@ -508,7 +508,7 @@ def build_history_page(shared_css):
 
     def pending_cell(colspan, msg='Not yet played'):
         # Wrapped in .hist-inner too (same as flag_cell) so setHistRound's
-        # per-item fly (see requirements/navigation.md ->
+        # per-item fly (see requirements/transitions.md ->
         # Transitions) has something to animate here as well — the message
         # itself is the one "item" this row holds when there's no flag data.
         return f'<td colspan="{colspan}" class="hist-pending"><div class="hist-inner">{msg}</div></td>'
@@ -682,7 +682,7 @@ function attachHistHoverHandlers() {{
 }}
 
 // Every flag+ELO cell (or, for a not-yet-played row, its message) is its
-// own item — see requirements/navigation.md -> Transitions ->
+// own item — see requirements/transitions.md -> Transitions ->
 // "The unit that moves, by action". The row itself, and the year
 // identifying it, are the board and never appear in this list — only
 // what's placed into a row's cells does.
@@ -691,10 +691,10 @@ function histItems(tbody) {{
 }}
 
 // Cross-page navigation (Home <-> WC YY <-> Tournaments <-> History) — see
-// requirements/navigation.md -> Cross-page navigation and
+// requirements/transitions.md -> Cross-page navigation and
 // brand-guidelines.md -> Motion -> "Walking to a different poster". The
 // actual click-intercept/sessionStorage/scroll-lock/fonts.ready mechanics,
-// plus the nav/board/content phase ordering (requirements/navigation.md ->
+// plus the nav/board/content phase ordering (requirements/transitions.md ->
 // Transitions -> "Layering"), are shared sitewide now (see
 // setupCrossPageNav in ../fly.js, loaded before this script) — nav chips
 // use that function's own default (pageNavFlyItems, also in ../fly.js);
@@ -702,13 +702,13 @@ function histItems(tbody) {{
 // cells, reusing histItems as-is since History already flies at cell
 // granularity for its own round toggle — see setHistRound below; only
 // Match List needs a finer grain than its usual row-level item for this
-// feature, see requirements/navigation.md -> Cross-page navigation) and its
+// feature, see requirements/transitions.md -> Cross-page navigation) and its
 // own board: #hist-board, the wrapper around both the caption paragraph
 // and the table itself, not just the table alone — the caption explains
 // what the table is showing, so it's part of the same physical clipping
 // as the table, not a separate loose scrap sitting outside it; leaving it
 // out of the board would mean it just sits there unanimated, exactly the
-// bug this board phase exists to prevent (see requirements/navigation.md ->
+// bug this board phase exists to prevent (see requirements/transitions.md ->
 // Cross-page navigation for why a page-specific board can't be assumed
 // "already there" the way universal chrome can — that reasoning applies
 // to every piece of the board, not only the table).
@@ -890,10 +890,10 @@ def page_html(year, script_block, shared_css, shared_js):
 </script>
 <script>
 // Cross-page navigation (Home <-> WC YY <-> Tournaments <-> History) — see
-// requirements/navigation.md -> Cross-page navigation and
+// requirements/transitions.md -> Cross-page navigation and
 // brand-guidelines.md -> Motion -> "Walking to a different poster". Shared
 // mechanics from ../fly.js (loaded above, in <head>), including the
-// nav/board/content phase ordering (requirements/navigation.md ->
+// nav/board/content phase ordering (requirements/transitions.md ->
 // Transitions -> "Layering"); every in-frame nav chip at every level uses
 // that function's own default (pageNavFlyItems(), .page-nav wraps all of
 // it — see the markup above), so this page supplies its own content beyond

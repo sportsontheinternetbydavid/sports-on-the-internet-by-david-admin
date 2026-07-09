@@ -7,7 +7,7 @@
 //
 // The board-level primitive (flyOut()/flyIn() below) lives here rather than
 // only in shared.js because cross-page navigation's own board phase (see
-// requirements/navigation.md -> Cross-page navigation) needs it on pages
+// requirements/transitions.md -> Cross-page navigation) needs it on pages
 // that don't load shared.js at all — the homepage, History. shared.js's
 // setPageView/setMatchView/toggleBracketRound use this same pair for their
 // own within-page board swaps rather than keeping a second copy. The
@@ -28,6 +28,16 @@
 // instead of merely documented to.
 const NAV_FLY_KEY = 'sotibd-nav-fly';
 
+// Set alongside NAV_FLY_KEY only when this specific departure found a Home
+// chip that persists onto the destination page unmoved — see
+// requirements/transitions.md -> "The general rule" and -> Cross-page
+// navigation ("A nav chip that's identical on both ends of a specific link
+// never flies"). The arrival side reads it to know whether to leave its own
+// Home chip alone too, rather than re-deriving "did the departure page have
+// an identical one" after the fact, which the arriving document has no way
+// to check on its own.
+const NAV_PERSIST_HOME_KEY = 'sotibd-nav-persist-home';
+
 // Read from ../nav.css's --fly-item-ms (the single source of truth) rather
 // than a second hardcoded number that could drift out of sync with it.
 const FLY_ITEM_MS = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fly-item-ms'));
@@ -39,7 +49,7 @@ const FLY_ITEM_JITTER_MS = 250;
 
 // Read from ../nav.css's --fly-ms (the single source of truth) rather than a
 // second hardcoded number that could drift out of sync with it — see
-// requirements/navigation.md -> Transitions -> "Chrome pace".
+// requirements/transitions.md -> Transitions -> "Chrome pace".
 const FLY_MS = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fly-ms'));
 
 // Flies `els` off-screen (see ../nav.css's .fly-panel) and resolves once the
@@ -164,7 +174,7 @@ function flyInItems(items) {
 //
 // What *does* still vary by page is which elements actually fly, and nav,
 // board, and content fly as three separate, ordered phases now — see
-// requirements/navigation.md -> Transitions -> "Layering": content clears,
+// requirements/transitions.md -> Transitions -> "Layering": content clears,
 // then the board (if any), then nav, on the way out; nav settles, then the
 // board (if any), then content, on the way in — never simultaneously.
 // `setupCrossPageNav` takes one function per layer: pageNavFlyItems() below
@@ -185,7 +195,7 @@ function flyInItems(items) {
 // its own finest-grain items (History's table cells, a World Cup page's
 // active view's rows/cards), `getBoardEl` for the one element that is that
 // page's own board, if it has one (History's `#hist-table`, a World Cup
-// page's active view container) — see requirements/navigation.md ->
+// page's active view container) — see requirements/transitions.md ->
 // Cross-page navigation for why this can't just be assumed "already there"
 // the way truly universal chrome (the cream background, the red Level 4
 // strip's own styling) can: the two documents on either end of a link don't
@@ -194,6 +204,19 @@ function flyInItems(items) {
 // board swap (flyOut()/flyIn() above), rather than sitting there unanimated.
 function pageNavFlyItems() {
   return Array.from(document.querySelectorAll('.page-nav .view-toggle > *'));
+}
+
+// The `Home` chip is the identical link — same label, same href, same slot
+// — on every tournament page and on history.html (see build.py's
+// tournamentUtilityBar()/historyUtilityBar()), so it's the one chip this
+// site currently has that can genuinely persist across a cross-page link
+// (see requirements/transitions.md -> "The general rule"). Found by href
+// rather than a dedicated class/id: nothing else on any page points at the
+// homepage this way, and it naturally returns null on pages with no such
+// chip at all (the homepage itself, whose own utility-bar buttons have no
+// href), so callers don't need a separate page-type check.
+function homeChip() {
+  return document.querySelector('.page-nav .utility-bar a[href="../../index.html"]');
 }
 
 function setupCrossPageNav(getNavFlyItems, getContentFlyItems, getBoardEl) {
@@ -238,8 +261,16 @@ function setupCrossPageNav(getNavFlyItems, getContentFlyItems, getBoardEl) {
     const locked = scrollLockEls();
     locked.forEach(function(el) { el.classList.add('fly-scroll-lock'); });
     const departingBoard = boardEl();
+    // The Home chip persists onto the destination unmoved whenever the
+    // destination has an identical one to land on — i.e. any link within
+    // the World Cup/History pages except the Home chip's own link, which
+    // leaves for the homepage, where no equivalent chip exists to persist
+    // onto. See requirements/transitions.md -> "The general rule" and ->
+    // Cross-page navigation.
+    const home = homeChip();
+    const homePersists = !!home && link !== home;
     // Content clears first, then the board (if this page has one), then nav
-    // — see requirements/navigation.md -> Transitions -> "Layering". Each
+    // — see requirements/transitions.md -> Transitions -> "Layering". Each
     // phase must fully settle before the next starts, so this is chained
     // promises, not everything flying together. flyOut (board-level, from
     // above) resolves immediately via Promise.resolve() when there's no
@@ -248,20 +279,34 @@ function setupCrossPageNav(getNavFlyItems, getContentFlyItems, getBoardEl) {
     flyOutItems(contentFlyItems()).then(function() {
       return departingBoard ? flyOut([departingBoard]) : Promise.resolve();
     }).then(function() {
-      return flyOutItems(navFlyItems());
+      const items = homePersists ? navFlyItems().filter(function(el) { return el !== home; }) : navFlyItems();
+      return flyOutItems(items);
     }).then(function() {
       sessionStorage.setItem(NAV_FLY_KEY, '1');
+      if (homePersists) {
+        sessionStorage.setItem(NAV_PERSIST_HOME_KEY, '1');
+      } else {
+        sessionStorage.removeItem(NAV_PERSIST_HOME_KEY);
+      }
       window.location.href = href;
     });
   });
 
   // Arrival — only a same-site click sets NAV_FLY_KEY, so this never fires
   // on a direct load/refresh, matching the sitewide "nothing flies on
-  // load" default (see requirements/public.md -> Navigation -> Initial
-  // display) with its one sanctioned exception.
+  // load" default (see requirements/transitions.md -> Initial display)
+  // with its one sanctioned exception.
   if (sessionStorage.getItem(NAV_FLY_KEY) === '1') {
     sessionStorage.removeItem(NAV_FLY_KEY);
-    const arrivalNavItems = navFlyItems();
+    // Mirrors the departure side's `homePersists` — read once, here, rather
+    // than re-derived, since this document has no way to inspect the page
+    // that was just left. When true, the arriving Home chip is left out of
+    // arrivalNavItems entirely below, so it's never pinned off-screen and
+    // never flies in — it was already exactly where it needs to be.
+    const homePersisted = sessionStorage.getItem(NAV_PERSIST_HOME_KEY) === '1';
+    sessionStorage.removeItem(NAV_PERSIST_HOME_KEY);
+    const persistedHome = homePersisted ? homeChip() : null;
+    const arrivalNavItems = persistedHome ? navFlyItems().filter(function(el) { return el !== persistedHome; }) : navFlyItems();
     const arrivalContentItems = contentFlyItems();
     const arrivalBoard = boardEl();
     // Pinned off-screen the instant they exist — before any paint — but the
@@ -269,7 +314,7 @@ function setupCrossPageNav(getNavFlyItems, getContentFlyItems, getBoardEl) {
     // fetch racing against this script's synchronous class mutations could
     // otherwise let the whole staggered arrival execute before the browser
     // ever shows a frame of it, which reads as one clump landing instantly
-    // rather than individually staggered pieces. See requirements/navigation.md
+    // rather than individually staggered pieces. See requirements/transitions.md
     // -> Cross-page navigation -> "Nav must already be standing before the
     // first thing behind it moves — never a race." This must cover the
     // board too, not just nav/content — a page's own board (its year
