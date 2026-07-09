@@ -76,6 +76,28 @@
   rotate: var(--rot);
   position: relative;
 }
+/* Selection's own lift (a stronger shadow, see the Selected rule below)
+   needs a real transition duration — a physical pick-up is a quick motion,
+   not an instant swap — see requirements/navigation.md -> Transitions ->
+   "Selection is a motion, not a snap". Deliberately its own rule, wrapped
+   in :where() to carry zero specificity, rather than folded into the base
+   rule above: a plain `.view-toggle button { transition: ... }` would have
+   specificity (0,1,1) — one class plus one type — which beats .fly-item's
+   (0,1,0), so it would silently steal the whole `transition` property
+   (translate/rotate timing and all) from any chip that's simultaneously
+   flying, exactly the "resting-state rule outranks fly-transition rule"
+   bug technical.md documents, just one level removed (which rule's
+   `transition` *property* wins, rather than which rule's `translate`
+   *value* wins). With :where()'s specificity of zero, .fly-item's own
+   transition (translate, rotate) always wins whenever a chip is mid-fly,
+   and this rule only ever supplies box-shadow timing the rest of the time.
+   No `scale` here — selection doesn't change a chip's size at all (see the
+   Selected rule below for why) — and no `rotate` either: a chip's rotation
+   never actually changes on selection (the Selected rule repeats the same
+   `var(--rot)`), so there's nothing for either to transition regardless. */
+:where(.view-toggle button, .view-toggle a, .view-toggle strong, .view-toggle span) {
+  transition: box-shadow 150ms ease-out;
+}
 .view-toggle strong, .view-toggle span.disabled { cursor: default; }
 
 .view-toggle > :nth-child(odd) { --rot: -1.6deg; }
@@ -101,7 +123,8 @@
 
 /* Tape on every chip — a physical scrap of board needs holding down
    whether or not it's the current selection; selection is differentiated
-   below instead (lift/scale/shadow + a bigger piece of tape). Size/angle/
+   below instead, by shadow alone (see the Selected rule below for why
+   tape itself never resizes and a chip never does either). Size/angle/
    position cycle by position mod 7 — a length that shares no common
    factor with the shape cycle (mod 4) or color cycle (mod 5) above, so
    tape variety never lines up with either in lockstep; nothing
@@ -126,17 +149,31 @@
 .view-toggle > :nth-child(7n+7) { --tape-w: 26px; --tape-h: 11px; --tape-rot: 2deg;  --tape-left: 48%; }
 
 /* Selected — no recolor (background stays whatever this chip already drew
-   from the palette above); lifts with a stronger shadow and a slight
-   scale-up (visibly picked up and pressed down). Tape is exactly whatever
-   piece this chip already had — real tape doesn't grow because the thing
-   under it got picked up, so selection is shadow/scale only, never a tape
-   resize. Text stays the same near-black — marker only comes in black, so
-   a colored background never flips to white text. Covers both single-choice
-   "current selection" and multi-select "shown" (a currently-visible
-   Knockout round) — both mean "this is on." */
+   from the palette above); lifts with a stronger, harder-edged shadow, the
+   real optical consequence of a physical chip sitting slightly higher off
+   the board (farther from the surface it's casting a shadow onto) — see
+   brand-guidelines.md -> Typography Principles and -> Layout -> "nothing
+   floats". Deliberately shadow only, no size change: a real piece of paper
+   doesn't grow because it got picked up or chosen — there's no physical
+   action that makes paper physically larger, so a scale-up here would be a
+   borrowed digital-UI convention (a button's :active "pop"), not a
+   materials-based one, however smoothly it's animated. This is the same
+   category of mistake this project already ruled out once for hover, via a
+   different property: a translateY lift was tried and rejected because "a
+   lift reads as the chip floating off the board" — scale-on-select is that
+   same instinct wearing `scale` instead of `translate`. Animated by the
+   base rule's own `transition: box-shadow` above, not an instant class
+   swap — a real hand doesn't teleport a chip to its picked-up shadow (see
+   requirements/navigation.md -> Transitions -> "Selection is a motion, not
+   a snap"). Tape is exactly whatever piece this chip already had — real
+   tape doesn't grow because the thing under it got picked up, so selection
+   is shadow only, never a tape resize. Text stays the same near-black —
+   marker only comes in black, so a colored background never flips to
+   white text. Covers both single-choice "current selection" and
+   multi-select "shown" (a currently-visible Knockout round) — both mean
+   "this is on." */
 .view-toggle button.active, .view-toggle a.active, .view-toggle strong.active {
   box-shadow: 4px 6px 0 rgba(0, 0, 0, 0.3);
-  scale: 1.08;
   rotate: var(--rot);
   z-index: 2;
 }
@@ -226,12 +263,12 @@
    silently overridden by a chip's own resting/selected look. A board or
    item can be mid-swap while also carrying .active (the outgoing view's
    own selected tab, the just-arrived default round's tab), and
-   .view-toggle button.active/.strong.active (above) sets its own `scale`/
-   `rotate` for the "picked up" look — if this fly mechanism also used
-   `transform`, whichever rule's shorthand won would silently discard the
-   other's value entirely (that's exactly what happened before this was
-   split: an !important arms race, one bug already found and fixed that
-   way — see technical.md -> "A resting-state rule must never outrank a
+   .view-toggle button.active/.strong.active (above) sets its own `rotate`
+   for the "picked up" look — if this fly mechanism also used `transform`,
+   whichever rule's shorthand won would silently discard the other's value
+   entirely (that's exactly what happened before this was split: an
+   !important arms race, one bug already found and fixed that way — see
+   technical.md -> "A resting-state rule must never outrank a
    fly-transition rule"). With `translate` as its own property, nothing
    else in this file ever sets it, so it can never lose that fight,
    structurally, not by convention. `rotate` is still shared with the
@@ -295,7 +332,11 @@ table { border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem; white-sp
    page — and the nav above it — never grows wider than Levels 1-3. */
 #matches-view table { margin-top: 0; }
 th, td { padding: 0.4rem 0.6rem; text-align: left; border-bottom: 1px solid #ddd; }
-th { font-family: 'Permanent Marker', cursive; background: #C0392B; color: #FFFFFF; position: sticky; top: 0; z-index: 2; height: 2.5rem; vertical-align: middle; }
+/* Level 4 header row (see requirements/navigation.md -> Level 4) — red
+   background, but near-black text, not white: real marker only comes in
+   black (../nav.css's chip rule says the same thing), and that holds for
+   every red Level 4 strip sitewide, not just chips. */
+th { font-family: 'Permanent Marker', cursive; background: #C0392B; color: #1a1a1a; position: sticky; top: 0; z-index: 2; height: 2.5rem; vertical-align: middle; }
 .num { text-align: right; }
 .narrow { text-align: center; }
 .spacer { padding: 0 0.3rem; }
@@ -373,10 +414,12 @@ tbody tr:hover { background: #EDE8DC; }
    against Level 3 above with no gap, same as Match List's table. */
 .rankings-panel { border: 1px solid rgba(0,0,0,0.08); border-radius: 0 0 6px 6px; background: rgba(255,255,255,0.35); padding: 0 0.8rem 0.3rem; }
 .rankings-cols { font-size: 0.85rem; white-space: nowrap; }
-/* This view's Level 4 (see requirements/public.md → Navigation) — red/white
-   like every other Level 4. The negative left/right margin cancels
-   .rankings-panel's padding so this bleeds all the way to the panel's
-   edges, aligning with Levels 1-3 above instead of sitting inset. */
+/* This view's Level 4 (see requirements/public.md → Navigation) — red
+   background, near-black text (never white — real marker only comes in
+   black, see ../nav.css's chip rule and shared.css's `th` above) like every
+   other Level 4. The negative left/right margin cancels .rankings-panel's
+   padding so this bleeds all the way to the panel's edges, aligning with
+   Levels 1-3 above instead of sitting inset. */
 .rankings-header {
   display: grid;
   align-items: center;
@@ -386,11 +429,14 @@ tbody tr:hover { background: #EDE8DC; }
   top: 0;
   margin: 0 -0.8rem;
   background: #C0392B;
-  color: #fff;
+  color: #1a1a1a;
   z-index: 10;
 }
 .rankings-header > div { padding: 0.3rem 0.5rem; text-align: center; font-weight: bold; }
-.rankings-header .axis-head { text-align: right; padding-right: 0.6rem; color: rgba(255,255,255,0.7); }
+/* Dimmed near-black, not dimmed white — same opacity convention as
+   ../nav.css's disabled chip text, reused here rather than inventing a
+   second "de-emphasized on red" treatment. */
+.rankings-header .axis-head { text-align: right; padding-right: 0.6rem; color: rgba(26, 26, 26, 0.55); }
 .rankings-body { display: grid; /* grid-template-columns set dynamically by renderRankings() */ }
 .scale-error { position: absolute; top: 4px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: #c00; pointer-events: none; }
 .rankings-axis { position: relative; }
@@ -552,13 +598,14 @@ tbody tr:hover { background: #EDE8DC; }
 /* Match List: unresolved knockout slot (see homeFrom/awayFrom) */
 .tbd-slot { color: #948f81; font-style: italic; font-size: 0.72rem; }
 
-/* Overrides shared.css's generic `th { background: #C0392B; color: #FFFFFF }`
+/* Overrides shared.css's generic `th { background: #C0392B; ... }`
    (written for the actual Level 4 header row) — .year-cell is a <th> for
    markup reasons (it's a row header, semantically), not a repeated copy of
-   the header itself. Without this it inherits white marker on red, which
-   isn't a real material this brand uses (see brand-guidelines.md ->
-   Typography: marker is black) — and reading down the column, every row's
-   year looked like a stack of headers instead of a handwritten label. */
+   the header itself. Without this override it inherits the red Level 4
+   background, and reading down the column, every row's year looked like a
+   stack of headers instead of a handwritten label. (Text color no longer
+   needs its own override here — shared.css's `th` is near-black now, same
+   as this rule already was.) */
 .year-cell {
   font-family: 'Permanent Marker', cursive;
   font-size: 1.1rem;
@@ -642,6 +689,7 @@ table.dimming .hist-cell.team-highlight { opacity: 1; }
 </head>
 <body>
 <div class="page-nav"><nav class="utility-bar view-toggle"><a href="../../index.html">Home</a></nav><nav class="page-toggle primary-tabs view-toggle"><button id="tab-f4" class="" onclick="setHistRound('f4')">Final 4</button><button id="tab-f8" class="" onclick="setHistRound('f8')">Final 8</button><button id="tab-f16" class="active" onclick="setHistRound('f16')">Final 16</button></nav></div>
+<div id="hist-board">
 <p class="hist-caption">ELO ranking of the teams entering the selected round, highest to lowest, left to right — not a final-standings table.</p>
 
 <div class="table-wrap">
@@ -663,6 +711,7 @@ table.dimming .hist-cell.team-highlight { opacity: 1; }
 <tr><th class="year-cell">1998</th><td class="hist-cell" data-team="Germany"><div class="hist-inner"><span class="icon" style="background-image:url('flags/de.svg');transform:rotate(0.8deg)" data-team="Germany"></span><span class="hist-elo">2072</span></div></td><td class="hist-cell" data-team="Brazil"><div class="hist-inner"><span class="icon" style="background-image:url('flags/br.svg');transform:rotate(0.4deg)" data-team="Brazil"></span><span class="hist-elo">2063</span></div></td><td class="hist-cell" data-team="France"><div class="hist-inner"><span class="icon" style="background-image:url('flags/fr.svg');transform:rotate(0.9deg)" data-team="France"></span><span class="hist-elo">2028</span></div></td><td class="hist-cell" data-team="Yugoslavia"><div class="hist-inner"><span class="icon" style="background-image:url('flags/yu.svg');transform:rotate(0.4deg)" data-team="Yugoslavia"></span><span class="hist-elo">1995</span></div></td><td class="hist-cell" data-team="Italy"><div class="hist-inner"><span class="icon" style="background-image:url('flags/it.svg');transform:rotate(-0.1deg)" data-team="Italy"></span><span class="hist-elo">1980</span></div></td><td class="hist-cell" data-team="England"><div class="hist-inner"><span class="icon" style="background-image:url('flags/gb-eng.svg');transform:rotate(0.4deg)" data-team="England"></span><span class="hist-elo">1972</span></div></td><td class="hist-cell" data-team="Netherlands"><div class="hist-inner"><span class="icon" style="background-image:url('flags/nl.svg');transform:rotate(0.7000000000000001deg)" data-team="Netherlands"></span><span class="hist-elo">1965</span></div></td><td class="hist-cell" data-team="Argentina"><div class="hist-inner"><span class="icon" style="background-image:url('flags/ar.svg');transform:rotate(0.9deg)" data-team="Argentina"></span><span class="hist-elo">1958</span></div></td><td class="hist-cell" data-team="Norway"><div class="hist-inner"><span class="icon" style="background-image:url('flags/no.svg');transform:rotate(0.6000000000000001deg)" data-team="Norway"></span><span class="hist-elo">1926</span></div></td><td class="hist-cell" data-team="Romania"><div class="hist-inner"><span class="icon" style="background-image:url('flags/ro.svg');transform:rotate(-0.6000000000000001deg)" data-team="Romania"></span><span class="hist-elo">1916</span></div></td><td class="hist-cell" data-team="Mexico"><div class="hist-inner"><span class="icon" style="background-image:url('flags/mx.svg');transform:rotate(0.2deg)" data-team="Mexico"></span><span class="hist-elo">1884</span></div></td><td class="hist-cell" data-team="Croatia"><div class="hist-inner"><span class="icon" style="background-image:url('flags/hr.svg');transform:rotate(1.0deg)" data-team="Croatia"></span><span class="hist-elo">1882</span></div></td><td class="hist-cell" data-team="Denmark"><div class="hist-inner"><span class="icon" style="background-image:url('flags/dk.svg');transform:rotate(0.6000000000000001deg)" data-team="Denmark"></span><span class="hist-elo">1863</span></div></td><td class="hist-cell" data-team="Paraguay"><div class="hist-inner"><span class="icon" style="background-image:url('flags/py.svg');transform:rotate(0.4deg)" data-team="Paraguay"></span><span class="hist-elo">1813</span></div></td><td class="hist-cell" data-team="Chile"><div class="hist-inner"><span class="icon" style="background-image:url('flags/cl.svg');transform:rotate(0.7000000000000001deg)" data-team="Chile"></span><span class="hist-elo">1778</span></div></td><td class="hist-cell" data-team="Nigeria"><div class="hist-inner"><span class="icon" style="background-image:url('flags/ng.svg');transform:rotate(0.6000000000000001deg)" data-team="Nigeria"></span><span class="hist-elo">1741</span></div></td></tr>
   </tbody>
 </table>
+</div>
 </div>
 
 <script>
@@ -700,17 +749,29 @@ function histItems(tbody) {
 // Cross-page navigation (Home <-> WC YY <-> Tournaments <-> History) — see
 // requirements/navigation.md -> Cross-page navigation and
 // brand-guidelines.md -> Motion -> "Walking to a different poster". The
-// actual click-intercept/sessionStorage/scroll-lock/fonts.ready mechanics
-// are shared sitewide now (see setupCrossPageNav in ../fly.js, loaded
-// before this script) — this page only supplies which elements are its own
-// to fly: every nav chip at every level (pageNavFlyItems(), also in
-// ../fly.js), plus the active round's own cells, reusing histItems as-is
-// since History already flies at cell granularity for its own round toggle
-// (see setHistRound below); only Match List needs a finer grain than its
-// usual row-level item for this feature (see requirements/public.md ->
-// Cross-page navigation).
-setupCrossPageNav(function() {
-  return pageNavFlyItems().concat(histItems(document.getElementById('hist-tbody')));
+// actual click-intercept/sessionStorage/scroll-lock/fonts.ready mechanics,
+// plus the nav/board/content phase ordering (requirements/navigation.md ->
+// Transitions -> "Layering"), are shared sitewide now (see
+// setupCrossPageNav in ../fly.js, loaded before this script) — nav chips
+// use that function's own default (pageNavFlyItems, also in ../fly.js);
+// this page supplies its own content beyond nav (the active round's own
+// cells, reusing histItems as-is since History already flies at cell
+// granularity for its own round toggle — see setHistRound below; only
+// Match List needs a finer grain than its usual row-level item for this
+// feature, see requirements/navigation.md -> Cross-page navigation) and its
+// own board: #hist-board, the wrapper around both the caption paragraph
+// and the table itself, not just the table alone — the caption explains
+// what the table is showing, so it's part of the same physical clipping
+// as the table, not a separate loose scrap sitting outside it; leaving it
+// out of the board would mean it just sits there unanimated, exactly the
+// bug this board phase exists to prevent (see requirements/navigation.md ->
+// Cross-page navigation for why a page-specific board can't be assumed
+// "already there" the way universal chrome can — that reasoning applies
+// to every piece of the board, not only the table).
+setupCrossPageNav(null, function() {
+  return histItems(document.getElementById('hist-tbody'));
+}, function() {
+  return document.getElementById('hist-board');
 });
 
 function setHistRound(round) {

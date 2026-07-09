@@ -1,14 +1,23 @@
-// Shared item-level fly primitive — see requirements/public.md -> Navigation
-// -> Transitions -> "The invisible hands" and brand-guidelines.md -> Motion.
-// Loaded on every page (year pages, history.html, index.html) before any
-// page-specific script that flies individual chips/rows/cards/cells in or
-// out with a small random stagger, never a whole board's worth at once.
+// Shared item-level and board-level fly primitives — see
+// requirements/public.md -> Navigation -> Transitions -> "The invisible
+// hands" and brand-guidelines.md -> Motion. Loaded on every page (year
+// pages, history.html, index.html) before any page-specific script that
+// flies individual chips/rows/cards/cells in or out with a small random
+// stagger, or a whole board in or out as one piece.
 //
-// This file holds only the item-level primitive, not the board-level one
-// (see ../nav.css's .fly-panel, orchestrated per-page by shared.js's own
-// flyOut()/flyIn(), or build_home.py's .home-group system) — those two
-// mechanisms are deliberately different (sequential single-panel swap vs.
-// permanently-coexisting parallel swap) and stay where they are.
+// The board-level primitive (flyOut()/flyIn() below) lives here rather than
+// only in shared.js because cross-page navigation's own board phase (see
+// requirements/navigation.md -> Cross-page navigation) needs it on pages
+// that don't load shared.js at all — the homepage, History. shared.js's
+// setPageView/setMatchView/toggleBracketRound use this same pair for their
+// own within-page board swaps rather than keeping a second copy. The
+// homepage's `.home-group` system is still a third, deliberately different
+// mechanism (permanently-coexisting parallel swap, not a sequential single-
+// panel one), used only for the homepage's own internal Sports!/Football
+// toggle — not to be confused with this file's board-level fly, which
+// setupCrossPageNav below uses for cross-page navigation's board phase on
+// every page that has a board of its own (the homepage simply has none, so
+// it never supplies one).
 
 // NAV_FLY_KEY is the sessionStorage protocol cross-page navigation (Home <->
 // History) uses to signal "this page was reached by an internal click, play
@@ -27,6 +36,51 @@ const FLY_ITEM_MS = parseFloat(getComputedStyle(document.documentElement).getPro
 // CSS custom property like --fly-item-ms, since it's consumed here as a JS
 // number (Math.random() * this), not applied directly as a style value.
 const FLY_ITEM_JITTER_MS = 250;
+
+// Read from ../nav.css's --fly-ms (the single source of truth) rather than a
+// second hardcoded number that could drift out of sync with it — see
+// requirements/navigation.md -> Transitions -> "Chrome pace".
+const FLY_MS = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fly-ms'));
+
+// Flies `els` off-screen (see ../nav.css's .fly-panel) and resolves once the
+// transition finishes. Leaves them in the flown-out state — hiding/removing
+// them from the DOM afterward is the caller's job.
+function flyOut(els) {
+  return new Promise(function(resolve) {
+    els.forEach(function(el) { el.classList.remove('fly-in-active'); el.classList.add('fly-panel', 'fly-out'); });
+    window.setTimeout(resolve, FLY_MS);
+  });
+}
+
+// Flies `els` in from off-screen, with an optional per-element stagger (ms)
+// for a rapid-fire reveal of several at once (see Knockout's round toggle).
+// Once settled, clears the fly classes back to no-transform rather than
+// leaving `transform: translateX(0)` in place — see ../nav.css's .fly-panel
+// comment for why a lingering identity transform is its own latent bug
+// (breaks any position:fixed descendant, e.g. Rankings' #rank-info).
+function flyIn(els, options) {
+  const stagger = (options && options.stagger) || 0;
+  const onSettled = options && options.onSettled;
+  return new Promise(function(resolve) {
+    if (!els.length) { if (onSettled) onSettled(); resolve(); return; }
+    els.forEach(function(el, i) {
+      el.classList.add('fly-panel', 'fly-in-start');
+      if (stagger) el.style.transitionDelay = (i * stagger) + 'ms';
+    });
+    void els[0].offsetWidth;
+    requestAnimationFrame(function() {
+      els.forEach(function(el) { el.classList.remove('fly-in-start'); el.classList.add('fly-in-active'); });
+      window.setTimeout(function() {
+        els.forEach(function(el) {
+          el.classList.remove('fly-panel', 'fly-in-active');
+          if (stagger) el.style.transitionDelay = '';
+        });
+        if (onSettled) onSettled();
+        resolve();
+      }, FLY_MS);
+    });
+  });
+}
 
 // True if `el` is at least partially within the vertical viewport — used to
 // scope flying to what's actually in frame (see requirements/public.md ->
@@ -108,27 +162,52 @@ function flyInItems(items) {
 // Tournaments) was simply never wired up, so those navigations silently
 // fell back to a plain, un-animated browser navigation.
 //
-// What *does* still vary by page is which elements actually fly, so
-// `setupCrossPageNav` takes a function for that: pageNavFlyItems() below is
-// the right default for a page whose nav chips are the whole story (every
-// page's nav lives in the same `.page-nav` wrapper — see nav.py's
-// render_page_nav — so "every nav chip at every level" is gathered the same
-// way regardless of which page it is), but a page can pass its own function
-// instead, either to add further in-frame content (History's table cells,
-// alongside its own nav chips) or to override nav-chip gathering entirely
-// (the homepage's Sports!-signature exemption: see brand-guidelines.md ->
-// "The homepage signature is exempt" — it must fly as the single
-// `#sports-group` piece, not as the separate chips a plain `.view-toggle >
-// *` scan would otherwise see it as, since it happens to share that class
-// for layout reasons alone).
+// What *does* still vary by page is which elements actually fly, and nav,
+// board, and content fly as three separate, ordered phases now — see
+// requirements/navigation.md -> Transitions -> "Layering": content clears,
+// then the board (if any), then nav, on the way out; nav settles, then the
+// board (if any), then content, on the way in — never simultaneously.
+// `setupCrossPageNav` takes one function per layer: pageNavFlyItems() below
+// is the right default for `getNavFlyItems` on a page whose nav chips are
+// the whole story (every page's nav lives in the same `.page-nav` wrapper —
+// see nav.py's render_page_nav — so "every nav chip at every level" is
+// gathered the same way regardless of which page it is); `getContentFlyItems`
+// and `getBoardEl` have no sitewide default (a page with nothing beyond its
+// nav, like the homepage, simply omits both). A page overrides
+// `getNavFlyItems` only to change nav-chip gathering itself — the
+// homepage's Sports!-signature exemption is the one case (see
+// brand-guidelines.md -> "The homepage signature is exempt" — it must fly
+// as the single `#sports-group` piece, not as the separate chips a plain
+// `.view-toggle > *` scan would otherwise see it as, since it happens to
+// share that class for layout reasons alone) — and overrides
+// `getContentFlyItems`/`getBoardEl` to supply whatever a page's own
+// view/table/bracket contributes beyond its nav: `getContentFlyItems` for
+// its own finest-grain items (History's table cells, a World Cup page's
+// active view's rows/cards), `getBoardEl` for the one element that is that
+// page's own board, if it has one (History's `#hist-table`, a World Cup
+// page's active view container) — see requirements/navigation.md ->
+// Cross-page navigation for why this can't just be assumed "already there"
+// the way truly universal chrome (the cream background, the red Level 4
+// strip's own styling) can: the two documents on either end of a link don't
+// necessarily share an equivalent board (the homepage has none at all), so
+// a page-specific board flies at board pace, same mechanism as a within-page
+// board swap (flyOut()/flyIn() above), rather than sitting there unanimated.
 function pageNavFlyItems() {
   return Array.from(document.querySelectorAll('.page-nav .view-toggle > *'));
 }
 
-function setupCrossPageNav(getFlyItems) {
-  function allFlyItems() {
-    const items = (typeof getFlyItems === 'function') ? getFlyItems() : pageNavFlyItems();
+function setupCrossPageNav(getNavFlyItems, getContentFlyItems, getBoardEl) {
+  function navFlyItems() {
+    const items = (typeof getNavFlyItems === 'function') ? getNavFlyItems() : pageNavFlyItems();
     return items.filter(Boolean).filter(inFrame);
+  }
+  function contentFlyItems() {
+    const items = (typeof getContentFlyItems === 'function') ? getContentFlyItems() : [];
+    return items.filter(Boolean).filter(inFrame);
+  }
+  function boardEl() {
+    const el = (typeof getBoardEl === 'function') ? getBoardEl() : null;
+    return (el && inFrame(el)) ? el : null;
   }
 
   // Any scrollable ancestor a flying item might live inside (a table's own
@@ -158,7 +237,19 @@ function setupCrossPageNav(getFlyItems) {
     e.preventDefault();
     const locked = scrollLockEls();
     locked.forEach(function(el) { el.classList.add('fly-scroll-lock'); });
-    flyOutItems(allFlyItems()).then(function() {
+    const departingBoard = boardEl();
+    // Content clears first, then the board (if this page has one), then nav
+    // — see requirements/navigation.md -> Transitions -> "Layering". Each
+    // phase must fully settle before the next starts, so this is chained
+    // promises, not everything flying together. flyOut (board-level, from
+    // above) resolves immediately via Promise.resolve() when there's no
+    // board, same as flyOutItems already does for an empty item list — a
+    // phase with nothing to do is skipped, not paused for.
+    flyOutItems(contentFlyItems()).then(function() {
+      return departingBoard ? flyOut([departingBoard]) : Promise.resolve();
+    }).then(function() {
+      return flyOutItems(navFlyItems());
+    }).then(function() {
       sessionStorage.setItem(NAV_FLY_KEY, '1');
       window.location.href = href;
     });
@@ -170,20 +261,40 @@ function setupCrossPageNav(getFlyItems) {
   // display) with its one sanctioned exception.
   if (sessionStorage.getItem(NAV_FLY_KEY) === '1') {
     sessionStorage.removeItem(NAV_FLY_KEY);
-    const arrivalItems = allFlyItems();
+    const arrivalNavItems = navFlyItems();
+    const arrivalContentItems = contentFlyItems();
+    const arrivalBoard = boardEl();
     // Pinned off-screen the instant they exist — before any paint — but the
     // actual flight waits on document.fonts.ready: a render-blocking font
     // fetch racing against this script's synchronous class mutations could
     // otherwise let the whole staggered arrival execute before the browser
     // ever shows a frame of it, which reads as one clump landing instantly
-    // rather than individually staggered pieces. See requirements/public.md
-    // -> Cross-page navigation -> "The board must already be standing
-    // before the first item moves — never a race."
-    arrivalItems.forEach(function(item) { item.classList.add('fly-item', 'fly-item-in-start'); });
+    // rather than individually staggered pieces. See requirements/navigation.md
+    // -> Cross-page navigation -> "Nav must already be standing before the
+    // first thing behind it moves — never a race." This must cover the
+    // board too, not just nav/content — a page's own board (its year
+    // column, its table frame) is ordinary DOM content like anything else
+    // on the page; nothing about it is exempt from being pinned before
+    // first paint just because it never animates *within* a single page.
+    arrivalNavItems.concat(arrivalContentItems).forEach(function(item) { item.classList.add('fly-item', 'fly-item-in-start'); });
+    if (arrivalBoard) arrivalBoard.classList.add('fly-panel', 'fly-in-start');
     document.fonts.ready.then(function() {
       const locked = scrollLockEls();
       locked.forEach(function(el) { el.classList.add('fly-scroll-lock'); });
-      flyInItems(arrivalItems).then(function() {
+      // Nav settles first, then the board (if any), then content — the
+      // reverse of the departure order above, per the same Layering rule.
+      // Content items live nested inside the board element when there is
+      // one (History's .hist-inner cells inside #hist-table, a World Cup
+      // page's rows/cards inside its view container) — flying the board in
+      // while a content item is still pinned at its own off-screen offset
+      // composes correctly (the item's translate is relative to its
+      // now-settling parent), so it stays correctly hidden until its own
+      // phase starts, no special-casing needed here for that nesting.
+      flyInItems(arrivalNavItems).then(function() {
+        return arrivalBoard ? flyIn([arrivalBoard]) : Promise.resolve();
+      }).then(function() {
+        return flyInItems(arrivalContentItems);
+      }).then(function() {
         locked.forEach(function(el) { el.classList.remove('fly-scroll-lock'); });
       });
     });

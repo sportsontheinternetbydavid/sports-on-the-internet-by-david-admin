@@ -76,6 +76,28 @@
   rotate: var(--rot);
   position: relative;
 }
+/* Selection's own lift (a stronger shadow, see the Selected rule below)
+   needs a real transition duration — a physical pick-up is a quick motion,
+   not an instant swap — see requirements/navigation.md -> Transitions ->
+   "Selection is a motion, not a snap". Deliberately its own rule, wrapped
+   in :where() to carry zero specificity, rather than folded into the base
+   rule above: a plain `.view-toggle button { transition: ... }` would have
+   specificity (0,1,1) — one class plus one type — which beats .fly-item's
+   (0,1,0), so it would silently steal the whole `transition` property
+   (translate/rotate timing and all) from any chip that's simultaneously
+   flying, exactly the "resting-state rule outranks fly-transition rule"
+   bug technical.md documents, just one level removed (which rule's
+   `transition` *property* wins, rather than which rule's `translate`
+   *value* wins). With :where()'s specificity of zero, .fly-item's own
+   transition (translate, rotate) always wins whenever a chip is mid-fly,
+   and this rule only ever supplies box-shadow timing the rest of the time.
+   No `scale` here — selection doesn't change a chip's size at all (see the
+   Selected rule below for why) — and no `rotate` either: a chip's rotation
+   never actually changes on selection (the Selected rule repeats the same
+   `var(--rot)`), so there's nothing for either to transition regardless. */
+:where(.view-toggle button, .view-toggle a, .view-toggle strong, .view-toggle span) {
+  transition: box-shadow 150ms ease-out;
+}
 .view-toggle strong, .view-toggle span.disabled { cursor: default; }
 
 .view-toggle > :nth-child(odd) { --rot: -1.6deg; }
@@ -101,7 +123,8 @@
 
 /* Tape on every chip — a physical scrap of board needs holding down
    whether or not it's the current selection; selection is differentiated
-   below instead (lift/scale/shadow + a bigger piece of tape). Size/angle/
+   below instead, by shadow alone (see the Selected rule below for why
+   tape itself never resizes and a chip never does either). Size/angle/
    position cycle by position mod 7 — a length that shares no common
    factor with the shape cycle (mod 4) or color cycle (mod 5) above, so
    tape variety never lines up with either in lockstep; nothing
@@ -126,17 +149,31 @@
 .view-toggle > :nth-child(7n+7) { --tape-w: 26px; --tape-h: 11px; --tape-rot: 2deg;  --tape-left: 48%; }
 
 /* Selected — no recolor (background stays whatever this chip already drew
-   from the palette above); lifts with a stronger shadow and a slight
-   scale-up (visibly picked up and pressed down). Tape is exactly whatever
-   piece this chip already had — real tape doesn't grow because the thing
-   under it got picked up, so selection is shadow/scale only, never a tape
-   resize. Text stays the same near-black — marker only comes in black, so
-   a colored background never flips to white text. Covers both single-choice
-   "current selection" and multi-select "shown" (a currently-visible
-   Knockout round) — both mean "this is on." */
+   from the palette above); lifts with a stronger, harder-edged shadow, the
+   real optical consequence of a physical chip sitting slightly higher off
+   the board (farther from the surface it's casting a shadow onto) — see
+   brand-guidelines.md -> Typography Principles and -> Layout -> "nothing
+   floats". Deliberately shadow only, no size change: a real piece of paper
+   doesn't grow because it got picked up or chosen — there's no physical
+   action that makes paper physically larger, so a scale-up here would be a
+   borrowed digital-UI convention (a button's :active "pop"), not a
+   materials-based one, however smoothly it's animated. This is the same
+   category of mistake this project already ruled out once for hover, via a
+   different property: a translateY lift was tried and rejected because "a
+   lift reads as the chip floating off the board" — scale-on-select is that
+   same instinct wearing `scale` instead of `translate`. Animated by the
+   base rule's own `transition: box-shadow` above, not an instant class
+   swap — a real hand doesn't teleport a chip to its picked-up shadow (see
+   requirements/navigation.md -> Transitions -> "Selection is a motion, not
+   a snap"). Tape is exactly whatever piece this chip already had — real
+   tape doesn't grow because the thing under it got picked up, so selection
+   is shadow only, never a tape resize. Text stays the same near-black —
+   marker only comes in black, so a colored background never flips to
+   white text. Covers both single-choice "current selection" and
+   multi-select "shown" (a currently-visible Knockout round) — both mean
+   "this is on." */
 .view-toggle button.active, .view-toggle a.active, .view-toggle strong.active {
   box-shadow: 4px 6px 0 rgba(0, 0, 0, 0.3);
-  scale: 1.08;
   rotate: var(--rot);
   z-index: 2;
 }
@@ -226,12 +263,12 @@
    silently overridden by a chip's own resting/selected look. A board or
    item can be mid-swap while also carrying .active (the outgoing view's
    own selected tab, the just-arrived default round's tab), and
-   .view-toggle button.active/.strong.active (above) sets its own `scale`/
-   `rotate` for the "picked up" look — if this fly mechanism also used
-   `transform`, whichever rule's shorthand won would silently discard the
-   other's value entirely (that's exactly what happened before this was
-   split: an !important arms race, one bug already found and fixed that
-   way — see technical.md -> "A resting-state rule must never outrank a
+   .view-toggle button.active/.strong.active (above) sets its own `rotate`
+   for the "picked up" look — if this fly mechanism also used `transform`,
+   whichever rule's shorthand won would silently discard the other's value
+   entirely (that's exactly what happened before this was split: an
+   !important arms race, one bug already found and fixed that way — see
+   technical.md -> "A resting-state rule must never outrank a
    fly-transition rule"). With `translate` as its own property, nothing
    else in this file ever sets it, so it can never lose that fight,
    structurally, not by convention. `rotate` is still shared with the
@@ -295,7 +332,11 @@ table { border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem; white-sp
    page — and the nav above it — never grows wider than Levels 1-3. */
 #matches-view table { margin-top: 0; }
 th, td { padding: 0.4rem 0.6rem; text-align: left; border-bottom: 1px solid #ddd; }
-th { font-family: 'Permanent Marker', cursive; background: #C0392B; color: #FFFFFF; position: sticky; top: 0; z-index: 2; height: 2.5rem; vertical-align: middle; }
+/* Level 4 header row (see requirements/navigation.md -> Level 4) — red
+   background, but near-black text, not white: real marker only comes in
+   black (../nav.css's chip rule says the same thing), and that holds for
+   every red Level 4 strip sitewide, not just chips. */
+th { font-family: 'Permanent Marker', cursive; background: #C0392B; color: #1a1a1a; position: sticky; top: 0; z-index: 2; height: 2.5rem; vertical-align: middle; }
 .num { text-align: right; }
 .narrow { text-align: center; }
 .spacer { padding: 0 0.3rem; }
@@ -373,10 +414,12 @@ tbody tr:hover { background: #EDE8DC; }
    against Level 3 above with no gap, same as Match List's table. */
 .rankings-panel { border: 1px solid rgba(0,0,0,0.08); border-radius: 0 0 6px 6px; background: rgba(255,255,255,0.35); padding: 0 0.8rem 0.3rem; }
 .rankings-cols { font-size: 0.85rem; white-space: nowrap; }
-/* This view's Level 4 (see requirements/public.md → Navigation) — red/white
-   like every other Level 4. The negative left/right margin cancels
-   .rankings-panel's padding so this bleeds all the way to the panel's
-   edges, aligning with Levels 1-3 above instead of sitting inset. */
+/* This view's Level 4 (see requirements/public.md → Navigation) — red
+   background, near-black text (never white — real marker only comes in
+   black, see ../nav.css's chip rule and shared.css's `th` above) like every
+   other Level 4. The negative left/right margin cancels .rankings-panel's
+   padding so this bleeds all the way to the panel's edges, aligning with
+   Levels 1-3 above instead of sitting inset. */
 .rankings-header {
   display: grid;
   align-items: center;
@@ -386,11 +429,14 @@ tbody tr:hover { background: #EDE8DC; }
   top: 0;
   margin: 0 -0.8rem;
   background: #C0392B;
-  color: #fff;
+  color: #1a1a1a;
   z-index: 10;
 }
 .rankings-header > div { padding: 0.3rem 0.5rem; text-align: center; font-weight: bold; }
-.rankings-header .axis-head { text-align: right; padding-right: 0.6rem; color: rgba(255,255,255,0.7); }
+/* Dimmed near-black, not dimmed white — same opacity convention as
+   ../nav.css's disabled chip text, reused here rather than inventing a
+   second "de-emphasized on red" treatment. */
+.rankings-header .axis-head { text-align: right; padding-right: 0.6rem; color: rgba(26, 26, 26, 0.55); }
 .rankings-body { display: grid; /* grid-template-columns set dynamically by renderRankings() */ }
 .scale-error { position: absolute; top: 4px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: #c00; pointer-events: none; }
 .rankings-axis { position: relative; }
@@ -1979,59 +2025,12 @@ for (const t of teams) confByTeam[t.name] = t.confederation;
 const flagByTeam = {};
 for (const t of teams) flagByTeam[t.name] = t.flag;
 
-// Universal fly in/out pacing — see requirements/public.md -> Navigation ->
-// Transitions and ../nav.css's --fly-ms (the single source of truth; read
-// here at runtime instead of a second hardcoded number that could drift
-// out of sync with it). Every swap in this file is sequential (old content
-// flies out, *then* new content is rendered and flies in) rather than the
-// homepage's simultaneous dual-panel version, since these views hold
-// heavier, dynamically-rendered content — so this constant is the out-leg's
-// wait before swapping content, not a full round-trip.
-const FLY_MS = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fly-ms'));
-
-// Shared fly-out/fly-in primitives — setPageView, setMatchView, and
-// toggleBracketRound each swap different content (a whole view, a set of
-// scattered table cells, one or more bracket columns), so this is a pair of
-// small building blocks rather than one rigid "swap panel A for panel B"
-// function. Callers own DOM mutation (removing/rendering content) and any
-// scroll-lock lifecycle (see ../nav.css's .fly-scroll-lock) between the two.
-
-// Flies `els` off-screen (see ../nav.css's .fly-panel) and resolves once the
-// transition finishes. Leaves them in the flown-out state — hiding/removing
-// them from the DOM afterward is the caller's job.
-function flyOut(els) {
-  return new Promise(function(resolve) {
-    els.forEach(function(el) { el.classList.remove('fly-in-active'); el.classList.add('fly-panel', 'fly-out'); });
-    window.setTimeout(resolve, FLY_MS);
-  });
-}
-
-// Flies `els` in from off-screen, with an optional per-element stagger (ms)
-// for a rapid-fire reveal of several at once (see Knockout's round toggle).
-// Once settled, clears the fly classes back to no-transform rather than
-// leaving `transform: translateX(0)` in place — see ../nav.css's .fly-panel
-// comment for why a lingering identity transform is its own latent bug
-// (breaks any position:fixed descendant, e.g. Rankings' #rank-info).
-function flyIn(els, options) {
-  const stagger = (options && options.stagger) || 0;
-  const onSettled = options && options.onSettled;
-  if (!els.length) { if (onSettled) onSettled(); return; }
-  els.forEach(function(el, i) {
-    el.classList.add('fly-panel', 'fly-in-start');
-    if (stagger) el.style.transitionDelay = (i * stagger) + 'ms';
-  });
-  void els[0].offsetWidth;
-  requestAnimationFrame(function() {
-    els.forEach(function(el) { el.classList.remove('fly-in-start'); el.classList.add('fly-in-active'); });
-    window.setTimeout(function() {
-      els.forEach(function(el) {
-        el.classList.remove('fly-panel', 'fly-in-active');
-        if (stagger) el.style.transitionDelay = '';
-      });
-      if (onSettled) onSettled();
-    }, FLY_MS);
-  });
-}
+// FLY_MS, flyOut(), and flyIn() — the shared board-level fly-out/fly-in
+// primitives used by setPageView, setMatchView, and toggleBracketRound below
+// — now live in ../fly.js (loaded before this script), since cross-page
+// navigation's own board phase (see requirements/navigation.md ->
+// Cross-page navigation) needs them on pages that don't load shared.js at
+// all (the homepage, History).
 
 // Returns a deterministic slight rotation (±1deg) for a team's flag,
 // derived from the team name so each team is consistent across all appearances.
@@ -3223,40 +3222,78 @@ function setPageView(view) {
   // for exactly the transition, not permanently (a view's inner table/
   // bracket may legitimately need its own horizontal scroll at rest).
   document.body.classList.add('fly-scroll-lock');
-  flyOut([outEl]).then(function() {
+  // No nav phase here — the tab strip's own chips never fly, only the
+  // selected chip's look updates (the toggle loop above, instant) — so this
+  // runs the other two Layering phases in sequence, each fully settling
+  // before the next starts: the outgoing view's own items clear first, then
+  // the outgoing board (the whole panel) exits; the new board settles, then
+  // its own items fly in. See requirements/navigation.md -> Transitions ->
+  // "Layering".
+  flyOutItems(boardSwapItems(outgoing)).then(function() {
+    return flyOut([outEl]);
+  }).then(function() {
     outEl.style.display = 'none';
     outEl.classList.remove('fly-out', 'fly-panel');
     incoming.style.display = 'block';
     renderPageView(view);
-    flyIn([incoming], { onSettled: function() { document.body.classList.remove('fly-scroll-lock'); } });
+    return flyIn([incoming]);
+  }).then(function() {
+    return flyInItems(boardSwapItems(view));
+  }).then(function() {
+    document.body.classList.remove('fly-scroll-lock');
   });
   if (location.hash.slice(1) !== view) history.replaceState(null, '', '#' + view);
 }
 
-// The active view's own in-frame content, for cross-page nav's extra-items
-// function (see build.py's page_html() -> setupCrossPageNav call, and
-// ../fly.js's setupCrossPageNav) — nav chips themselves are handled by that
-// function's own default (pageNavFlyItems), this is only ever the page's
-// additional content beyond its nav. Reads currentPageView fresh each call
-// rather than being fixed at setup time, so a departure mid-Knockout-browse
-// flies Knockout's cards, not whatever view happened to be showing when the
-// listener was attached.
+// A given view's own in-frame content — used both by cross-page nav's
+// extra-items function (see build.py's page_html() -> setupCrossPageNav
+// call, and ../fly.js's setupCrossPageNav; nav chips themselves are handled
+// by that function's own default, pageNavFlyItems) and by setPageView below,
+// for the outgoing view's own item-out phase (see requirements/
+// navigation.md -> Transitions -> "Layering").
 //
 // Match List is the one view needing its own finer-than-usual grain here —
-// see requirements/public.md -> Navigation -> Cross-page navigation ->
-// "The item, for a row-based view... is finer than the in-page row-swap
-// grain": each flag/score/ELO figure (.ml-inner — see gameRowCells/
-// flagCellHtml) flies on its own, not the row. Knockout's game cards and
-// Rankings' flags are already each view's own finest independently-
-// meaningful unit — the same elements slideInBracketColumns/
-// slideOutBracketColumns and renderRankings already treat as items — so
-// gathering them needs no further restructuring, just a selector. Groups
-// has no real content yet (still a "coming soon" placeholder).
-function currentViewFlyItems() {
-  if (currentPageView === 'matches') return Array.from(document.querySelectorAll('#matches-view tbody .ml-inner'));
-  if (currentPageView === 'knockout') return Array.from(document.querySelectorAll('#knockout-outer .bracket-game-wrap'));
-  if (currentPageView === 'rankings') return Array.from(document.querySelectorAll('#rankings-body .flag-pin'));
+// see requirements/navigation.md -> Cross-page navigation -> "The item,
+// for a row-based view... is finer than the in-page row-swap grain": each
+// flag/score/ELO figure (.ml-inner — see gameRowCells/flagCellHtml) flies
+// on its own, not the row. Knockout's game cards and Rankings' flags are
+// already each view's own finest independently-meaningful unit — the same
+// elements slideInBracketColumns/slideOutBracketColumns and renderRankings
+// already treat as items — so gathering them needs no further
+// restructuring, just a selector. Groups has no real content yet (still a
+// "coming soon" placeholder), so it returns nothing to fly.
+function viewFlyItems(view) {
+  if (view === 'matches') return Array.from(document.querySelectorAll('#matches-view tbody .ml-inner'));
+  if (view === 'knockout') return Array.from(document.querySelectorAll('#knockout-outer .bracket-game-wrap'));
+  if (view === 'rankings') return Array.from(document.querySelectorAll('#rankings-body .flag-pin'));
   return [];
+}
+
+// Reads currentPageView fresh each call rather than being fixed at setup
+// time, so a cross-page departure mid-Knockout-browse flies Knockout's
+// cards, not whatever view happened to be showing when the listener was
+// attached.
+function currentViewFlyItems() {
+  return viewFlyItems(currentPageView);
+}
+
+// A view's own items for the *within-page* Level 2 board swap (setPageView
+// below) — row-level for Match List, since the finer .ml-inner-per-cell
+// grain viewFlyItems uses is specifically a cross-page-nav-only exception
+// (see requirements/navigation.md -> Cross-page navigation -> "The item,
+// for a row-based view... is finer than the in-page row-swap grain" — the
+// plain in-page case stays row-level, per the row in requirements/
+// navigation.md -> Transitions -> "The unit that moves, by action"); every
+// other view already uses its finest unit either way, so this just reuses
+// viewFlyItems for those. Scoped to what's actually in frame — a Match List
+// can run 50+ rows deep, and flying rows the reader can't see wastes motion
+// on nothing (same reasoning as Cross-page navigation -> "Scoped to what's
+// actually in frame").
+function boardSwapItems(view) {
+  const items = view === 'matches'
+    ? Array.from(document.querySelectorAll('#matches-view tbody tr'))
+    : viewFlyItems(view);
+  return items.filter(inFrame);
 }
 
 function validateContract() {
@@ -3322,16 +3359,24 @@ initRankingsHover();
 // Cross-page navigation (Home <-> WC YY <-> Tournaments <-> History) — see
 // requirements/navigation.md -> Cross-page navigation and
 // brand-guidelines.md -> Motion -> "Walking to a different poster". Shared
-// mechanics from ../fly.js (loaded above, in <head>); every in-frame nav
-// chip at every level (pageNavFlyItems(), .page-nav wraps all of it — see
-// the markup above) plus whichever view is actually showing's own content
-// (currentViewFlyItems(), in shared.js, loaded just above this script) —
-// Match List rows/Rankings flags/Knockout cards on departure, and Match
-// List specifically on arrival, since that's the only view a fresh
-// cross-page arrival ever lands on (currentPageView starts 'matches' and
-// nothing carries a #hash across a navigation).
-setupCrossPageNav(function() {
-  return pageNavFlyItems().concat(currentViewFlyItems());
+// mechanics from ../fly.js (loaded above, in <head>), including the
+// nav/board/content phase ordering (requirements/navigation.md ->
+// Transitions -> "Layering"); every in-frame nav chip at every level uses
+// that function's own default (pageNavFlyItems(), .page-nav wraps all of
+// it — see the markup above), so this page supplies its own content beyond
+// nav (currentViewFlyItems(), in shared.js — Match List rows/Rankings
+// flags/Knockout cards on departure, and Match List specifically on
+// arrival, since that's the only view a fresh cross-page arrival ever
+// lands on: currentPageView starts 'matches' and nothing carries a #hash
+// across a navigation) and its own board: whichever view container is
+// currently active (its table/bracket/flag-grid frame lives inside it, so
+// it arrives with the container rather than sitting there unanimated —
+// same reasoning as History's #hist-board). Reads currentPageView fresh
+// each call, same as currentViewFlyItems, so it's correct on both the
+// departure side (whichever view the reader was actually on) and the
+// arrival side (always 'matches', per the above).
+setupCrossPageNav(null, currentViewFlyItems, function() {
+  return document.getElementById(currentPageView + '-view');
 });
 </script>
 

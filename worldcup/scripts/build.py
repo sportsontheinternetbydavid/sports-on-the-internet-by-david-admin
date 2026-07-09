@@ -535,13 +535,14 @@ def build_history_page(shared_css):
 {FAVICON_SCRIPT}
 <style>
 {shared_css}
-/* Overrides shared.css's generic `th {{ background: #C0392B; color: #FFFFFF }}`
+/* Overrides shared.css's generic `th {{ background: #C0392B; ... }}`
    (written for the actual Level 4 header row) — .year-cell is a <th> for
    markup reasons (it's a row header, semantically), not a repeated copy of
-   the header itself. Without this it inherits white marker on red, which
-   isn't a real material this brand uses (see brand-guidelines.md ->
-   Typography: marker is black) — and reading down the column, every row's
-   year looked like a stack of headers instead of a handwritten label. */
+   the header itself. Without this override it inherits the red Level 4
+   background, and reading down the column, every row's year looked like a
+   stack of headers instead of a handwritten label. (Text color no longer
+   needs its own override here — shared.css's `th` is near-black now, same
+   as this rule already was.) */
 .year-cell {{
   font-family: 'Permanent Marker', cursive;
   font-size: 1.1rem;
@@ -625,6 +626,7 @@ table.dimming .hist-cell.team-highlight {{ opacity: 1; }}
 </head>
 <body>
 {page_nav}
+<div id="hist-board">
 <p class="hist-caption">ELO ranking of the teams entering the selected round, highest to lowest, left to right — not a final-standings table.</p>
 
 <div class="table-wrap">
@@ -638,6 +640,7 @@ table.dimming .hist-cell.team-highlight {{ opacity: 1; }}
   <tbody id="hist-tbody">
 {round_html['f16']}  </tbody>
 </table>
+</div>
 </div>
 
 <script>
@@ -675,17 +678,29 @@ function histItems(tbody) {{
 // Cross-page navigation (Home <-> WC YY <-> Tournaments <-> History) — see
 // requirements/navigation.md -> Cross-page navigation and
 // brand-guidelines.md -> Motion -> "Walking to a different poster". The
-// actual click-intercept/sessionStorage/scroll-lock/fonts.ready mechanics
-// are shared sitewide now (see setupCrossPageNav in ../fly.js, loaded
-// before this script) — this page only supplies which elements are its own
-// to fly: every nav chip at every level (pageNavFlyItems(), also in
-// ../fly.js), plus the active round's own cells, reusing histItems as-is
-// since History already flies at cell granularity for its own round toggle
-// (see setHistRound below); only Match List needs a finer grain than its
-// usual row-level item for this feature (see requirements/public.md ->
-// Cross-page navigation).
-setupCrossPageNav(function() {{
-  return pageNavFlyItems().concat(histItems(document.getElementById('hist-tbody')));
+// actual click-intercept/sessionStorage/scroll-lock/fonts.ready mechanics,
+// plus the nav/board/content phase ordering (requirements/navigation.md ->
+// Transitions -> "Layering"), are shared sitewide now (see
+// setupCrossPageNav in ../fly.js, loaded before this script) — nav chips
+// use that function's own default (pageNavFlyItems, also in ../fly.js);
+// this page supplies its own content beyond nav (the active round's own
+// cells, reusing histItems as-is since History already flies at cell
+// granularity for its own round toggle — see setHistRound below; only
+// Match List needs a finer grain than its usual row-level item for this
+// feature, see requirements/navigation.md -> Cross-page navigation) and its
+// own board: #hist-board, the wrapper around both the caption paragraph
+// and the table itself, not just the table alone — the caption explains
+// what the table is showing, so it's part of the same physical clipping
+// as the table, not a separate loose scrap sitting outside it; leaving it
+// out of the board would mean it just sits there unanimated, exactly the
+// bug this board phase exists to prevent (see requirements/navigation.md ->
+// Cross-page navigation for why a page-specific board can't be assumed
+// "already there" the way universal chrome can — that reasoning applies
+// to every piece of the board, not only the table).
+setupCrossPageNav(null, function() {{
+  return histItems(document.getElementById('hist-tbody'));
+}}, function() {{
+  return document.getElementById('hist-board');
 }});
 
 function setHistRound(round) {{
@@ -860,16 +875,24 @@ def page_html(year, script_block, shared_css, shared_js):
 // Cross-page navigation (Home <-> WC YY <-> Tournaments <-> History) — see
 // requirements/navigation.md -> Cross-page navigation and
 // brand-guidelines.md -> Motion -> "Walking to a different poster". Shared
-// mechanics from ../fly.js (loaded above, in <head>); every in-frame nav
-// chip at every level (pageNavFlyItems(), .page-nav wraps all of it — see
-// the markup above) plus whichever view is actually showing's own content
-// (currentViewFlyItems(), in shared.js, loaded just above this script) —
-// Match List rows/Rankings flags/Knockout cards on departure, and Match
-// List specifically on arrival, since that's the only view a fresh
-// cross-page arrival ever lands on (currentPageView starts 'matches' and
-// nothing carries a #hash across a navigation).
-setupCrossPageNav(function() {{
-  return pageNavFlyItems().concat(currentViewFlyItems());
+// mechanics from ../fly.js (loaded above, in <head>), including the
+// nav/board/content phase ordering (requirements/navigation.md ->
+// Transitions -> "Layering"); every in-frame nav chip at every level uses
+// that function's own default (pageNavFlyItems(), .page-nav wraps all of
+// it — see the markup above), so this page supplies its own content beyond
+// nav (currentViewFlyItems(), in shared.js — Match List rows/Rankings
+// flags/Knockout cards on departure, and Match List specifically on
+// arrival, since that's the only view a fresh cross-page arrival ever
+// lands on: currentPageView starts 'matches' and nothing carries a #hash
+// across a navigation) and its own board: whichever view container is
+// currently active (its table/bracket/flag-grid frame lives inside it, so
+// it arrives with the container rather than sitting there unanimated —
+// same reasoning as History's #hist-board). Reads currentPageView fresh
+// each call, same as currentViewFlyItems, so it's correct on both the
+// departure side (whichever view the reader was actually on) and the
+// arrival side (always 'matches', per the above).
+setupCrossPageNav(null, currentViewFlyItems, function() {{
+  return document.getElementById(currentPageView + '-view');
 }});
 </script>
 

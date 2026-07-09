@@ -243,6 +243,7 @@ Stylized second.
 * Print the detailed explanations.
 * Never sacrifice readability.
 * The page should feel assembled rather than digitally designed.
+* Marker ink is black, full stop — a real marker doesn't come in white, so marker-written text never turns white or light-colored no matter what it's sitting on. This holds for a chip on a colored paper cutout and for a red Level 4 header strip alike — a colored background is never, on its own, a reason for the text on it to flip light. If a background is dark enough that black text genuinely can't be read, that's a sign the background needs to change, not the ink.
 
 ---
 

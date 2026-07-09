@@ -125,24 +125,22 @@ body { font-family: 'Fredoka One', cursive; font-size: 1rem; line-height: 1.5; b
    makes the whole block read as one thing, in either state. Deliberate
    homepage-only exception, not a change to the general rule. */
 #page-nav .view-toggle { justify-content: center; }
-/* scale/rotate: none (not transform: none) — .view-toggle strong.active
-   (../nav.css) sets its "picked up" look via the standalone scale/rotate
-   properties now, not the transform shorthand (see that file's comment on
-   why), so canceling it here needs to reset those same two properties
-   rather than a transform that no longer carries either value. */
-#sports-level2 strong.active { background: none; box-shadow: none; scale: none; rotate: none; color: #C0392B; font-size: 1.4rem; padding: 0; }
+/* rotate: none (not transform: none) — .view-toggle strong.active
+   (../nav.css) sets its "picked up" look via the standalone rotate
+   property now, not the transform shorthand (see that file's comment on
+   why), so canceling it here needs to reset that same property rather
+   than a transform that no longer carries it. No scale to reset — a
+   chip's Selected look never changes its size at all (see nav.css's
+   comment on why: real paper doesn't grow because it got picked up). */
+#sports-level2 strong.active { background: none; box-shadow: none; rotate: none; color: #C0392B; font-size: 1.4rem; padding: 0; }
 #sports-level2 strong.active::before { display: none; }
-#sports-level3 strong.active { background: none; box-shadow: none; scale: none; rotate: none; color: #5a4a3a; font-size: 1.1rem; padding: 0; }
+#sports-level3 strong.active { background: none; box-shadow: none; rotate: none; color: #5a4a3a; font-size: 1.1rem; padding: 0; }
 #sports-level3 strong.active::before { display: none; }
 /* A little breathing room on all sides so a chip's shadow/tape isn't
    clipped by the viewport edge (or, since overflow:hidden above means
    clipping is literal, cut off outright) — not a "top margin above the
    nav" in the sense requirements/public.md rules out, just enough for the
-   paper material's own shadow/rotation/scale to render. Left/right matter
-   most for a *selected* chip flush against the row's edge: its
-   scale(1.06) pushes the transformed edge a few px past the unscaled
-   edge, which needs somewhere to go now that overflow is clipped rather
-   than just unreachable by scroll. */
+   paper material's own shadow/rotation to render. */
 #page-nav { padding: 10px 8px; }
 
 /* Both groups are stacked in the same box (position:absolute, same
@@ -174,8 +172,8 @@ body { font-family: 'Fredoka One', cursive; font-size: 1rem; line-height: 1.5; b
    comment on .fly-panel/.fly-item for why these are the standalone
    properties and not the transform shorthand: a direct child here can
    carry .active (e.g. "World Cup", the only real Level 2 item) while its
-   group is mid-swap, and .view-toggle strong.active sets its own scale/
-   rotate for the "picked up" look — sharing the transform property would
+   group is mid-swap, and .view-toggle strong.active sets its own rotate
+   for the "picked up" look — sharing the transform property would
    let whichever rule's shorthand wins silently discard the other's value.
    translate is untouched by anything else in this file or ../nav.css, so
    it can't lose that fight structurally; rotate is shared with the chip's
@@ -230,9 +228,14 @@ window.addEventListener('DOMContentLoaded', function() {
 // Cross-page navigation (Home <-> WC YY <-> Tournaments <-> History) — see
 // requirements/navigation.md -> Cross-page navigation and
 // brand-guidelines.md -> Motion -> "Walking to a different poster". The
-// actual click-intercept/sessionStorage/scroll-lock/fonts.ready mechanics
-// are shared sitewide now (see setupCrossPageNav in fly.js, loaded before
-// this script) — this page only supplies which elements are its own to fly.
+// actual click-intercept/sessionStorage/scroll-lock/fonts.ready mechanics,
+// plus the nav/board/content phase ordering (requirements/navigation.md ->
+// Transitions -> "Layering"), are shared sitewide now (see
+// setupCrossPageNav in fly.js, loaded before this script) — this page only
+// supplies which elements are its own nav to fly; it has no board and no
+// content layer beyond nav at all (the homepage is nav, top to bottom), so
+// it passes nothing for setupCrossPageNav's content-getter or board-getter
+// parameters — both phases simply don't run on this end of any link.
 //
 // Every Level 1 chip, plus whichever of Sports!/Football's own Level 2-3
 // chips is currently showing (every one of Football's Level 2-3 items is a

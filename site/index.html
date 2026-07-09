@@ -76,6 +76,28 @@
   rotate: var(--rot);
   position: relative;
 }
+/* Selection's own lift (a stronger shadow, see the Selected rule below)
+   needs a real transition duration — a physical pick-up is a quick motion,
+   not an instant swap — see requirements/navigation.md -> Transitions ->
+   "Selection is a motion, not a snap". Deliberately its own rule, wrapped
+   in :where() to carry zero specificity, rather than folded into the base
+   rule above: a plain `.view-toggle button { transition: ... }` would have
+   specificity (0,1,1) — one class plus one type — which beats .fly-item's
+   (0,1,0), so it would silently steal the whole `transition` property
+   (translate/rotate timing and all) from any chip that's simultaneously
+   flying, exactly the "resting-state rule outranks fly-transition rule"
+   bug technical.md documents, just one level removed (which rule's
+   `transition` *property* wins, rather than which rule's `translate`
+   *value* wins). With :where()'s specificity of zero, .fly-item's own
+   transition (translate, rotate) always wins whenever a chip is mid-fly,
+   and this rule only ever supplies box-shadow timing the rest of the time.
+   No `scale` here — selection doesn't change a chip's size at all (see the
+   Selected rule below for why) — and no `rotate` either: a chip's rotation
+   never actually changes on selection (the Selected rule repeats the same
+   `var(--rot)`), so there's nothing for either to transition regardless. */
+:where(.view-toggle button, .view-toggle a, .view-toggle strong, .view-toggle span) {
+  transition: box-shadow 150ms ease-out;
+}
 .view-toggle strong, .view-toggle span.disabled { cursor: default; }
 
 .view-toggle > :nth-child(odd) { --rot: -1.6deg; }
@@ -101,7 +123,8 @@
 
 /* Tape on every chip — a physical scrap of board needs holding down
    whether or not it's the current selection; selection is differentiated
-   below instead (lift/scale/shadow + a bigger piece of tape). Size/angle/
+   below instead, by shadow alone (see the Selected rule below for why
+   tape itself never resizes and a chip never does either). Size/angle/
    position cycle by position mod 7 — a length that shares no common
    factor with the shape cycle (mod 4) or color cycle (mod 5) above, so
    tape variety never lines up with either in lockstep; nothing
@@ -126,17 +149,31 @@
 .view-toggle > :nth-child(7n+7) { --tape-w: 26px; --tape-h: 11px; --tape-rot: 2deg;  --tape-left: 48%; }
 
 /* Selected — no recolor (background stays whatever this chip already drew
-   from the palette above); lifts with a stronger shadow and a slight
-   scale-up (visibly picked up and pressed down). Tape is exactly whatever
-   piece this chip already had — real tape doesn't grow because the thing
-   under it got picked up, so selection is shadow/scale only, never a tape
-   resize. Text stays the same near-black — marker only comes in black, so
-   a colored background never flips to white text. Covers both single-choice
-   "current selection" and multi-select "shown" (a currently-visible
-   Knockout round) — both mean "this is on." */
+   from the palette above); lifts with a stronger, harder-edged shadow, the
+   real optical consequence of a physical chip sitting slightly higher off
+   the board (farther from the surface it's casting a shadow onto) — see
+   brand-guidelines.md -> Typography Principles and -> Layout -> "nothing
+   floats". Deliberately shadow only, no size change: a real piece of paper
+   doesn't grow because it got picked up or chosen — there's no physical
+   action that makes paper physically larger, so a scale-up here would be a
+   borrowed digital-UI convention (a button's :active "pop"), not a
+   materials-based one, however smoothly it's animated. This is the same
+   category of mistake this project already ruled out once for hover, via a
+   different property: a translateY lift was tried and rejected because "a
+   lift reads as the chip floating off the board" — scale-on-select is that
+   same instinct wearing `scale` instead of `translate`. Animated by the
+   base rule's own `transition: box-shadow` above, not an instant class
+   swap — a real hand doesn't teleport a chip to its picked-up shadow (see
+   requirements/navigation.md -> Transitions -> "Selection is a motion, not
+   a snap"). Tape is exactly whatever piece this chip already had — real
+   tape doesn't grow because the thing under it got picked up, so selection
+   is shadow only, never a tape resize. Text stays the same near-black —
+   marker only comes in black, so a colored background never flips to
+   white text. Covers both single-choice "current selection" and
+   multi-select "shown" (a currently-visible Knockout round) — both mean
+   "this is on." */
 .view-toggle button.active, .view-toggle a.active, .view-toggle strong.active {
   box-shadow: 4px 6px 0 rgba(0, 0, 0, 0.3);
-  scale: 1.08;
   rotate: var(--rot);
   z-index: 2;
 }
@@ -226,12 +263,12 @@
    silently overridden by a chip's own resting/selected look. A board or
    item can be mid-swap while also carrying .active (the outgoing view's
    own selected tab, the just-arrived default round's tab), and
-   .view-toggle button.active/.strong.active (above) sets its own `scale`/
-   `rotate` for the "picked up" look — if this fly mechanism also used
-   `transform`, whichever rule's shorthand won would silently discard the
-   other's value entirely (that's exactly what happened before this was
-   split: an !important arms race, one bug already found and fixed that
-   way — see technical.md -> "A resting-state rule must never outrank a
+   .view-toggle button.active/.strong.active (above) sets its own `rotate`
+   for the "picked up" look — if this fly mechanism also used `transform`,
+   whichever rule's shorthand won would silently discard the other's value
+   entirely (that's exactly what happened before this was split: an
+   !important arms race, one bug already found and fixed that way — see
+   technical.md -> "A resting-state rule must never outrank a
    fly-transition rule"). With `translate` as its own property, nothing
    else in this file ever sets it, so it can never lose that fight,
    structurally, not by convention. `rotate` is still shared with the
@@ -319,24 +356,22 @@ body { font-family: 'Fredoka One', cursive; font-size: 1rem; line-height: 1.5; b
    makes the whole block read as one thing, in either state. Deliberate
    homepage-only exception, not a change to the general rule. */
 #page-nav .view-toggle { justify-content: center; }
-/* scale/rotate: none (not transform: none) — .view-toggle strong.active
-   (../nav.css) sets its "picked up" look via the standalone scale/rotate
-   properties now, not the transform shorthand (see that file's comment on
-   why), so canceling it here needs to reset those same two properties
-   rather than a transform that no longer carries either value. */
-#sports-level2 strong.active { background: none; box-shadow: none; scale: none; rotate: none; color: #C0392B; font-size: 1.4rem; padding: 0; }
+/* rotate: none (not transform: none) — .view-toggle strong.active
+   (../nav.css) sets its "picked up" look via the standalone rotate
+   property now, not the transform shorthand (see that file's comment on
+   why), so canceling it here needs to reset that same property rather
+   than a transform that no longer carries it. No scale to reset — a
+   chip's Selected look never changes its size at all (see nav.css's
+   comment on why: real paper doesn't grow because it got picked up). */
+#sports-level2 strong.active { background: none; box-shadow: none; rotate: none; color: #C0392B; font-size: 1.4rem; padding: 0; }
 #sports-level2 strong.active::before { display: none; }
-#sports-level3 strong.active { background: none; box-shadow: none; scale: none; rotate: none; color: #5a4a3a; font-size: 1.1rem; padding: 0; }
+#sports-level3 strong.active { background: none; box-shadow: none; rotate: none; color: #5a4a3a; font-size: 1.1rem; padding: 0; }
 #sports-level3 strong.active::before { display: none; }
 /* A little breathing room on all sides so a chip's shadow/tape isn't
    clipped by the viewport edge (or, since overflow:hidden above means
    clipping is literal, cut off outright) — not a "top margin above the
    nav" in the sense requirements/public.md rules out, just enough for the
-   paper material's own shadow/rotation/scale to render. Left/right matter
-   most for a *selected* chip flush against the row's edge: its
-   scale(1.06) pushes the transformed edge a few px past the unscaled
-   edge, which needs somewhere to go now that overflow is clipped rather
-   than just unreachable by scroll. */
+   paper material's own shadow/rotation to render. */
 #page-nav { padding: 10px 8px; }
 
 /* Both groups are stacked in the same box (position:absolute, same
@@ -368,8 +403,8 @@ body { font-family: 'Fredoka One', cursive; font-size: 1rem; line-height: 1.5; b
    comment on .fly-panel/.fly-item for why these are the standalone
    properties and not the transform shorthand: a direct child here can
    carry .active (e.g. "World Cup", the only real Level 2 item) while its
-   group is mid-swap, and .view-toggle strong.active sets its own scale/
-   rotate for the "picked up" look — sharing the transform property would
+   group is mid-swap, and .view-toggle strong.active sets its own rotate
+   for the "picked up" look — sharing the transform property would
    let whichever rule's shorthand wins silently discard the other's value.
    translate is untouched by anything else in this file or ../nav.css, so
    it can't lose that fight structurally; rotate is shared with the chip's
@@ -423,9 +458,14 @@ window.addEventListener('DOMContentLoaded', function() {
 // Cross-page navigation (Home <-> WC YY <-> Tournaments <-> History) — see
 // requirements/navigation.md -> Cross-page navigation and
 // brand-guidelines.md -> Motion -> "Walking to a different poster". The
-// actual click-intercept/sessionStorage/scroll-lock/fonts.ready mechanics
-// are shared sitewide now (see setupCrossPageNav in fly.js, loaded before
-// this script) — this page only supplies which elements are its own to fly.
+// actual click-intercept/sessionStorage/scroll-lock/fonts.ready mechanics,
+// plus the nav/board/content phase ordering (requirements/navigation.md ->
+// Transitions -> "Layering"), are shared sitewide now (see
+// setupCrossPageNav in fly.js, loaded before this script) — this page only
+// supplies which elements are its own nav to fly; it has no board and no
+// content layer beyond nav at all (the homepage is nav, top to bottom), so
+// it passes nothing for setupCrossPageNav's content-getter or board-getter
+// parameters — both phases simply don't run on this end of any link.
 //
 // Every Level 1 chip, plus whichever of Sports!/Football's own Level 2-3
 // chips is currently showing (every one of Football's Level 2-3 items is a

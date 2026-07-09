@@ -20,59 +20,12 @@ for (const t of teams) confByTeam[t.name] = t.confederation;
 const flagByTeam = {};
 for (const t of teams) flagByTeam[t.name] = t.flag;
 
-// Universal fly in/out pacing — see requirements/public.md -> Navigation ->
-// Transitions and ../nav.css's --fly-ms (the single source of truth; read
-// here at runtime instead of a second hardcoded number that could drift
-// out of sync with it). Every swap in this file is sequential (old content
-// flies out, *then* new content is rendered and flies in) rather than the
-// homepage's simultaneous dual-panel version, since these views hold
-// heavier, dynamically-rendered content — so this constant is the out-leg's
-// wait before swapping content, not a full round-trip.
-const FLY_MS = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fly-ms'));
-
-// Shared fly-out/fly-in primitives — setPageView, setMatchView, and
-// toggleBracketRound each swap different content (a whole view, a set of
-// scattered table cells, one or more bracket columns), so this is a pair of
-// small building blocks rather than one rigid "swap panel A for panel B"
-// function. Callers own DOM mutation (removing/rendering content) and any
-// scroll-lock lifecycle (see ../nav.css's .fly-scroll-lock) between the two.
-
-// Flies `els` off-screen (see ../nav.css's .fly-panel) and resolves once the
-// transition finishes. Leaves them in the flown-out state — hiding/removing
-// them from the DOM afterward is the caller's job.
-function flyOut(els) {
-  return new Promise(function(resolve) {
-    els.forEach(function(el) { el.classList.remove('fly-in-active'); el.classList.add('fly-panel', 'fly-out'); });
-    window.setTimeout(resolve, FLY_MS);
-  });
-}
-
-// Flies `els` in from off-screen, with an optional per-element stagger (ms)
-// for a rapid-fire reveal of several at once (see Knockout's round toggle).
-// Once settled, clears the fly classes back to no-transform rather than
-// leaving `transform: translateX(0)` in place — see ../nav.css's .fly-panel
-// comment for why a lingering identity transform is its own latent bug
-// (breaks any position:fixed descendant, e.g. Rankings' #rank-info).
-function flyIn(els, options) {
-  const stagger = (options && options.stagger) || 0;
-  const onSettled = options && options.onSettled;
-  if (!els.length) { if (onSettled) onSettled(); return; }
-  els.forEach(function(el, i) {
-    el.classList.add('fly-panel', 'fly-in-start');
-    if (stagger) el.style.transitionDelay = (i * stagger) + 'ms';
-  });
-  void els[0].offsetWidth;
-  requestAnimationFrame(function() {
-    els.forEach(function(el) { el.classList.remove('fly-in-start'); el.classList.add('fly-in-active'); });
-    window.setTimeout(function() {
-      els.forEach(function(el) {
-        el.classList.remove('fly-panel', 'fly-in-active');
-        if (stagger) el.style.transitionDelay = '';
-      });
-      if (onSettled) onSettled();
-    }, FLY_MS);
-  });
-}
+// FLY_MS, flyOut(), and flyIn() — the shared board-level fly-out/fly-in
+// primitives used by setPageView, setMatchView, and toggleBracketRound below
+// — now live in ../fly.js (loaded before this script), since cross-page
+// navigation's own board phase (see requirements/navigation.md ->
+// Cross-page navigation) needs them on pages that don't load shared.js at
+// all (the homepage, History).
 
 // Returns a deterministic slight rotation (±1deg) for a team's flag,
 // derived from the team name so each team is consistent across all appearances.
@@ -1264,40 +1217,78 @@ function setPageView(view) {
   // for exactly the transition, not permanently (a view's inner table/
   // bracket may legitimately need its own horizontal scroll at rest).
   document.body.classList.add('fly-scroll-lock');
-  flyOut([outEl]).then(function() {
+  // No nav phase here — the tab strip's own chips never fly, only the
+  // selected chip's look updates (the toggle loop above, instant) — so this
+  // runs the other two Layering phases in sequence, each fully settling
+  // before the next starts: the outgoing view's own items clear first, then
+  // the outgoing board (the whole panel) exits; the new board settles, then
+  // its own items fly in. See requirements/navigation.md -> Transitions ->
+  // "Layering".
+  flyOutItems(boardSwapItems(outgoing)).then(function() {
+    return flyOut([outEl]);
+  }).then(function() {
     outEl.style.display = 'none';
     outEl.classList.remove('fly-out', 'fly-panel');
     incoming.style.display = 'block';
     renderPageView(view);
-    flyIn([incoming], { onSettled: function() { document.body.classList.remove('fly-scroll-lock'); } });
+    return flyIn([incoming]);
+  }).then(function() {
+    return flyInItems(boardSwapItems(view));
+  }).then(function() {
+    document.body.classList.remove('fly-scroll-lock');
   });
   if (location.hash.slice(1) !== view) history.replaceState(null, '', '#' + view);
 }
 
-// The active view's own in-frame content, for cross-page nav's extra-items
-// function (see build.py's page_html() -> setupCrossPageNav call, and
-// ../fly.js's setupCrossPageNav) — nav chips themselves are handled by that
-// function's own default (pageNavFlyItems), this is only ever the page's
-// additional content beyond its nav. Reads currentPageView fresh each call
-// rather than being fixed at setup time, so a departure mid-Knockout-browse
-// flies Knockout's cards, not whatever view happened to be showing when the
-// listener was attached.
+// A given view's own in-frame content — used both by cross-page nav's
+// extra-items function (see build.py's page_html() -> setupCrossPageNav
+// call, and ../fly.js's setupCrossPageNav; nav chips themselves are handled
+// by that function's own default, pageNavFlyItems) and by setPageView below,
+// for the outgoing view's own item-out phase (see requirements/
+// navigation.md -> Transitions -> "Layering").
 //
 // Match List is the one view needing its own finer-than-usual grain here —
-// see requirements/public.md -> Navigation -> Cross-page navigation ->
-// "The item, for a row-based view... is finer than the in-page row-swap
-// grain": each flag/score/ELO figure (.ml-inner — see gameRowCells/
-// flagCellHtml) flies on its own, not the row. Knockout's game cards and
-// Rankings' flags are already each view's own finest independently-
-// meaningful unit — the same elements slideInBracketColumns/
-// slideOutBracketColumns and renderRankings already treat as items — so
-// gathering them needs no further restructuring, just a selector. Groups
-// has no real content yet (still a "coming soon" placeholder).
-function currentViewFlyItems() {
-  if (currentPageView === 'matches') return Array.from(document.querySelectorAll('#matches-view tbody .ml-inner'));
-  if (currentPageView === 'knockout') return Array.from(document.querySelectorAll('#knockout-outer .bracket-game-wrap'));
-  if (currentPageView === 'rankings') return Array.from(document.querySelectorAll('#rankings-body .flag-pin'));
+// see requirements/navigation.md -> Cross-page navigation -> "The item,
+// for a row-based view... is finer than the in-page row-swap grain": each
+// flag/score/ELO figure (.ml-inner — see gameRowCells/flagCellHtml) flies
+// on its own, not the row. Knockout's game cards and Rankings' flags are
+// already each view's own finest independently-meaningful unit — the same
+// elements slideInBracketColumns/slideOutBracketColumns and renderRankings
+// already treat as items — so gathering them needs no further
+// restructuring, just a selector. Groups has no real content yet (still a
+// "coming soon" placeholder), so it returns nothing to fly.
+function viewFlyItems(view) {
+  if (view === 'matches') return Array.from(document.querySelectorAll('#matches-view tbody .ml-inner'));
+  if (view === 'knockout') return Array.from(document.querySelectorAll('#knockout-outer .bracket-game-wrap'));
+  if (view === 'rankings') return Array.from(document.querySelectorAll('#rankings-body .flag-pin'));
   return [];
+}
+
+// Reads currentPageView fresh each call rather than being fixed at setup
+// time, so a cross-page departure mid-Knockout-browse flies Knockout's
+// cards, not whatever view happened to be showing when the listener was
+// attached.
+function currentViewFlyItems() {
+  return viewFlyItems(currentPageView);
+}
+
+// A view's own items for the *within-page* Level 2 board swap (setPageView
+// below) — row-level for Match List, since the finer .ml-inner-per-cell
+// grain viewFlyItems uses is specifically a cross-page-nav-only exception
+// (see requirements/navigation.md -> Cross-page navigation -> "The item,
+// for a row-based view... is finer than the in-page row-swap grain" — the
+// plain in-page case stays row-level, per the row in requirements/
+// navigation.md -> Transitions -> "The unit that moves, by action"); every
+// other view already uses its finest unit either way, so this just reuses
+// viewFlyItems for those. Scoped to what's actually in frame — a Match List
+// can run 50+ rows deep, and flying rows the reader can't see wastes motion
+// on nothing (same reasoning as Cross-page navigation -> "Scoped to what's
+// actually in frame").
+function boardSwapItems(view) {
+  const items = view === 'matches'
+    ? Array.from(document.querySelectorAll('#matches-view tbody tr'))
+    : viewFlyItems(view);
+  return items.filter(inFrame);
 }
 
 function validateContract() {

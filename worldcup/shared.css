@@ -13,7 +13,11 @@ table { border-collapse: collapse; margin-top: 1rem; font-size: 0.9rem; white-sp
    page — and the nav above it — never grows wider than Levels 1-3. */
 #matches-view table { margin-top: 0; }
 th, td { padding: 0.4rem 0.6rem; text-align: left; border-bottom: 1px solid #ddd; }
-th { font-family: 'Permanent Marker', cursive; background: #C0392B; color: #FFFFFF; position: sticky; top: 0; z-index: 2; height: 2.5rem; vertical-align: middle; }
+/* Level 4 header row (see requirements/navigation.md -> Level 4) — red
+   background, but near-black text, not white: real marker only comes in
+   black (../nav.css's chip rule says the same thing), and that holds for
+   every red Level 4 strip sitewide, not just chips. */
+th { font-family: 'Permanent Marker', cursive; background: #C0392B; color: #1a1a1a; position: sticky; top: 0; z-index: 2; height: 2.5rem; vertical-align: middle; }
 .num { text-align: right; }
 .narrow { text-align: center; }
 .spacer { padding: 0 0.3rem; }
@@ -91,10 +95,12 @@ tbody tr:hover { background: #EDE8DC; }
    against Level 3 above with no gap, same as Match List's table. */
 .rankings-panel { border: 1px solid rgba(0,0,0,0.08); border-radius: 0 0 6px 6px; background: rgba(255,255,255,0.35); padding: 0 0.8rem 0.3rem; }
 .rankings-cols { font-size: 0.85rem; white-space: nowrap; }
-/* This view's Level 4 (see requirements/public.md → Navigation) — red/white
-   like every other Level 4. The negative left/right margin cancels
-   .rankings-panel's padding so this bleeds all the way to the panel's
-   edges, aligning with Levels 1-3 above instead of sitting inset. */
+/* This view's Level 4 (see requirements/public.md → Navigation) — red
+   background, near-black text (never white — real marker only comes in
+   black, see ../nav.css's chip rule and shared.css's `th` above) like every
+   other Level 4. The negative left/right margin cancels .rankings-panel's
+   padding so this bleeds all the way to the panel's edges, aligning with
+   Levels 1-3 above instead of sitting inset. */
 .rankings-header {
   display: grid;
   align-items: center;
@@ -104,11 +110,14 @@ tbody tr:hover { background: #EDE8DC; }
   top: 0;
   margin: 0 -0.8rem;
   background: #C0392B;
-  color: #fff;
+  color: #1a1a1a;
   z-index: 10;
 }
 .rankings-header > div { padding: 0.3rem 0.5rem; text-align: center; font-weight: bold; }
-.rankings-header .axis-head { text-align: right; padding-right: 0.6rem; color: rgba(255,255,255,0.7); }
+/* Dimmed near-black, not dimmed white — same opacity convention as
+   ../nav.css's disabled chip text, reused here rather than inventing a
+   second "de-emphasized on red" treatment. */
+.rankings-header .axis-head { text-align: right; padding-right: 0.6rem; color: rgba(26, 26, 26, 0.55); }
 .rankings-body { display: grid; /* grid-template-columns set dynamically by renderRankings() */ }
 .scale-error { position: absolute; top: 4px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: #c00; pointer-events: none; }
 .rankings-axis { position: relative; }

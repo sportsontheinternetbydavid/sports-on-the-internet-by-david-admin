@@ -79,7 +79,7 @@ Pages without the primary tabs (`history.html`) show only Level 1, styled identi
 
 #### Table
 - Page background `#F5F0E8` carries through — tables sit on the cream background.
-- Table header row is this page's Level 4 (see `navigation.md`) — same red/white, Permanent Marker treatment as the rest of the nav.
+- Table header row is this page's Level 4 (see `navigation.md`) — same red background, near-black Permanent Marker text as the rest of the nav.
 - Row hover: a warm tint `#EDE8DC`.
 - All other table layout and column behavior is unchanged.
 
@@ -329,7 +329,7 @@ Both Rank and Scale views share the same canvas structure: one vertical column p
 
 - *Flag dimensions*: each flag icon has a fixed pixel width and height, consistent across both views.
 - *Column width*: every gameset column has a fixed minimum width of `3 × flag_width + 2 × gap` (where *gap* is a fixed small spacing between side-by-side flags, defined in the Scale view). This applies uniformly across both views. Column separator lines are always fully visible; no flag extends past its column boundary. (The `3 ×` derives from the Scale view cluster constraint — see `scale-algorithm.md`.)
-- *Header row*: the row of gameset labels (Initial / MD1 / MD2 / … or Initial / Game 1 / … for 2026) is this view's Level 4 (see *Navigation* under *World Cup pages*) — red `#C0392B` background, white text, matching every other view's Level 4, sitting just below Level 3 above it.
+- *Header row*: the row of gameset labels (Initial / MD1 / MD2 / … or Initial / Game 1 / … for 2026) is this view's Level 4 (see *Navigation* under *World Cup pages*) — red `#C0392B` background, near-black text, matching every other view's Level 4, sitting just below Level 3 above it.
 
 ---
 
