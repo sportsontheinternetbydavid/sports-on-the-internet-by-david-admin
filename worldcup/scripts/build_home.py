@@ -49,8 +49,8 @@ FOOTBALL_LEVEL_2 = [
 # current/latest year; from there, that page's own Level 2 reaches any other
 # year.
 FOOTBALL_LEVEL_3 = [
-    ('History', 'football/worldcup/history.html', None),
     ('Tournaments', 'football/worldcup/2026.html', None),
+    ('History', 'football/worldcup/history.html', None),
 ]
 
 FAVICON_SCRIPT = """<script>
